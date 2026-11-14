@@ -30,29 +30,115 @@
   --font-sans: var(--font-inter);
   --font-heading: var(--font-jakarta);
   --font-logo: var(--font-irish-grover);
+
+  --animate-fade-in: fade-in 1.6s ease-out both;
+  --animate-ring: ring 110s linear infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes ring {
+    from {
+      translate: 0 0 calc(var(--r) * -1);
+      rotate: y 0deg;
+    }
+    to {
+      translate: 0 0 calc(var(--r) * -1);
+      rotate: y -360deg;
+    }
+  }
+  --animate-rise: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes globe-in {
+    from {
+      opacity: 0;
+      scale: 0.94;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
-html {
-  scroll-behavior: smooth;
+/* Estilos base: van en @layer base para que las clases de Tailwind los puedan sobrescribir */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* El sitio es oscuro: fondo ink con estrellas y nebulosa (ver .bg-stars y .nebula) */
+  body {
+    background: var(--ink);
+    color: var(--snow);
+    font-family: var(--font-inter), system-ui, sans-serif;
+    font-weight: 400;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+    font-weight: 700;
+    color: var(--snow);
+  }
+
+  ::selection {
+    background: var(--navy);
+    color: var(--snow);
+  }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-weight: 400;
+/* Fondo global fijo: estrellas (canvas) + nebulosa en navy/slate */
+.bg-stars {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -3;
+  pointer-events: none;
+}
+.nebula {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(64rem 44rem at 82% -6%, rgb(40 58 84 / 0.95), transparent 64%),
+    radial-gradient(54rem 42rem at -8% 40%, rgb(40 58 84 / 0.7), transparent 64%),
+    radial-gradient(48rem 36rem at 72% 105%, rgb(76 102 121 / 0.32), transparent 64%),
+    radial-gradient(38rem 26rem at 30% 70%, rgb(76 102 121 / 0.08), transparent 62%);
+}
+@media (max-width: 700px) {
+  .nebula {
+    background:
+      radial-gradient(26rem 20rem at 88% -4%, rgb(40 58 84 / 0.85), transparent 66%),
+      radial-gradient(24rem 22rem at -12% 42%, rgb(40 58 84 / 0.65), transparent 66%),
+      radial-gradient(22rem 18rem at 78% 104%, rgb(76 102 121 / 0.16), transparent 64%);
+  }
 }
 
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(--font-jakarta), system-ui, sans-serif;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-::selection {
-  background: var(--navy);
-  color: var(--snow);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

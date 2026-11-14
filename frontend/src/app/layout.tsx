@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Irish_Grover, Plus_Jakarta_Sans } from "next/font/google";
 import Navbar from "@/components/Navbar";
+import StarField from "@/components/StarField";
 import "./globals.css";
 
 const inter = Inter({
@@ -36,6 +37,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${jakarta.variable} ${irishGrover.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <StarField />
+        <div className="nebula" aria-hidden="true" />
         <Navbar />
         <main className="flex flex-1 flex-col">{children}</main>
       </body>

@@ -6,7 +6,7 @@ export default function Logo({ className = "" }: { className?: string }) {
     <Link
       href="/pantalla-1"
       aria-label="Yakana's Team - inicio"
-      className={`font-logo text-2xl leading-none text-navy sm:text-3xl ${className}`}
+      className={`shrink-0 whitespace-nowrap font-logo text-base leading-none text-snow sm:text-xl ${className}`}
     >
       Yakana&apos;s Team
     </Link>
