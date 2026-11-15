@@ -306,7 +306,7 @@ export default function HarmonizeChart() {
                       <text x={PAD.l - 8} y={y(v) + 4} textAnchor="end">
                         {v === 0
                           ? "0"
-                          : narrow
+                          : narrow || lang === "en"
                             ? `${Math.round(v / 1000)}k`
                             : `${Math.round(v / 1000)} mil`}
                       </text>

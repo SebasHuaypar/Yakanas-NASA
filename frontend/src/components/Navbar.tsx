@@ -10,7 +10,7 @@ const links = [
   { href: "/historia", label: { en: "Story", es: "Historia" } },
   { href: "/metodo", label: { en: "Method", es: "Método" } },
   { href: "/explorador", label: { en: "Explorer", es: "Explorador" } },
-  { href: "/alertas", label: { en: "Alerts", es: "Alertas" } },
+  { href: "/prevencion", label: { en: "Prevention", es: "Prevención" } },
 ];
 
 /**
