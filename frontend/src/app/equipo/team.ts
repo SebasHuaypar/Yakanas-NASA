@@ -42,12 +42,17 @@ export const TEAM: Member[] = [
   {
     id: "darcy",
     name: "Darcy Ortega",
+    photo: "/equipo/darcy.jpg",
     role: { en: "Frontend", es: "Frontend" },
     contribution: {
       en: "Built the Explorer: the department map, the 3D terrain view with real hotspot cells and the 23-year monthly calendar.",
       es: "Construyó el Explorador: el mapa por departamentos, la vista de relieve 3D con las celdas de calor reales y el calendario mensual de 23 años.",
     },
-    links: {},
+    links: {
+      linkedin: "https://www.linkedin.com/in/ortega-sullcaccori-darcy",
+      github: "https://github.com/DarcyOrtegaSullcaccori",
+      email: "ortegadarcy2005@gmail.com",
+    },
   },
   {
     id: "cesar",
@@ -78,7 +83,7 @@ export const TEAM: Member[] = [
     id: "isaac",
     name: "Isaac Martel",
     photo: "/equipo/isaac.webp",
-    role: { en: "Predictive modeling", es: "Modelado predictivo" },
+    role: { en: "Data Scientist", es: "Data Scientist" },
     contribution: {
       en: "Built the predictive model, a logistic regression trained on the harmonized series and compared against four other methods, and collaborated on the MODIS–VIIRS harmonization model and on integrating the team’s work into the 2003–2026 series and its API.",
       es: "Construyó el modelo predictivo, una regresión logística entrenada con la serie armonizada y comparada con otros cuatro métodos, y colaboró en el modelo de armonización MODIS–VIIRS y en la integración del trabajo del equipo en la serie 2003–2026 y su API.",
