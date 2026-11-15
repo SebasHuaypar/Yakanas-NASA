@@ -89,7 +89,10 @@ function FlipCard({
       aria-label={`${m.name} - ${hint}`}
       onClick={() => setFlipped((v) => !v)}
       onKeyDown={(e) => {
-        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+        if (
+          e.target === e.currentTarget &&
+          (e.key === "Enter" || e.key === " ")
+        ) {
           e.preventDefault();
           setFlipped((v) => !v);
         }
@@ -108,34 +111,34 @@ function FlipCard({
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink/90 via-ink/50 to-transparent backdrop-blur-[2px] [mask-image:linear-gradient(to_top,black_55%,transparent)]"
           />
-          {socials.length > 0 && (
-            <ul className="absolute inset-x-0 bottom-0 flex justify-center gap-2 p-4">
-              {socials.map((l) => (
-                <li key={l.key}>
-                  <a
-                    href={l.href}
-                    target={l.key === "email" ? undefined : "_blank"}
-                    rel="noopener noreferrer"
-                    aria-label={`${m.name} - ${l.label}`}
-                    title={l.label}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    className="grid size-10 place-items-center rounded-full border border-snow/30 bg-ink/40 text-snow/90 backdrop-blur transition-colors hover:border-amber hover:text-amber focus-visible:outline-2 focus-visible:outline-amber"
-                  >
-                    {l.icon}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
         {/* Reverso */}
-        <div className="absolute inset-0 flex items-center overflow-hidden rounded-3xl border border-amber/50 bg-[linear-gradient(160deg,#283A54,#0C090A)] p-6 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+        <div className="absolute inset-0 flex items-center overflow-hidden rounded-3xl border border-amber/50 bg-[linear-gradient(160deg,#283A54,#0C090A)] px-6 pb-20 pt-6 [backface-visibility:hidden] [transform:rotateY(180deg)]">
           <p className="text-sm leading-relaxed text-snow/85 sm:text-base">
             {back}
           </p>
         </div>
       </div>
+      {socials.length > 0 && (
+        <ul className="absolute inset-x-0 bottom-0 z-10 flex justify-center gap-2 p-4">
+          {socials.map((l) => (
+            <li key={l.key}>
+              <a
+                href={l.href}
+                target={l.key === "email" ? undefined : "_blank"}
+                rel="noopener noreferrer"
+                aria-label={`${m.name} - ${l.label}`}
+                title={l.label}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                className="grid size-10 place-items-center rounded-full border border-snow/30 bg-ink/40 text-snow/90 backdrop-blur transition-colors hover:border-amber hover:text-amber focus-visible:outline-2 focus-visible:outline-amber"
+              >
+                {l.icon}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -217,7 +220,6 @@ export default function TeamView() {
           ))}
         </ul>
       </section>
-
     </div>
   );
 }
