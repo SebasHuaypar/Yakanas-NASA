@@ -12,9 +12,10 @@ const links = [
 ];
 
 /**
- * Barra superior fija y sin fondo: logo a la izquierda y una píldora suelta por pantalla.
- * En la pantalla 1 no se ve al inicio (la bienvenida ya muestra el logo grande);
- * aparece apenas se empieza a hacer scroll.
+ * Barra fija arriba, de lado a lado, con fondo que difumina lo que pasa por detrás.
+ * Logo a la izquierda y las pantallas a la derecha como texto con subrayado (blanco en la activa).
+ * En la pantalla 1 no se ve al inicio (la bienvenida ya muestra el logo grande); aparece con un
+ * fundido apenas se empieza a hacer scroll.
  */
 export default function Navbar() {
   const pathname = usePathname();
@@ -32,14 +33,16 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 h-14 transition-all duration-500 ${
-        visible ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"
-      }`}
       aria-hidden={!visible}
+      className={`fixed inset-x-0 top-0 z-50 border-b border-snow/10 bg-ink/55 backdrop-blur-xl transition-all duration-500 ${
+        visible
+          ? "translate-y-0 opacity-100"
+          : "pointer-events-none -translate-y-full opacity-0"
+      }`}
     >
-      <nav className="mx-auto flex h-full w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+      <nav className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:h-[4.5rem] sm:px-6">
         <Logo />
-        <ul className="flex items-center gap-1.5 sm:gap-2">
+        <ul className="flex items-center gap-4 sm:gap-9">
           {links.map(({ href, label }) => {
             const active = pathname === href;
             return (
@@ -48,13 +51,19 @@ export default function Navbar() {
                   href={href}
                   tabIndex={visible ? 0 : -1}
                   aria-current={active ? "page" : undefined}
-                  className={`block whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-medium backdrop-blur-sm transition-colors sm:px-4 sm:py-1.5 sm:text-xs ${
-                    active
-                      ? "border-snow bg-snow text-ink"
-                      : "border-snow/20 bg-ink/40 text-snow/70 hover:border-snow/50 hover:text-snow"
+                  className={`group relative block whitespace-nowrap py-2 text-xs font-medium transition-colors sm:text-sm ${
+                    active ? "text-snow" : "text-snow/60 hover:text-snow"
                   }`}
                 >
                   {label}
+                  <span
+                    aria-hidden="true"
+                    className={`absolute inset-x-0 -bottom-0.5 h-0.5 origin-left rounded-full bg-snow transition-transform duration-300 ${
+                      active
+                        ? "scale-x-100"
+                        : "scale-x-0 group-hover:scale-x-100 group-hover:bg-snow/60"
+                    }`}
+                  />
                 </Link>
               </li>
             );

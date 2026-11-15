@@ -2,30 +2,38 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import Reveal from "@/components/Reveal";
+import SectionDivider from "@/components/SectionDivider";
+import { PERU_MONTHLY_MEAN } from "@/lib/fire-data";
+import { sceneBus } from "@/lib/scene-bus";
+import FireClock from "./FireClock";
+import type { SceneState } from "./GlobeScene";
 
 // three.js solo corre en el navegador
 const GlobeScene = dynamic(() => import("./GlobeScene"), { ssr: false });
 
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const smooth = (a: number, b: number, x: number) => {
-  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  const t = clamp01((x - a) / (b - a));
   return t * t * (3 - 2 * t);
 };
 
 /**
- * Pantalla 1: una historia guiada por el scroll.
+ * Pantalla 1: una historia con el globo de fondo.
  *  1) Bienvenida con apenas el borde del globo asomando abajo.
- *  2) Al bajar, el globo sube, gira y se acerca hasta Perú.
- *  3) Aparece el texto sobre el país.
- * El contenedor es alto y la escena queda fija (sticky) mientras dura la animación.
+ *  2) Al empezar a bajar, el globo sube, gira y se acerca hasta Perú (animación por tiempo).
+ *  3) El globo se queda zoomeado sobre Perú, fijo detrás, mientras el reloj del fuego y las
+ *     siguientes secciones (children) pasan por encima como una landing normal.
  */
-export default function HeroScroll() {
-  const container = useRef<HTMLElement>(null);
+export default function HeroScroll({ children }: { children?: ReactNode }) {
+  const wrapper = useRef<HTMLDivElement>(null);
   const intro = useRef<HTMLDivElement>(null);
-  const scrim = useRef<HTMLDivElement>(null);
-  const story = useRef<HTMLDivElement>(null);
+  const dim = useRef<HTMLDivElement>(null);
 
-  const progress = useRef(0); // valor suavizado que usa la escena
+  const clearSmooth = useRef(0);
+  const state = useRef<SceneState>({ p: 0, dive: 0, end: 0 }); // valores suavizados para la escena 3D
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(true);
   const [reduced, setReduced] = useState(false);
@@ -39,7 +47,7 @@ export default function HeroScroll() {
   }, []);
 
   useEffect(() => {
-    const el = container.current;
+    const el = wrapper.current;
     if (!el) return;
     const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), {
       threshold: 0,
@@ -48,37 +56,41 @@ export default function HeroScroll() {
     return () => io.disconnect();
   }, []);
 
-  // Progreso del scroll -> suavizado -> escena y textos
+  // Scroll -> suavizado -> escena y textos
   useEffect(() => {
-    const el = container.current;
-    if (!el) return;
-    let target = 0;
+    const wrap = wrapper.current;
+    if (!wrap) return;
+    const target = { p: 0, dive: 0 };
     let raf = 0;
     let last = performance.now();
 
     const readScroll = () => {
-      const r = el.getBoundingClientRect();
-      const total = r.height - window.innerHeight;
-      target = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
+      // El scroll solo dispara el viaje al Perú; la animación corre sola por tiempo (como una web, no un video)
+      const scrolled = -wrap.getBoundingClientRect().top;
+      target.p = scrolled > window.innerHeight * 0.18 ? 1 : 0;
     };
 
     const frame = (now: number) => {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      const k = reduced ? 1 : 1 - Math.exp(-dt * 5);
-      progress.current += (target - progress.current) * k;
-      const p = progress.current;
+      const k = reduced ? 1 : 1 - Math.exp(-dt * 1.7);
+      const s = state.current;
+      s.p += (target.p - s.p) * k;
+      const p = s.p;
+
+      clearSmooth.current +=
+        (sceneBus.clear - clearSmooth.current) *
+        (reduced ? 1 : 1 - Math.exp(-dt * 1.3));
 
       if (intro.current) {
-        intro.current.style.opacity = String(1 - smooth(0.02, 0.16, p));
-        intro.current.style.transform = `translateY(${-smooth(0, 0.2, p) * 70}px)`;
+        intro.current.style.opacity = String(1 - smooth(0.02, 0.12, p));
+        intro.current.style.transform = `translateY(${-smooth(0, 0.15, p) * 70}px)`;
       }
-      if (scrim.current)
-        scrim.current.style.opacity = String(smooth(0.5, 0.75, p));
-      if (story.current) {
-        const s = smooth(0.62, 0.86, p);
-        story.current.style.opacity = String(s);
-        story.current.style.transform = `translateY(${(1 - s) * 34}px)`;
+      // Oscurecimiento parejo para leer el contenido sobre el globo (se aclara en la sección de los satélites)
+      if (dim.current) {
+        dim.current.style.opacity = String(
+          smooth(0.7, 1, p) * 0.55 * (1 - 0.75 * clearSmooth.current),
+        );
       }
       raf = requestAnimationFrame(frame);
     };
@@ -95,85 +107,119 @@ export default function HeroScroll() {
   }, [reduced]);
 
   return (
-    <section ref={container} id="inicio" className="relative h-[240svh]">
-      <div className="sticky top-0 h-svh overflow-hidden">
-        {/* Globo 3D */}
+    <div ref={wrapper} id="inicio" className="relative">
+      {/* Globo 3D fijo detrás de toda la historia (no ocupa espacio en el flujo) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none sticky top-0 z-0 -mb-[100svh] h-svh overflow-hidden"
+      >
         <div
-          aria-hidden="true"
           className={`absolute inset-0 transition-opacity duration-[1600ms] ${
             ready ? "opacity-100" : "opacity-0"
           }`}
         >
           <GlobeScene
-            progressRef={progress}
+            stateRef={state}
             reducedMotion={reduced}
             running={visible}
             onReady={() => setReady(true)}
           />
         </div>
 
-        {/* Velo para que el texto final se lea sobre el globo */}
         <div
-          ref={scrim}
-          aria-hidden="true"
+          ref={dim}
           style={{ opacity: 0 }}
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(12_9_10/0.88)_0%,rgb(12_9_10/0.6)_38%,transparent_72%)]"
+          className="absolute inset-0 bg-ink"
         />
+      </div>
 
-        {/* 1) Bienvenida */}
-        <div
-          ref={intro}
-          className="pointer-events-none absolute inset-x-0 top-0 flex h-[79%] flex-col items-center px-4 pt-8 text-center sm:pt-10"
-        >
-          <p className="flex animate-rise items-center gap-2.5 text-[11px] text-snow/65 sm:text-xs [animation-delay:200ms]">
-            <Image
-              src="/images/nasa-logo-white.svg"
-              alt="NASA"
-              width={110}
-              height={92}
-              unoptimized
-              className="h-6 w-auto sm:h-7"
-            />
-            <span>
-              Una solución para{" "}
-              <span className="font-medium text-snow">
-                NASA Space Apps Challenge 2026
+      {/* Hero: bienvenida (queda fija mientras el globo viaja hasta Perú) */}
+      <section className="relative z-10 h-svh">
+        <div className="relative h-svh overflow-hidden">
+          <div
+            ref={intro}
+            className="pointer-events-none absolute inset-x-0 top-0 flex h-[79%] flex-col items-center px-4 pt-8 text-center sm:pt-10"
+          >
+            <p className="flex animate-rise items-center gap-2.5 text-[11px] text-snow/65 sm:text-xs [animation-delay:200ms]">
+              <Image
+                src="/images/nasa-logo-white.svg"
+                alt="NASA"
+                width={110}
+                height={92}
+                unoptimized
+                className="h-6 w-auto sm:h-7"
+              />
+              <span>
+                Una solución para{" "}
+                <span className="font-medium text-snow">
+                  NASA Space Apps Challenge 2026
+                </span>
               </span>
-            </span>
-          </p>
-
-          {/* Logo + Presenta: centrados entre la línea de NASA y el borde del globo */}
-          <div className="flex flex-1 flex-col items-center justify-center">
-            <h1 className="animate-rise font-logo text-[3.4rem] font-normal leading-none text-snow [animation-delay:450ms] sm:text-8xl lg:text-9xl">
-              Yakana&apos;s Team
-            </h1>
-
-            <p className="mt-4 animate-rise text-sm tracking-[0.14em] text-snow/65 [animation-delay:800ms] sm:mt-6 sm:text-base">
-              Presenta
             </p>
+
+            {/* Logo + Presenta: centrados entre la línea de NASA y el borde del globo */}
+            <div className="flex flex-1 flex-col items-center justify-center">
+              <h1 className="animate-rise font-logo text-[3.4rem] font-normal leading-none text-snow [animation-delay:450ms] sm:text-8xl lg:text-9xl">
+                Yakana&apos;s Team
+              </h1>
+
+              <p className="mt-4 animate-rise text-sm tracking-[0.14em] text-snow/65 [animation-delay:800ms] sm:mt-6 sm:text-base">
+                Presenta
+              </p>
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* 3) Texto sobre Perú */}
-        <div
-          ref={story}
-          style={{ opacity: 0 }}
-          className="pointer-events-none absolute inset-x-0 top-0 mx-auto flex max-w-3xl flex-col items-center px-5 pt-20 text-center sm:pt-24"
-        >
-          <h2 className="text-[1.9rem] leading-[1.1] tracking-tight text-snow sm:text-5xl lg:text-6xl">
-            Cada año, el Perú tiene su temporada de fuego.
-            <span className="block text-snow/60">
-              Ahora vemos 23 años de ella.
-            </span>
-          </h2>
-          <p className="mt-5 max-w-[56ch] text-sm leading-relaxed text-snow/80 sm:mt-6 sm:text-lg">
-            Los satélites detectan incendios desde el espacio, pero los antiguos
-            y los nuevos los cuentan de forma distinta. Los unimos en un solo
-            registro justo, región por región, para que cualquiera pueda ver
-            cuándo y dónde arde el Perú.
-          </p>
+      {/* El Perú arde cada año: sección normal (sin altura forzada) sobre el globo */}
+      <section
+        id="reloj"
+        className="relative z-10 px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44"
+      >
+        <SectionDivider
+          index="01"
+          label="El fenómeno"
+          className="mb-14 sm:mb-20"
+        />
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-10 text-left lg:grid-cols-2 lg:gap-16">
+          {/* Texto: centrado verticalmente respecto al reloj, con el botón debajo */}
+          <Reveal className="lg:order-2">
+            <h2 className="text-[1.9rem] leading-tight tracking-tight text-snow sm:text-5xl">
+              El Perú arde cada año
+            </h2>
+            <p className="mt-3 max-w-[40ch] text-sm leading-relaxed text-snow/70 sm:text-base">
+              Así ocurre en un año típico, mes a mes.
+            </p>
+
+            <Link
+              href="/pantalla-3"
+              className="group mt-7 inline-flex items-center gap-2 rounded-full bg-snow px-7 py-3.5 text-sm font-medium text-ink transition duration-300 hover:shadow-[0_0_32px_rgb(243_249_252/0.4)] sm:mt-9"
+            >
+              Explora tu región
+              <span
+                aria-hidden="true"
+                className="transition-transform duration-300 group-hover:translate-x-1"
+              >
+                →
+              </span>
+            </Link>
+          </Reveal>
+
+          {/* Reloj */}
+          <Reveal delay={150} className="lg:order-1">
+            <div className="mx-auto w-full max-w-[560px] rounded-[2rem] border border-snow/15 bg-snow/[0.06] p-4 shadow-[0_12px_60px_rgb(0_0_0/0.45),inset_0_1px_0_rgb(243_249_252/0.14)] backdrop-blur-xl sm:p-7">
+              <FireClock
+                data={PERU_MONTHLY_MEAN}
+                autoPlay
+                svgClassName="max-w-[480px]"
+              />
+            </div>
+          </Reveal>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Siguientes secciones: landing normal por encima del globo */}
+      <div className="relative z-10">{children}</div>
+    </div>
   );
 }

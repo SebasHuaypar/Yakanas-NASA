@@ -9,7 +9,11 @@ import { CAROUSEL } from "@/lib/carousel";
  * Solo CSS para el giro; gira solo y se pausa/reanuda al hacer clic.
  * Cada foto muestra su crédito en letra pequeña (autor + licencia).
  */
-export default function CurvedCarousel({ className = "" }: { className?: string }) {
+export default function CurvedCarousel({
+  className = "",
+}: {
+  className?: string;
+}) {
   const n = CAROUSEL.length;
   const [paused, setPaused] = useState(false);
 

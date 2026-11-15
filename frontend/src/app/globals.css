@@ -120,18 +120,68 @@
   z-index: -2;
   pointer-events: none;
   background:
-    radial-gradient(64rem 44rem at 82% -6%, rgb(40 58 84 / 0.95), transparent 64%),
-    radial-gradient(54rem 42rem at -8% 40%, rgb(40 58 84 / 0.7), transparent 64%),
-    radial-gradient(48rem 36rem at 72% 105%, rgb(76 102 121 / 0.32), transparent 64%),
-    radial-gradient(38rem 26rem at 30% 70%, rgb(76 102 121 / 0.08), transparent 62%);
+    radial-gradient(
+      64rem 44rem at 82% -6%,
+      rgb(40 58 84 / 0.95),
+      transparent 64%
+    ),
+    radial-gradient(
+      54rem 42rem at -8% 40%,
+      rgb(40 58 84 / 0.7),
+      transparent 64%
+    ),
+    radial-gradient(
+      48rem 36rem at 72% 105%,
+      rgb(76 102 121 / 0.32),
+      transparent 64%
+    ),
+    radial-gradient(
+      38rem 26rem at 30% 70%,
+      rgb(76 102 121 / 0.08),
+      transparent 62%
+    );
 }
 @media (max-width: 700px) {
   .nebula {
     background:
-      radial-gradient(26rem 20rem at 88% -4%, rgb(40 58 84 / 0.85), transparent 66%),
-      radial-gradient(24rem 22rem at -12% 42%, rgb(40 58 84 / 0.65), transparent 66%),
-      radial-gradient(22rem 18rem at 78% 104%, rgb(76 102 121 / 0.16), transparent 64%);
+      radial-gradient(
+        26rem 20rem at 88% -4%,
+        rgb(40 58 84 / 0.85),
+        transparent 66%
+      ),
+      radial-gradient(
+        24rem 22rem at -12% 42%,
+        rgb(40 58 84 / 0.65),
+        transparent 66%
+      ),
+      radial-gradient(
+        22rem 18rem at 78% 104%,
+        rgb(76 102 121 / 0.16),
+        transparent 64%
+      );
   }
+}
+
+/* Tajadas de los relojes dentro de un <Reveal />: crecen desde el centro, una tras otra, al aparecer */
+[data-in] .wedge-grow {
+  transform-box: view-box;
+  transform-origin: center;
+  transition:
+    transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.9s ease-out,
+    stroke 0.3s,
+    fill-opacity 0.3s;
+  transition-delay:
+    calc(var(--d, 0ms) + var(--i, 0) * 45ms),
+    calc(var(--d, 0ms) + var(--i, 0) * 45ms), 0s, 0s;
+}
+[data-in="false"] .wedge-grow {
+  transform: scale(0.25);
+  opacity: 0;
+}
+[data-in="true"] .wedge-grow {
+  transform: none;
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

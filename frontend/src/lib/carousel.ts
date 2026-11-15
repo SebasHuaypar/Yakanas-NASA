@@ -20,7 +20,8 @@ export type CarouselItem = {
 };
 
 const MINDEF = "Ministerio de Defensa del Perú";
-const commons = (file: string) => `https://commons.wikimedia.org/wiki/File:${file}`;
+const commons = (file: string) =>
+  `https://commons.wikimedia.org/wiki/File:${file}`;
 
 export const CAROUSEL: readonly CarouselItem[] = [
   {
@@ -39,7 +40,9 @@ export const CAROUSEL: readonly CarouselItem[] = [
     date: "Agosto 2024",
     author: "Carlo Brescia",
     license: "CC BY-SA 4.0",
-    source: commons("Incendios_forestales_alrededor_del_cerro_San_Cristóbal_01.jpg"),
+    source: commons(
+      "Incendios_forestales_alrededor_del_cerro_San_Cristóbal_01.jpg",
+    ),
   },
   {
     src: "/images/carousel/fuego-3.webp",
@@ -75,7 +78,9 @@ export const CAROUSEL: readonly CarouselItem[] = [
     date: "Octubre 2024",
     author: "Johnattan Rupire",
     license: "CC BY-SA 4.0",
-    source: commons("Áreas_quemadas_en_la_comunidad_shipibo_konibo_Santa_Clara_de_Yarinacocha.jpg"),
+    source: commons(
+      "Áreas_quemadas_en_la_comunidad_shipibo_konibo_Santa_Clara_de_Yarinacocha.jpg",
+    ),
   },
   {
     src: "/images/carousel/fuego-7.webp",
@@ -84,7 +89,9 @@ export const CAROUSEL: readonly CarouselItem[] = [
     date: "Setiembre 2024",
     author: MINDEF,
     license: "CC BY 2.0",
-    source: commons("Descarga_de_agua_hacia_los_incendios_forestales_en_Chachapoyas.jpg"),
+    source: commons(
+      "Descarga_de_agua_hacia_los_incendios_forestales_en_Chachapoyas.jpg",
+    ),
   },
   {
     src: "/images/carousel/fuego-8.webp",
@@ -93,7 +100,9 @@ export const CAROUSEL: readonly CarouselItem[] = [
     date: "Octubre 2019",
     author: "Thayne Tuason",
     license: "CC BY 4.0",
-    source: commons("Peruvian_highlands_burned-_between_Huancayo_and_Ayuacucho.jpg"),
+    source: commons(
+      "Peruvian_highlands_burned-_between_Huancayo_and_Ayuacucho.jpg",
+    ),
   },
   {
     src: "/images/carousel/fuego-9.webp",
