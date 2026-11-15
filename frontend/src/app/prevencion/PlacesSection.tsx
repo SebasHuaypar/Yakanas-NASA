@@ -26,6 +26,7 @@ import {
 } from "@/lib/saved-places";
 import { useApi } from "@/lib/use-api";
 import FireMap from "./FireMap";
+import { PinIcon } from "./Icons";
 import type { T } from "./text";
 
 type Api<D> = { data?: D; error?: Error; loading: boolean; reload: () => void };
@@ -477,7 +478,14 @@ export default function PlacesSection({
                 disabled={locating}
                 className={BTN_PRIMARY}
               >
-                {locating ? t.locating : `📍 ${t.useLocation}`}
+                {locating ? (
+                  t.locating
+                ) : (
+                  <>
+                    <PinIcon className="mr-1.5 inline-block -translate-y-px" />
+                    {t.useLocation}
+                  </>
+                )}
               </button>
             </div>
 

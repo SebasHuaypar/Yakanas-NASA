@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔥 Yakana's Team · Fire Calendar of Peru
+# Yakana's Team · Fire Calendar of Peru
 
 **One comparable record of Peru's satellite fire hotspots, 2003 → today — harmonized across NASA's MODIS and VIIRS sensors, explored on the web and turned into alerts.**
 

@@ -6,6 +6,7 @@ import type { ApiAlert, ApiEvents, ApiFires, ApiHealth } from "@/lib/api";
 import { useLang } from "@/lib/lang";
 import { useApi } from "@/lib/use-api";
 import FieldSection from "./FieldSection";
+import { FlameIcon } from "./Icons";
 import PlacesSection from "./PlacesSection";
 import SeasonSection from "./SeasonSection";
 import { textFor } from "./text";
@@ -86,7 +87,8 @@ export default function PreventionView() {
         </div>
 
         <p className="mt-2.5 rounded-xl border border-snow/15 bg-snow/[0.04] px-4 py-2 text-xs text-snow/80 sm:text-sm">
-          🔥 {t.emergency}
+          <FlameIcon className="mr-1.5 inline-block -translate-y-px" />
+          {t.emergency}
         </p>
 
         <div

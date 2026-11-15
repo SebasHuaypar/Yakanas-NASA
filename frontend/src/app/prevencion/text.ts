@@ -117,7 +117,7 @@ export const TXT = {
       when: string;
       url: string;
     }) =>
-      `🔥 Fire watch · ${o.name}\n${o.status}\n${o.nearest}\n${o.season}\nLocation: ${o.coords}\nSatellite data (NASA FIRMS) ${o.when}.\nSource: ${o.url}`,
+      `Fire watch · ${o.name}\n${o.status}\n${o.nearest}\n${o.season}\nLocation: ${o.coords}\nSatellite data (NASA FIRMS) ${o.when}.\nSource: ${o.url}`,
     // section 2
     s2: "Field view",
     s2t: "Coordinates and situation for firefighters and authorities",
@@ -282,7 +282,7 @@ export const TXT = {
       when: string;
       url: string;
     }) =>
-      `🔥 Vigilancia de fuego · ${o.name}\n${o.status}\n${o.nearest}\n${o.season}\nUbicación: ${o.coords}\nDatos satelitales (NASA FIRMS) ${o.when}.\nFuente: ${o.url}`,
+      `Vigilancia de fuego · ${o.name}\n${o.status}\n${o.nearest}\n${o.season}\nUbicación: ${o.coords}\nDatos satelitales (NASA FIRMS) ${o.when}.\nFuente: ${o.url}`,
     s2: "Vista de campo",
     s2t: "Coordenadas y situación para bomberos y autoridades",
     s2d: "Detecciones encadenadas en eventos (≤ 1,2 km y ≤ 1 día de distancia). Copia coordenadas, filtra por departamento, descarga los datos o imprime un parte de situación de una página.",
