@@ -936,9 +936,9 @@ export default function TechPanel() {
 
   function onKey(e: React.KeyboardEvent, i: number) {
     const d =
-      e.key === "ArrowDown" || e.key === "ArrowRight"
+      e.key === "ArrowRight" || e.key === "ArrowDown"
         ? 1
-        : e.key === "ArrowUp" || e.key === "ArrowLeft"
+        : e.key === "ArrowLeft" || e.key === "ArrowUp"
           ? -1
           : 0;
     if (!d) return;
@@ -956,12 +956,11 @@ export default function TechPanel() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-12">
+    <div className="space-y-6">
       <div
         role="tablist"
         aria-label={L.t_aria}
-        aria-orientation="vertical"
-        className="grid gap-3 self-start sm:grid-cols-2 lg:grid-cols-1"
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden"
       >
         {SECTIONS.map((s, i) => {
           const on = sel === s.id;
@@ -976,22 +975,22 @@ export default function TechPanel() {
               tabIndex={on ? 0 : -1}
               onClick={() => setSel(s.id)}
               onKeyDown={(e) => onKey(e, i)}
-              className={`glass flex items-start gap-4 rounded-3xl px-5 py-4 text-left transition-colors duration-300 ${
+              className={`glass flex shrink-0 cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors duration-300 sm:shrink ${
                 on ? "border-navy/70! bg-navy/10!" : "hover:border-navy/40!"
               }`}
             >
               <span
-                className={`font-heading text-3xl font-semibold leading-none ${on ? "text-navy" : "text-navy/35"}`}
+                className={`font-heading text-2xl font-semibold leading-none ${on ? "text-navy" : "text-navy/35"}`}
               >
                 {s.n}
               </span>
-              <span>
+              <span className="min-w-0">
                 <span
-                  className={`block font-semibold ${on ? "text-navy" : "text-navy/80"}`}
+                  className={`block whitespace-nowrap font-semibold sm:whitespace-normal ${on ? "text-navy" : "text-navy/80"}`}
                 >
                   {L.sections[i].label}
                 </span>
-                <span className="mt-0.5 block text-xs text-slate">
+                <span className="mt-0.5 hidden text-xs text-slate lg:block">
                   {L.sections[i].hint}
                 </span>
               </span>
