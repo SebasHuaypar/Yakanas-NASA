@@ -70,7 +70,7 @@ const TX = {
     c_foot:
       "Same formula the pipeline applies to each department-month before 2012, with the official calibration v1 and the Duan smearing correction.",
     c_how: "How it got to that number",
-    c_means: "What each value means for",
+    c_hover: "Pass the cursor over a term to see what it means for this region.",
     c_aT: "Base level",
     c_aD: "How much more VIIRS sees than MODIS even with few hotspots: the effect of its finer resolution.",
     c_bT: "Slope",
@@ -200,7 +200,7 @@ const TX = {
     c_foot:
       "La misma fórmula que aplica el pipeline a cada departamento-mes antes de 2012, con la calibración oficial v1 y la corrección de Duan.",
     c_how: "Así llegó a ese número",
-    c_means: "Qué significa cada valor de",
+    c_hover: "Pasa el cursor por un término para ver qué significa en esta región.",
     c_aT: "Nivel base",
     c_aD: "Cuánto más ve VIIRS que MODIS aunque haya pocos focos: el efecto de su resolución más fina.",
     c_bT: "Pendiente",
@@ -301,8 +301,6 @@ const TX = {
 };
 
 const box = "glass rounded-3xl p-5";
-const boxF = (on: boolean) =>
-  `glass rounded-3xl p-5 transition-colors ${on ? "border-navy/70! bg-navy/10!" : ""}`;
 
 /* ------------------------------------------------------------------ */
 /* 01 · PROBAR EL MODELO                                              */
@@ -350,11 +348,35 @@ function Calculator() {
     ],
   ];
 
+  /* Qué significa el término señalado (o, sin señalar, una pista para tocarlos). */
+  const hint: ReactNode =
+    focus === "a" ? (
+      <>
+        <b className="text-ink">{L.c_aT}</b> · {L.c_aD}
+      </>
+    ) : focus === "b" ? (
+      <>
+        <b className="text-ink">{L.c_bT}</b> · {L.c_bD1}{" "}
+        {(fit.b * 10).toFixed(1).replace(".", L.dec)} %. {L.c_bD2}
+      </>
+    ) : focus === "d" ? (
+      <>
+        <b className="text-ink">{L.c_dT}</b> · {L.c_dD}
+        {fit.high.length
+          ? `: ${fit.high.map((m) => MONTH_NAMES[lang][m - 1]).join(", ")}`
+          : ""}
+        .
+      </>
+    ) : (
+      L.c_hover
+    );
+
   return (
     <div className="flex flex-col gap-6">
       <p className="max-w-3xl text-slate">{L.c_intro}</p>
 
       <Formula
+        hint={hint}
         a={fit.a}
         b={fit.b}
         d={fit.d}
@@ -364,9 +386,9 @@ function Calculator() {
         onFocus={setFocus}
       />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className="glass grid rounded-3xl lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:divide-x lg:divide-slate/20">
         {/* Entradas */}
-        <div className={`${box} space-y-6`}>
+        <div className="space-y-6 p-5 sm:p-6">
           <p className={`text-[11px] text-slate ${hud}`}>{L.c_you}</p>
 
           <div>
@@ -444,7 +466,7 @@ function Calculator() {
         </div>
 
         {/* Resultado */}
-        <div className="glass flex flex-col rounded-3xl p-6" aria-live="polite">
+        <div className="flex flex-col border-t border-slate/20 p-5 sm:p-6 lg:border-t-0" aria-live="polite">
           <p className={`text-[11px] text-slate ${hud}`}>{L.c_est}</p>
           <p className="mt-2 font-heading text-6xl font-bold leading-none text-navy sm:text-7xl">
             ≈ {nf.format(Math.round(est))}
@@ -504,78 +526,27 @@ function Calculator() {
       {/* Paso a paso */}
       <div>
         <p className={`text-[11px] text-slate ${hud}`}>{L.c_how}</p>
-        <ol className="mt-3 grid gap-3 md:grid-cols-4">
-          {steps.map(([n, t, calc, k]) => (
-            <li
-              key={n}
-              className={boxF(focus === k || (k === "a" && focus === "d"))}
-              onMouseEnter={() => setFocus(k)}
-              onMouseLeave={() => setFocus(null)}
-            >
-              <span className="font-heading text-3xl font-semibold leading-none text-navy/40">
-                {n}
-              </span>
-              <p className="mt-3 text-sm text-ink">{t}</p>
-              <p className="mt-2 break-words font-mono text-xs text-navy">
-                {calc}
-              </p>
-            </li>
-          ))}
+        <ol className="mt-3 divide-y divide-slate/15 border-y border-slate/15">
+          {steps.map(([n, t, calc, k]) => {
+            const on = focus === k || (k === "a" && focus === "d");
+            return (
+              <li
+                key={n}
+                onMouseEnter={() => setFocus(k)}
+                onMouseLeave={() => setFocus(null)}
+                className={`grid items-baseline gap-x-5 gap-y-1 px-3 py-3 transition-colors sm:grid-cols-[2rem_minmax(0,1fr)_auto] ${on ? "bg-navy/10" : ""}`}
+              >
+                <span className="font-heading text-xl font-semibold text-navy/50">
+                  {n}
+                </span>
+                <span className="text-sm text-ink">{t}</span>
+                <span className="break-words font-mono text-xs text-navy sm:text-right">
+                  {calc}
+                </span>
+              </li>
+            );
+          })}
         </ol>
-      </div>
-
-      {/* Qué significa cada valor */}
-      <div>
-        <p className={`text-[11px] text-slate ${hud}`}>
-          {L.c_means} {fitName}
-        </p>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <div
-            className={boxF(focus === "a")}
-            onMouseEnter={() => setFocus("a")}
-            onMouseLeave={() => setFocus(null)}
-          >
-            <p className="font-heading text-3xl font-bold text-navy">
-              <span className="font-mono text-base text-slate">a = </span>
-              {fit.a.toFixed(2)}
-            </p>
-            <p className="mt-2 text-sm font-medium text-ink">{L.c_aT}</p>
-            <p className="mt-1 text-xs text-slate">{L.c_aD}</p>
-          </div>
-          <div
-            className={boxF(focus === "b")}
-            onMouseEnter={() => setFocus("b")}
-            onMouseLeave={() => setFocus(null)}
-          >
-            <p className="font-heading text-3xl font-bold text-navy">
-              <span className="font-mono text-base text-slate">b = </span>
-              {fit.b.toFixed(2)}
-            </p>
-            <p className="mt-2 text-sm font-medium text-ink">{L.c_bT}</p>
-            <p className="mt-1 text-xs text-slate">
-              {L.c_bD1} {(fit.b * 10).toFixed(1).replace(".", L.dec)} %.{" "}
-              {L.c_bD2}
-            </p>
-          </div>
-          <div
-            className={boxF(focus === "d")}
-            onMouseEnter={() => setFocus("d")}
-            onMouseLeave={() => setFocus(null)}
-          >
-            <p className="font-heading text-3xl font-bold text-navy">
-              <span className="font-mono text-base text-slate">d = </span>
-              {fit.d.toFixed(2)}
-            </p>
-            <p className="mt-2 text-sm font-medium text-ink">{L.c_dT}</p>
-            <p className="mt-1 text-xs text-slate">
-              {L.c_dD}
-              {fit.high.length
-                ? `: ${fit.high.map((m) => MONTH_NAMES[lang][m - 1]).join(", ")}`
-                : ""}
-              .
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -14,6 +14,8 @@ type Props = {
   high: boolean;
   focus: TermKey | null;
   onFocus: (k: TermKey | null) => void;
+  /** Línea que explica el término señalado (reserva su altura para no mover nada). */
+  hint?: React.ReactNode;
 };
 
 const TXT = {
@@ -67,12 +69,8 @@ function Term({
       onMouseLeave={() => onFocus(null)}
       onFocus={() => onFocus(k)}
       onBlur={() => onFocus(null)}
-      className={`flex min-w-[5.5rem] cursor-help flex-col items-center rounded-2xl border px-3 py-3 outline-none transition-colors ${
-        on
-          ? hot
-            ? "border-(--hot)/70 bg-(--hot)/10"
-            : "border-navy bg-navy/10"
-          : "border-slate/20 hover:border-slate/50"
+      className={`flex min-w-[5rem] cursor-help flex-col items-center rounded-xl px-3 py-2 outline-none transition-colors ${
+        on ? (hot ? "bg-(--hot)/10" : "bg-navy/10") : "hover:bg-white/[0.04]"
       }`}
     >
       <span
@@ -112,6 +110,7 @@ export default function Formula({
   high,
   focus,
   onFocus,
+  hint,
 }: Props) {
   const [lang] = useLang();
   const L = TXT[lang];
@@ -149,6 +148,14 @@ export default function Formula({
           ln(MODIS + 1)
         </Term>
       </div>
+      {hint !== undefined && (
+        <p
+          aria-live="polite"
+          className="mx-auto mt-5 flex min-h-12 max-w-2xl items-center justify-center border-t border-slate/20 pt-4 text-center text-sm text-slate"
+        >
+          <span>{hint}</span>
+        </p>
+      )}
     </Card>
   );
 }
