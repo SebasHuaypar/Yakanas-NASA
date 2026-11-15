@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import Reveal from "@/components/Reveal";
-import Footer from "@/components/sections/Footer";
 import {
   GitHubIcon,
   InstagramIcon,
@@ -219,7 +218,6 @@ export default function TeamView() {
         </ul>
       </section>
 
-      <Footer />
     </div>
   );
 }

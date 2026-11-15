@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import Card from "@/components/Card";
-import Footer from "@/components/sections/Footer";
 import type { ApiEvents, ApiFires, ApiForecast, ApiPlaceRecurrence } from "@/lib/api";
 import { bearing, compass, distanceKm, fmtCoord, inPeru, weekOfYear } from "@/lib/geo-utils";
 import { useLang, type Lang } from "@/lib/lang";
@@ -526,7 +525,6 @@ export default function PreventionView() {
         </p>
       </div>
 
-      <Footer />
     </div>
   );
 }

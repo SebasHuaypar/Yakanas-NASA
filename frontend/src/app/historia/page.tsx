@@ -6,7 +6,6 @@ export const metadata = {
 
 import HeroScroll from "@/components/hero/HeroScroll";
 import Regions from "@/components/sections/Regions";
-import Footer from "@/components/sections/Footer";
 import Satellites from "@/components/sections/Satellites";
 
 export default function Pantalla1() {
@@ -14,7 +13,6 @@ export default function Pantalla1() {
     <HeroScroll>
       <Regions />
       <Satellites />
-      <Footer />
     </HeroScroll>
   );
 }

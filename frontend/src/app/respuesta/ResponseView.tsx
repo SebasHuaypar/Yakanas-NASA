@@ -3,7 +3,6 @@
 import Link from "next/link";
 import FieldSection from "@/app/prevencion/FieldSection";
 import { textFor } from "@/app/prevencion/text";
-import Footer from "@/components/sections/Footer";
 import type { ApiAlert, ApiEvents } from "@/lib/api";
 import { useLang } from "@/lib/lang";
 import { useApi } from "@/lib/use-api";
@@ -30,7 +29,6 @@ export default function ResponseView() {
           <FieldSection t={textFor(lang)} lang={lang} events={events} alert={alert} />
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

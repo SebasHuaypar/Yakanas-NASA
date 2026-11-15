@@ -16,7 +16,6 @@ import HarmonizeChart from "./HarmonizeChart";
 import Reveal from "./Reveal";
 import ScrollLine from "./ScrollLine";
 import Image from "next/image";
-import Footer from "@/components/sections/Footer";
 import SectionHead from "./SectionHead";
 import TechPanel from "./TechPanel";
 import WhatHappened from "./WhatHappened";
@@ -539,7 +538,6 @@ export default function MetodoView() {
           </section>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

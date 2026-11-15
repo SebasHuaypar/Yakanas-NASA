@@ -6,7 +6,6 @@ import { loadFireDataset } from "@/app/explorador/lib/fire-data";
 import { TEXTS } from "@/app/explorador/lib/i18n";
 import type { FireDataset } from "@/app/explorador/lib/types";
 import { useLang } from "@/lib/lang";
-import Footer from "@/components/sections/Footer";
 import Explorer from "./Explorer";
 
 /** Pantalla 3: explorador de datos de fuego (cabecera con imagen + explorador). El idioma es global (navbar). */
@@ -103,7 +102,6 @@ export default function FireScreen() {
       <p className="mx-auto mt-4 w-full max-w-6xl px-4 pb-4 text-xs leading-relaxed text-snow/50 sm:px-6">
         {t.foot}
       </p>
-      <Footer />
     </div>
   );
 }
