@@ -138,6 +138,21 @@ export default function Pantalla2() {
         <div className="relative z-10">
           {/* HERO: centrado, mucho aire; el fondo lo pone el layout global */}
           <section className="relative flex min-h-[92vh] flex-col justify-center">
+            {/* Imagen satelital de Perú: se desvanece hacia la primera sección */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent_0%,black_16%,black_48%,transparent_100%)]"
+            >
+              <Image
+                src="/pantalla-2/hero-peru.webp"
+                alt=""
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover object-[68%_42%] opacity-75"
+              />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_50%_45%,rgb(12_9_10/0.6),transparent_78%)]" />
+            </div>
             <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-36 text-center sm:px-6 sm:pt-44">
               <Reveal>
                 <p className="text-xs uppercase tracking-[0.22em] text-slate">
@@ -146,17 +161,15 @@ export default function Pantalla2() {
               </Reveal>
               <Reveal delay={0.08}>
                 <h1 className="mx-auto mt-8 max-w-5xl text-5xl leading-[1.04] tracking-tight sm:text-7xl lg:text-8xl">
-                  El fuego no se multiplicó.
-                  <span className="block text-navy/50">Cambió la cámara.</span>
+                  Cambió la cámara,
+                  <span className="block text-navy/50">no el fuego.</span>
                 </h1>
               </Reveal>
               <Reveal delay={0.16}>
-                <p className="mx-auto mt-10 max-w-2xl text-lg text-slate sm:text-xl">
-                  Al sumar los registros de dos satélites, el conteo de focos de
-                  calor del Perú se multiplica casi por nueve en 2012. Buena
-                  parte de ese salto no es fuego nuevo: es un sensor distinto
-                  que detecta más. Así lo corregimos para que veinte años de
-                  datos hablen el mismo idioma.
+                <p className="mx-auto mt-8 max-w-xl text-lg text-slate sm:text-xl">
+                  VIIRS cuenta casi nueve veces más focos que MODIS. Lo
+                  corregimos para que veinte años de datos hablen el mismo
+                  idioma.
                 </p>
               </Reveal>
               <Reveal delay={0.24}>
@@ -183,7 +196,7 @@ export default function Pantalla2() {
             {/* Franja de cifras con divisores */}
             <div className="relative mx-auto w-full max-w-6xl px-4 pb-28 sm:px-6">
               <Reveal delay={0.3}>
-                <dl className="grid border-y border-slate/25 sm:grid-cols-3">
+                <dl className="glass-dark grid overflow-hidden rounded-[2rem] sm:grid-cols-3">
                   {[
                     [
                       "Salto aparente 2011 → 2012",
@@ -213,12 +226,20 @@ export default function Pantalla2() {
                   ].map(([label, value, sub], i) => (
                     <div
                       key={String(label)}
-                      className={`px-8 py-12 ${i ? "border-t border-slate/25 sm:border-l sm:border-t-0" : ""}`}
+                      className={`relative px-8 py-10 sm:py-12 ${i ? "border-t border-navy/10 sm:border-l sm:border-t-0" : ""}`}
                     >
+                      {i === 1 && (
+                        <span
+                          aria-hidden
+                          className="absolute left-0 top-1/2 z-10 hidden size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-navy/20 bg-[#0C090A] text-sm text-navy sm:grid"
+                        >
+                          →
+                        </span>
+                      )}
                       <dt className={`text-[11px] text-slate ${hud}`}>
                         {label}
                       </dt>
-                      <dd className="mt-3 font-heading text-5xl font-bold text-navy">
+                      <dd className="mt-4 font-heading text-5xl font-bold tracking-tight text-navy sm:text-6xl">
                         {value}
                       </dd>
                       <p className="mt-2 text-sm text-slate">{sub}</p>
