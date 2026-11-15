@@ -64,7 +64,9 @@ function Term({
   onFocus,
   label,
   children,
+  hot = false,
 }: {
+  hot?: boolean;
   k: TermKey;
   focus: TermKey | null;
   onFocus: (k: TermKey | null) => void;
@@ -85,7 +87,7 @@ function Term({
           : "border-transparent hover:border-slate/40"
       }`}
     >
-      <span className="whitespace-nowrap font-heading text-xl font-semibold italic text-navy sm:text-[1.65rem]">
+      <span className={`whitespace-nowrap font-heading text-xl font-semibold sm:text-[1.65rem] ${hot ? "text-[#FF6B2C]" : "text-navy"}`}>
         {children}
       </span>
       <span className={`mt-1 text-[9px] text-slate ${hud}`}>{label}</span>
@@ -130,7 +132,7 @@ export default function Formula({
         aria-label={L.aria}
         className="mt-4 flex flex-wrap items-start justify-center gap-x-0.5 gap-y-3"
       >
-        <Term k="viirs" focus={focus} onFocus={onFocus} label={L.est}>
+        <Term k="viirs" hot focus={focus} onFocus={onFocus} label={L.est}>
           ln(VIIRS + 1)
         </Term>
         <Op>=</Op>
@@ -157,7 +159,7 @@ export default function Formula({
           aria-hidden
           className="mt-2 break-words text-center font-mono text-sm leading-loose text-ink sm:text-base"
         >
-          ln(VIIRS + 1) = <span className="text-navy">{f(a)}</span> +{" "}
+          <span className="text-[#FF6B2C]">ln(VIIRS + 1)</span> = <span className="text-navy">{f(a)}</span> +{" "}
           <span className="text-navy">{f(d)}</span> × {high ? 1 : 0} +{" "}
           <span className="text-navy">{f(b)}</span> × ln(
           {modis.toLocaleString(L.loc)} + 1)

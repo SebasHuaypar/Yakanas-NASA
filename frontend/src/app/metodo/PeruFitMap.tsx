@@ -33,6 +33,8 @@ const TXT = {
     unitsOwn: "units with their own fit",
     hover1: "Hover over the map to see each unit's parameters. The remaining ",
     hover2: " do not have enough months with fire and use the national fit.",
+    legOwn: "Own fit",
+    legNat: "National fit",
   },
   es: {
     mapAria:
@@ -54,6 +56,8 @@ const TXT = {
       "Pasa el cursor por el mapa para ver los parámetros de cada una. Las ",
     hover2:
       " restantes no tienen suficientes meses con fuego y usan el ajuste nacional.",
+    legOwn: "Ajuste propio",
+    legNat: "Ajuste nacional",
   },
 };
 type Zone = (typeof ZONES)[number]["id"];
@@ -80,97 +84,107 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
   const fit = shown ? fitById(shown.id) : null;
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start">
-      {/* mapa */}
+    <div>
+      {/* filtro de zona, arriba y a todo el ancho */}
       <div
-        className={`relative mx-auto w-full ${compact ? "max-w-[13rem]" : "max-w-md"}`}
+        role="group"
+        aria-label={L.filter}
+        className="flex flex-wrap gap-2"
       >
-        <svg
-          viewBox={MAP_VIEWBOX}
-          role="img"
-          aria-label={L.mapAria}
-          className="block h-auto w-full"
-        >
-          {PERU_REGIONS.map((r) => {
-            const active = zone === "todas" || r.zone === zone;
-            return (
-              <path
-                key={r.id}
-                d={r.d}
-                tabIndex={0}
-                aria-label={`${r.name}: ${isOwn(r.id) ? L.own : L.nat}`}
-                onMouseEnter={() => setHover(r.id)}
-                onMouseLeave={() => setHover(null)}
-                onFocus={() => setHover(r.id)}
-                onBlur={() => setHover(null)}
-                className={`cursor-pointer stroke-(--base) outline-none ${
-                  hover === r.id
-                    ? "fill-[#FF6B2C]"
-                    : active
-                      ? "fill-slate/55"
-                      : "fill-slate/15"
-                }`}
-                strokeWidth={1.2}
-                vectorEffect="non-scaling-stroke"
-              />
-            );
-          })}
-          {/* escena del comparador */}
-          <rect
-            x={SCENE.x}
-            y={SCENE.y}
-            width={SCENE.w}
-            height={SCENE.h}
-            fill="none"
-            strokeWidth={1.5}
-            strokeDasharray="4 3"
-            className="stroke-navy"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-        <p
-          className={`mt-3 flex items-center gap-2 text-[11px] text-slate ${hud}`}
-        >
-          <span
-            aria-hidden
-            className="inline-block h-2.5 w-4 border border-dashed border-navy"
-          />
-          {L.scene}
-        </p>
+        {ZONES.map((z) => (
+          <button
+            key={z.id}
+            type="button"
+            aria-pressed={zone === z.id}
+            onClick={() => setZone(z.id)}
+            className={`rounded-full border px-5 py-2 text-sm font-medium transition-colors ${
+              zone === z.id
+                ? "border-(--accent) bg-(--accent) text-[#0C090A]"
+                : "border-slate/40 text-navy hover:border-navy"
+            }`}
+          >
+            {z[lang]}
+          </button>
+        ))}
       </div>
 
-      {/* controles */}
-      <div>
+      <div className="mt-6 grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+        {/* mapa: no se mueve ni cambia de tamaño */}
         <div
-          role="group"
-          aria-label={L.filter}
-          className="flex flex-wrap gap-2"
+          className={`relative mx-auto w-full ${compact ? "max-w-[17rem]" : "max-w-md"}`}
         >
-          {ZONES.map((z) => (
-            <button
-              key={z.id}
-              type="button"
-              aria-pressed={zone === z.id}
-              onClick={() => setZone(z.id)}
-              className={`rounded-full border px-5 py-2 text-sm font-medium transition-colors ${
-                zone === z.id
-                  ? "border-(--accent) bg-(--accent) text-[#0C090A]"
-                  : "border-slate/40 text-navy hover:border-navy"
-              }`}
-            >
-              {z[lang]}
-            </button>
-          ))}
+          <svg
+            viewBox={MAP_VIEWBOX}
+            role="img"
+            aria-label={L.mapAria}
+            className="block h-auto w-full"
+          >
+            {PERU_REGIONS.map((r) => {
+              const active = zone === "todas" || r.zone === zone;
+              return (
+                <path
+                  key={r.id}
+                  d={r.d}
+                  tabIndex={0}
+                  aria-label={`${r.name}: ${isOwn(r.id) ? L.own : L.nat}`}
+                  onMouseEnter={() => setHover(r.id)}
+                  onMouseLeave={() => setHover(null)}
+                  onFocus={() => setHover(r.id)}
+                  onBlur={() => setHover(null)}
+                  className={`cursor-pointer stroke-(--base) transition-[opacity,fill] duration-200 outline-none ${
+                    isOwn(r.id) ? "fill-(--accent)" : "fill-slate"
+                  } ${hover === r.id ? "opacity-100" : active ? (isOwn(r.id) ? "opacity-60" : "opacity-35") : "opacity-10"}`}
+                  strokeWidth={1.2}
+                  vectorEffect="non-scaling-stroke"
+                />
+              );
+            })}
+            <rect
+              x={SCENE.x}
+              y={SCENE.y}
+              width={SCENE.w}
+              height={SCENE.h}
+              fill="none"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+              className="stroke-navy"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <p
+            className={`mt-3 flex items-center gap-2 text-[11px] text-slate ${hud}`}
+          >
+            <span
+              aria-hidden
+              className="inline-block h-2.5 w-4 border border-dashed border-navy"
+            />
+            {L.scene}
+          </p>
         </div>
 
-        <Card aria-live="polite" className="mt-6 h-72 overflow-hidden rounded-3xl p-6">
+        {/* tarjeta de datos: altura fija para que nada se desplace */}
+        <Card
+          aria-live="polite"
+          className="flex h-[22rem] flex-col rounded-3xl p-6"
+        >
           {shown ? (
             <>
-              <p className={`text-xs text-(--accent) ${hud}`}>
-                {ZONES.find((z) => z.id === shown.zone)?.[lang] ?? shown.zone}
-              </p>
-              <h3 className="mt-1 text-2xl">{shown.name}</h3>
-              <p className="mt-2 text-slate">
+              <div className="flex items-center justify-between gap-3">
+                <p className={`text-xs text-(--accent) ${hud}`}>
+                  {ZONES.find((z) => z.id === shown.zone)?.[lang] ?? shown.zone}
+                </p>
+                <span
+                  className={`rounded-full border px-3 py-1 text-[11px] ${hud} ${
+                    fit?.own
+                      ? "border-(--accent)/60 text-(--accent)"
+                      : "border-slate/50 text-slate"
+                  }`}
+                >
+                  {fit?.own ? L.own : L.nat}
+                </span>
+              </div>
+              <h3 className="mt-3 text-3xl leading-tight">{shown.name}</h3>
+              <p className="mt-2 text-sm text-slate">
                 {fit?.own ? (
                   <>
                     {L.hasOwn} <b className="text-ink">{L.ownB}</b> {L.ownEnd}
@@ -183,7 +197,7 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
                 )}
               </p>
               {fit && (
-                <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 text-sm sm:grid-cols-4">
+                <dl className="mt-auto grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {(
                     [
                       ["a", fit.a.toFixed(2)],
@@ -192,11 +206,14 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
                       [L.months, String(fit.months)],
                     ] as [string, string][]
                   ).map(([k, v]) => (
-                    <div key={k} className="min-w-0">
-                      <dt className={`truncate text-[11px] text-slate ${hud}`}>
+                    <div
+                      key={k}
+                      className="min-w-0 rounded-2xl border border-slate/25 bg-white/[0.03] px-3 py-2.5"
+                    >
+                      <dt className={`truncate text-[10px] text-slate ${hud}`}>
                         {k}
                       </dt>
-                      <dd className="font-heading text-lg font-bold tabular-nums text-navy">
+                      <dd className="font-heading text-xl font-bold tabular-nums text-navy">
                         {v}
                       </dd>
                     </div>
@@ -209,18 +226,27 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
               <p className={`text-xs text-(--accent) ${hud}`}>
                 {own} {L.of} {PERU_REGIONS.length}
               </p>
-              <h3 className="mt-1 text-2xl">
+              <h3 className="mt-3 text-3xl leading-tight">
                 {own} {L.unitsOwn}
               </h3>
-              <p className="mt-2 text-slate">
+              <p className="mt-2 text-sm text-slate">
                 {L.hover1}
                 {PERU_REGIONS.length - own}
                 {L.hover2}
               </p>
+              <ul className="mt-auto flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate">
+                <li className="flex items-center gap-2">
+                  <span aria-hidden className="h-3 w-3 rounded-sm bg-(--accent)/80" />
+                  {L.legOwn}
+                </li>
+                <li className="flex items-center gap-2">
+                  <span aria-hidden className="h-3 w-3 rounded-sm bg-slate/50" />
+                  {L.legNat}
+                </li>
+              </ul>
             </>
           )}
         </Card>
-
       </div>
     </div>
   );
