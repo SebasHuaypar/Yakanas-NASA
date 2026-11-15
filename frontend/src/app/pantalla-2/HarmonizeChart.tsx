@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { FIRST_VIIRS_YEAR, SATELLITE_MARKS, SERIES } from "./data";
+import Card from "@/components/Card";
 
 const nf = new Intl.NumberFormat("es");
 const fmt = (n: number) => nf.format(Math.round(n));
@@ -101,7 +102,7 @@ export default function HarmonizeChart() {
   const noteY = Math.max(ay - 54, PAD.t + 18);
 
   return (
-    <div className="glass-dark rounded-3xl p-6 sm:p-10">
+    <Card className="rounded-3xl p-6 sm:p-10">
       <div className="grid gap-10 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-14">
         {/* Consola: controles */}
         <aside className="flex flex-col gap-6">
@@ -129,7 +130,7 @@ export default function HarmonizeChart() {
                   type="button"
                   aria-pressed={on}
                   onClick={() => setPct(s.pct)}
-                  className={`glass-dark rounded-3xl px-5 py-4 text-left transition-colors duration-300 ${
+                  className={`glass rounded-3xl px-5 py-4 text-left transition-colors duration-300 ${
                     on ? "border-navy/70! bg-navy/10!" : "hover:border-navy/40!"
                   }`}
                 >
@@ -144,7 +145,7 @@ export default function HarmonizeChart() {
             })}
           </div>
 
-          <div className="glass-dark rounded-3xl p-5 text-navy">
+          <Card className="rounded-3xl p-5 text-navy">
             <p className="text-sm text-slate">Salto de 2011 a 2012</p>
             <p
               className="font-heading text-5xl font-bold leading-none"
@@ -172,7 +173,7 @@ export default function HarmonizeChart() {
                 </>
               )}
             </p>
-          </div>
+          </Card>
 
           <div className="flex items-center gap-3">
             <label
@@ -430,6 +431,6 @@ export default function HarmonizeChart() {
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

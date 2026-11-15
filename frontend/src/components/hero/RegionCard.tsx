@@ -1,5 +1,6 @@
 import { type Region } from "@/lib/fire-data";
 import FireClock from "./FireClock";
+import Card from "@/components/Card";
 
 /** Tarjeta de una región: porcentaje de los focos del país, reloj con los meses y una línea de contexto. */
 export default function RegionCard({
@@ -10,7 +11,10 @@ export default function RegionCard({
   share: number;
 }) {
   return (
-    <article className="flex h-full w-full flex-col gap-3 rounded-3xl border border-snow/15 bg-snow/[0.06] p-5 text-center shadow-[0_12px_50px_rgb(0_0_0/0.4),inset_0_1px_0_rgb(243_249_252/0.14)] backdrop-blur-xl md:p-6">
+    <Card
+      as="article"
+      className="flex h-full w-full flex-col gap-3 p-5 text-center md:p-6"
+    >
       <FireClock
         data={region.data}
         place={region.name}
@@ -32,6 +36,6 @@ export default function RegionCard({
           {region.desc}
         </p>
       </div>
-    </article>
+    </Card>
   );
 }

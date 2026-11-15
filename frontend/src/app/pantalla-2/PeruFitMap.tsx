@@ -4,6 +4,7 @@ import { useState } from "react";
 import { hud } from "./fonts";
 import { MAP_VIEWBOX, PERU_REGIONS } from "./peru-map";
 import { REGION_FITS } from "./regions";
+import Card from "@/components/Card";
 
 const ZONES = [
   { id: "todas", label: "Todas" },
@@ -111,10 +112,7 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
           ))}
         </div>
 
-        <div
-          className="mt-6 min-h-40 glass-dark rounded-3xl p-6"
-          aria-live="polite"
-        >
+        <Card aria-live="polite" className="mt-6 min-h-40 rounded-3xl p-6">
           {shown ? (
             <>
               <p className={`text-xs text-(--accent) ${hud}`}>{shown.zone}</p>
@@ -165,7 +163,7 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
               </p>
             </>
           )}
-        </div>
+        </Card>
 
         <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate">
           <li className="flex items-center gap-2">

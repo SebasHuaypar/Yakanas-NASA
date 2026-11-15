@@ -8,6 +8,7 @@ import { PAIR_TOTAL } from "./pairs";
 import RangeBar from "./RangeBar";
 import RangeYears from "./RangeYears";
 import { REGION_FITS } from "./regions";
+import Card from "@/components/Card";
 
 const tile = "glass rounded-3xl p-5";
 const i11 = SERIES.years.indexOf(FIRST_VIIRS_YEAR - 1);
@@ -74,13 +75,13 @@ export function DatosContent() {
 export function SolapeContent() {
   return (
     <div className="space-y-5">
-      <div className="glass rounded-3xl p-5">
+      <Card className="rounded-3xl p-5">
         <OverlapTimeline />
-      </div>
+      </Card>
       <div className="grid gap-5 md:grid-cols-[1.35fr_1fr]">
-        <div className="glass rounded-3xl p-5">
+        <Card className="rounded-3xl p-5">
           <PairsScatter />
-        </div>
+        </Card>
         <div className="grid content-start gap-3">
           <Stat v="11" t="años de solape" d="2012 – 2022" />
           <Stat
@@ -108,7 +109,7 @@ export function ModeloContent() {
   return (
     <div className="space-y-5">
       <div className="grid gap-5 md:grid-cols-2">
-        <div className="glass rounded-3xl p-5">
+        <Card className="rounded-3xl p-5">
           <p className={`text-[11px] text-slate ${hud}`}>La regla</p>
           <code className="mt-2 block break-words font-mono text-[13px] leading-relaxed text-ink">
             log(VIIRS+1) = a + d·alta + b·log(MODIS+1)
@@ -118,8 +119,8 @@ export function ModeloContent() {
             VIIRS. Cada región tiene sus propios <b className="text-ink">a</b>,{" "}
             <b className="text-ink">d</b> y <b className="text-ink">b</b>.
           </p>
-        </div>
-        <div className="glass rounded-3xl p-5">
+        </Card>
+        <Card className="rounded-3xl p-5">
           <p className={`text-[11px] text-slate ${hud}`}>Un ejemplo</p>
           {est !== null ? (
             <p className="mt-2 text-sm text-slate">
@@ -135,7 +136,7 @@ export function ModeloContent() {
           <p className="mt-2 text-xs text-slate">
             Cálculo orientativo con los parámetros del prototipo.
           </p>
-        </div>
+        </Card>
       </div>
       <PeruFitMap compact />
       <DataNote>
@@ -151,22 +152,22 @@ export function RangoContent() {
   return (
     <div className="space-y-5">
       <div className="grid gap-5 md:grid-cols-2">
-        <div className="glass rounded-3xl p-5 pt-4">
+        <Card className="rounded-3xl p-5 pt-4">
           <RangeBar
             year={FIRST_VIIRS_YEAR - 1}
             low={SERIES.low[i11]}
             mid={SERIES.harmonized[i11]}
             high={SERIES.high[i11]}
           />
-        </div>
-        <div className="glass rounded-3xl p-5">
+        </Card>
+        <Card className="rounded-3xl p-5">
           <RangeYears
             years={SERIES.years.slice(0, i11 + 1)}
             mid={SERIES.harmonized.slice(0, i11 + 1)}
             low={SERIES.low.slice(0, i11 + 1)}
             high={SERIES.high.slice(0, i11 + 1)}
           />
-        </div>
+        </Card>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         {[

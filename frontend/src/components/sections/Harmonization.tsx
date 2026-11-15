@@ -13,6 +13,7 @@ import {
   VIIRS_MONTHLY,
   VIIRS_START,
 } from "@/lib/sensor-series";
+import Card from "@/components/Card";
 
 /* ---------- Geometría del gráfico (viewBox 1000 x 380) ---------- */
 const W = 1000;
@@ -126,12 +127,12 @@ export default function Harmonization() {
   return (
     <section
       id="solucion"
-      className="relative px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44"
+      className="relative px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32"
     >
       <SectionDivider
         index="04"
         label="La solución"
-        className="mb-12 sm:mb-16"
+        className="mb-10 sm:mb-14"
       />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
         {/* Texto: título y los tres pasos del método */}
@@ -187,9 +188,10 @@ export default function Harmonization() {
         {/* Gráfico */}
         <div className="min-w-0 flex-1">
           <Reveal delay={150}>
-            <div
+            <Card
+              tone="dark"
               ref={chart}
-              className="rounded-[1.75rem] border border-snow/15 bg-ink/50 p-3 shadow-[0_12px_60px_rgb(0_0_0/0.45),inset_0_1px_0_rgb(243_249_252/0.14)] backdrop-blur-xl sm:p-5"
+              className="rounded-[1.75rem] p-3 sm:p-5"
             >
               <svg
                 viewBox={`0 0 ${W} ${H}`}
@@ -335,7 +337,7 @@ export default function Harmonization() {
                   </text>
                 </g>
               </svg>
-            </div>
+            </Card>
           </Reveal>
 
           {/* Métricas y botón */}

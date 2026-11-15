@@ -20,6 +20,7 @@ import TechPanel from "./TechPanel";
 import WhatHappened from "./WhatHappened";
 import { FIRST_VIIRS_YEAR, SERIES } from "./data";
 import { hud, mono, montserrat } from "./fonts";
+import Card from "@/components/Card";
 
 export const metadata = {
   title: "Método · Yakana's Team",
@@ -194,9 +195,12 @@ export default function Pantalla2() {
             </div>
 
             {/* Franja de cifras con divisores */}
-            <div className="relative mx-auto w-full max-w-6xl px-4 pb-28 sm:px-6">
+            <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">
               <Reveal delay={0.3}>
-                <dl className="glass-dark grid overflow-hidden rounded-[2rem] sm:grid-cols-3">
+                <Card
+                  as="dl"
+                  className="grid overflow-hidden rounded-[2rem] sm:grid-cols-3"
+                >
                   {[
                     [
                       "Salto aparente 2011 → 2012",
@@ -245,7 +249,7 @@ export default function Pantalla2() {
                       <p className="mt-2 text-sm text-slate">{sub}</p>
                     </div>
                   ))}
-                </dl>
+                </Card>
                 <div className="mt-8 max-w-3xl">
                   <DataNote>
                     Cifras calculadas con los datos NASA FIRMS del prototipo
@@ -260,7 +264,7 @@ export default function Pantalla2() {
 
           {/* 03 · CÓMO ESTÁ HECHO — cuatro tarjetas verticales + detalle */}
           <section className="relative">
-            <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44">
+            <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32">
               <Reveal>
                 <SectionHead
                   kicker="01 · Cómo está hecho"
@@ -278,7 +282,7 @@ export default function Pantalla2() {
 
           {/* 01 · PRUEBA — consola: controles a la izquierda, visor a la derecha */}
           <section id="resultado" className="relative scroll-mt-24">
-            <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44">
+            <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32">
               <Reveal>
                 <SectionHead
                   kicker="02 · El resultado"
@@ -307,7 +311,7 @@ export default function Pantalla2() {
 
           {/* 03 · VALIDACIÓN */}
           <section className="relative">
-            <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44">
+            <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32">
               <Reveal>
                 <SectionHead
                   kicker="03 · Validación"
@@ -340,14 +344,14 @@ export default function Pantalla2() {
                   ],
                 ].map(([v, big, label, d], i) => (
                   <Reveal key={String(label)} delay={i * 0.1}>
-                    <div className="glass-dark h-full rounded-3xl px-6 py-12">
+                    <Card className="h-full rounded-3xl px-6 py-12">
                       <DotRing value={Number(v)} label={String(label)}>
                         {big}
                       </DotRing>
                       <p className="mx-auto mt-8 max-w-64 text-center text-sm text-slate">
                         {d}
                       </p>
-                    </div>
+                    </Card>
                   </Reveal>
                 ))}
               </div>
@@ -363,7 +367,7 @@ export default function Pantalla2() {
 
           {/* 05 · DETALLE TÉCNICO */}
           <section id="detalle" className="scroll-mt-24">
-            <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44">
+            <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32">
               <Reveal>
                 <SectionHead
                   kicker="04 · Bajo el capó"
@@ -389,7 +393,7 @@ export default function Pantalla2() {
 
           {/* CIERRE */}
           <section className="relative overflow-hidden border-t border-slate/25">
-            <div className="relative mx-auto w-full max-w-6xl px-4 py-32 text-center sm:px-6 sm:py-48">
+            <div className="relative mx-auto w-full max-w-6xl px-4 py-24 text-center sm:px-6 sm:py-32">
               <Reveal>
                 <p className={`text-xs text-slate ${hud}`}>Siguiente paso</p>
                 <h2 className="mx-auto mt-4 max-w-4xl text-4xl tracking-tight sm:text-6xl">

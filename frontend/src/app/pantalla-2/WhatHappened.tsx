@@ -1,5 +1,6 @@
 import { BY_SENSOR } from "./data";
 import { hud } from "./fonts";
+import Card from "@/components/Card";
 
 const fmt1 = (n: number) =>
   n.toLocaleString("es", {
@@ -34,11 +35,11 @@ export default function WhatHappened() {
       <p className={`text-[11px] text-slate ${hud}`}>Qué pasó en {years[iV]}</p>
       <div className="mt-4 grid gap-5 md:grid-cols-3">
         {tiles.map(([v, t, d]) => (
-          <div key={t} className="glass-dark rounded-3xl p-7">
+          <Card key={t} className="rounded-3xl p-7">
             <p className="font-heading text-5xl font-bold text-navy">{v}</p>
             <p className="mt-3 font-medium text-ink">{t}</p>
             <p className="mt-1 text-sm text-slate">{d}</p>
-          </div>
+          </Card>
         ))}
       </div>
     </div>

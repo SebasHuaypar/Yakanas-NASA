@@ -195,10 +195,7 @@ function Calculator() {
         </div>
 
         {/* Resultado */}
-        <div
-          className="glass-dark flex flex-col rounded-3xl p-6"
-          aria-live="polite"
-        >
+        <div className="glass flex flex-col rounded-3xl p-6" aria-live="polite">
           <p className={`text-[11px] text-slate ${hud}`}>El modelo estima</p>
           <p className="mt-2 font-heading text-6xl font-bold leading-none text-navy sm:text-7xl">
             ≈ {nf.format(Math.round(est))}
@@ -761,7 +758,7 @@ export default function TechPanel() {
               tabIndex={on ? 0 : -1}
               onClick={() => setSel(s.id)}
               onKeyDown={(e) => onKey(e, i)}
-              className={`glass-dark flex items-start gap-4 rounded-3xl px-5 py-4 text-left transition-colors duration-300 ${
+              className={`glass flex items-start gap-4 rounded-3xl px-5 py-4 text-left transition-colors duration-300 ${
                 on ? "border-navy/70! bg-navy/10!" : "hover:border-navy/40!"
               }`}
             >
@@ -789,7 +786,7 @@ export default function TechPanel() {
         id="tech-panel"
         role="tabpanel"
         aria-labelledby={`tech-${sel}`}
-        className="glass-dark min-w-0 rounded-3xl p-6 sm:p-10"
+        className="glass min-w-0 rounded-3xl p-6 sm:p-10"
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div

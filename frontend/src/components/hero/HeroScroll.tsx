@@ -10,6 +10,7 @@ import { PERU_MONTHLY_MEAN } from "@/lib/fire-data";
 import { sceneBus } from "@/lib/scene-bus";
 import FireClock from "./FireClock";
 import type { SceneState } from "./GlobeScene";
+import Card from "@/components/Card";
 
 // three.js solo corre en el navegador
 const GlobeScene = dynamic(() => import("./GlobeScene"), { ssr: false });
@@ -174,12 +175,12 @@ export default function HeroScroll({ children }: { children?: ReactNode }) {
       {/* El Perú arde cada año: sección normal (sin altura forzada) sobre el globo */}
       <section
         id="reloj"
-        className="relative z-10 px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44"
+        className="relative z-10 px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32"
       >
         <SectionDivider
           index="01"
           label="El fenómeno"
-          className="mb-14 sm:mb-20"
+          className="mb-10 sm:mb-14"
         />
         <div className="mx-auto grid w-full max-w-6xl items-center gap-10 text-left lg:grid-cols-2 lg:gap-16">
           {/* Texto: centrado verticalmente respecto al reloj, con el botón debajo */}
@@ -207,13 +208,13 @@ export default function HeroScroll({ children }: { children?: ReactNode }) {
 
           {/* Reloj */}
           <Reveal delay={150} className="lg:order-1">
-            <div className="mx-auto w-full max-w-[560px] rounded-[2rem] border border-snow/15 bg-snow/[0.06] p-4 shadow-[0_12px_60px_rgb(0_0_0/0.45),inset_0_1px_0_rgb(243_249_252/0.14)] backdrop-blur-xl sm:p-7">
+            <Card className="mx-auto w-full max-w-[560px] rounded-[2rem] p-4 sm:p-7">
               <FireClock
                 data={PERU_MONTHLY_MEAN}
                 autoPlay
                 svgClassName="max-w-[480px]"
               />
-            </div>
+            </Card>
           </Reveal>
         </div>
       </section>

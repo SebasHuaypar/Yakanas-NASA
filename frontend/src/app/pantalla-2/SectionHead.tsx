@@ -24,7 +24,7 @@ export default function SectionHead({
   return (
     <>
       <Reveal>
-        <div className="mb-12 flex items-center gap-4 text-[11px] uppercase tracking-[0.22em] text-slate sm:mb-16">
+        <div className="mb-10 flex items-center gap-4 text-[11px] uppercase tracking-[0.22em] text-slate sm:mb-14">
           <span className="font-heading font-bold text-navy">{index}</span>
           <span>{label}</span>
           <span

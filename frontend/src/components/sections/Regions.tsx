@@ -17,13 +17,13 @@ export default function Regions() {
   return (
     <section
       id="regiones"
-      className="relative px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44"
+      className="relative px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32"
     >
       <div className="mx-auto w-full max-w-6xl">
         <SectionDivider
           index="02"
           label="Tres regiones"
-          className="mb-14 sm:mb-20"
+          className="mb-10 sm:mb-14"
         />
         <Reveal className="mx-auto max-w-2xl text-center">
           <h2 className="text-[1.9rem] leading-tight tracking-tight sm:text-5xl">

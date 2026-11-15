@@ -41,7 +41,7 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
               key={it.id}
               aria-label={`${it.n} ${it.title}`}
               style={{ flexGrow: open ? 9 : 1 }}
-              className={`relative min-w-26 basis-0 overflow-hidden glass-dark rounded-4xl transition-[flex-grow,border-color] duration-500 ease-out ${
+              className={`relative min-w-26 basis-0 overflow-hidden glass rounded-4xl transition-[flex-grow,border-color] duration-500 ease-out ${
                 open ? "border-navy/60!" : "hover:border-navy/40!"
               }`}
             >
@@ -124,10 +124,7 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
         {items.map((it, i) => {
           const open = active === i;
           return (
-            <section
-              key={it.id}
-              className="glass-dark overflow-hidden rounded-4xl"
-            >
+            <section key={it.id} className="glass overflow-hidden rounded-4xl">
               <button
                 type="button"
                 aria-expanded={open}

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Reveal from "@/components/Reveal";
 import SectionDivider from "@/components/SectionDivider";
 import { sceneBus } from "@/lib/scene-bus";
+import Card from "@/components/Card";
 
 /* ---------- Simulación del mismo terreno visto por dos sensores ---------- */
 
@@ -338,7 +339,7 @@ export default function TwoEyes() {
     <section
       ref={section}
       id="satelites"
-      className="relative px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44"
+      className="relative px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32"
     >
       <div className="mx-auto w-full max-w-6xl">
         <SectionDivider index="03" label="Los satélites" />
@@ -410,9 +411,10 @@ export default function TwoEyes() {
 
           {/* Lupa interactiva (queda a la vista mientras se lee el texto) */}
           <Reveal className="lg:sticky lg:top-28 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
-            <div
+            <Card
+              tone="dark"
               ref={lensBox}
-              className="rounded-[2rem] border border-snow/15 bg-ink/50 p-4 shadow-[0_12px_60px_rgb(0_0_0/0.45),inset_0_1px_0_rgb(243_249_252/0.14)] backdrop-blur-xl sm:p-6"
+              className="rounded-[2rem] p-4 sm:p-6"
             >
               <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-[0.14em] text-snow/55">
                 <span>MODIS · 1 km</span>
@@ -441,14 +443,15 @@ export default function TwoEyes() {
               <p className="mt-4 text-center text-xs text-snow/55">
                 Arrastra la línea central para comparar
               </p>
-            </div>
+            </Card>
           </Reveal>
 
           {/* Cifra: la diferencia entre los dos ojos */}
           <Reveal className="lg:col-start-1 lg:row-start-2">
-            <div
+            <Card
+              tone="dark"
               ref={statBox}
-              className="flex items-center gap-5 rounded-3xl border border-snow/15 bg-ink/55 p-5 backdrop-blur-xl sm:gap-7 sm:p-6"
+              className="flex items-center gap-5 p-5 sm:gap-7 sm:p-6"
             >
               <p className="font-heading text-5xl font-bold leading-none tracking-tight text-snow sm:text-7xl">
                 <span ref={statNum}>×4,8</span>
@@ -458,7 +461,7 @@ export default function TwoEyes() {
                 Perú. Compararlos tal cual sería injusto: por eso los unimos en
                 un solo registro.
               </p>
-            </div>
+            </Card>
           </Reveal>
         </div>
       </div>
