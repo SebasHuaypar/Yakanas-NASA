@@ -303,3 +303,16 @@ export type ApiPlaceRecurrence = {
   semanas_mas_frecuentes: number[];
   semanas: { semana: number; inicia: string; anios_con_fuego: number; frecuencia: number; cuales: number[] }[];
 };
+
+/** Probabilidad de fuego por zona de ~6 km (regresión logística del backend, /prevention/model). */
+export type ApiModelMap = {
+  fecha: string;
+  region_id: string;
+  features: { geometry: { coordinates: [number, number] }; properties: { probabilidad: number; frecuencia: number; region_id: string; name: string } }[];
+};
+
+/** Variables, pesos y validación del modelo (/prevention/model/info). */
+export type ApiModelInfo = {
+  modelo: string;
+  validacion?: { regresion_logistica?: { auc: number; aciertos_zonas_marcadas: number; cobertura_zonas_marcadas: number } };
+};

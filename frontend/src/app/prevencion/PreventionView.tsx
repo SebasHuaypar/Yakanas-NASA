@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { PERU_VIEWBOX } from "@/app/explorador/lib/geo";
 import Card from "@/components/Card";
-import type { ApiEvents, ApiFires, ApiForecast, ApiPlaceRecurrence } from "@/lib/api";
+import { apiGet, type ApiEvents, type ApiFires, type ApiForecast, type ApiModelInfo, type ApiModelMap, type ApiPlaceRecurrence } from "@/lib/api";
 import { bearing, compass, distanceKm, fmtCoord, inPeru, weekOfYear } from "@/lib/geo-utils";
 import { useLang, type Lang } from "@/lib/lang";
 import { addPlace, MAX_PLACES, removePlace, useSavedPlaces, type SavedPlace } from "@/lib/saved-places";
@@ -298,6 +299,42 @@ function ForecastBars({ months, lang }: { months: { year: number; month: number;
   );
 }
 
+/** Probabilidad de fuego (regresión logística del backend) en la zona de un punto para las próximas 8 semanas. */
+type ModelState = { key: string; weeks: { date: string; p: number }[] | null };
+function useModelWeeks(loc: { lat: number; lon: number }, dept: string | undefined) {
+  const [state, setState] = useState<ModelState | null>(null);
+  const key = dept ? `${dept}|${loc.lat}|${loc.lon}` : "";
+  useEffect(() => {
+    if (!dept) return;
+    const ctl = new AbortController();
+    const base = Date.now();
+    const dates = Array.from({ length: 8 }, (_, i) => new Date(base + i * 7 * 864e5).toISOString().slice(0, 10));
+    Promise.all(dates.map((fecha) => apiGet<ApiModelMap>("/prevention/model", { fecha, region_id: dept, minimo: 0.05, limit: 20000 }, ctl.signal)))
+      .then((maps) => {
+        const weeks = maps.map((m, i) => {
+          let p = 0;
+          let best = 0.09; // grados: la zona del modelo mide 0,06°
+          for (const f of m.features) {
+            const [lo, la] = f.geometry.coordinates;
+            const d = Math.hypot(la - loc.lat, lo - loc.lon);
+            if (d < best) {
+              best = d;
+              p = f.properties.probabilidad;
+            }
+          }
+          return { date: dates[i], p };
+        });
+        setState({ key, weeks });
+      })
+      .catch(() => {
+        if (!ctl.signal.aborted) setState({ key, weeks: null });
+      });
+    return () => ctl.abort();
+  }, [key, dept, loc.lat, loc.lon]);
+  if (!state || state.key !== key) return { loading: !!dept, weeks: null as ModelState["weeks"] };
+  return { loading: false, weeks: state.weeks };
+}
+
 function Season({ loc, c, lang }: { loc: Loc; c: Copy; lang: Lang }) {
   const rec = useApi<ApiPlaceRecurrence>("/recurrence/place", { lat: Number(fmtCoord(loc.lat)), lon: Number(fmtCoord(loc.lon)) });
   const now = new Date();
@@ -307,8 +344,19 @@ function Season({ loc, c, lang }: { loc: Loc; c: Copy; lang: Lang }) {
 
   const week = weekOfYear(now);
   const semanas = rec.data?.semanas;
-  const weeks = semanas ? Array.from({ length: 8 }, (_, i) => semanas[(week - 1 + i) % semanas.length]) : [];
-  const highCount = weeks.filter((w) => level(w.frecuencia) === "high").length;
+  const model = useModelWeeks(loc, rec.data?.region_id);
+  const info = useApi<ApiModelInfo>("/prevention/model/info");
+  // Con el modelo se muestra la probabilidad; si no responde, la recurrencia histórica de esa semana.
+  const weeks = model.weeks
+    ? model.weeks.map((w) => ({ key: w.date, date: w.date, p: w.p as number | null, lv: level(w.p) }))
+    : semanas
+      ? Array.from({ length: 8 }, (_, i) => semanas[(week - 1 + i) % semanas.length]).map((w) => {
+          const [m, d] = w.inicia.split("-").map(Number);
+          return { key: String(w.semana), date: `${now.getFullYear()}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`, p: null as number | null, lv: level(w.frecuencia) };
+        })
+      : [];
+  const highCount = weeks.filter((w) => w.lv === "high").length;
+  const acc = info.data?.validacion?.regresion_logistica?.aciertos_zonas_marcadas;
 
   // Meses más críticos: los que tienen semanas de frecuencia alta (o, si no hay, los dos más frecuentes)
   const critical = useMemo(() => {
@@ -348,18 +396,20 @@ function Season({ loc, c, lang }: { loc: Loc; c: Copy; lang: Lang }) {
           <p className="text-xs text-snow/55">{c.next8Help}</p>
           <ul className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-8">
             {weeks.map((w) => {
-              const lv = level(w.frecuencia);
-              const [m, d] = w.inicia.split("-").map(Number);
+              const [y, m, d] = w.date.split("-").map(Number);
+              const label = w.p === null ? (w.lv === "high" ? c.high : w.lv === "mid" ? c.mid : c.low) : w.p < 0.05 ? "< 5 %" : `${Math.round(w.p * 100)} %`;
               return (
-                <li key={w.semana} className={`rounded-2xl border px-2 py-3 text-center ${TILE[lv]}`}>
+                <li key={w.key} className={`rounded-2xl border px-2 py-3 text-center ${TILE[w.lv]}`}>
                   <p className="text-[10px] uppercase tracking-wide opacity-80">{c.weekOf}</p>
-                  <p className="text-sm font-semibold">{new Date(Date.UTC(2026, m - 1, d)).toLocaleDateString(c.loc, { day: "numeric", month: "short", timeZone: "UTC" })}</p>
-                  <p className="mt-1 text-[11px] font-bold">{lv === "high" ? c.high : lv === "mid" ? c.mid : c.low}</p>
+                  <p className="text-sm font-semibold">{new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(c.loc, { day: "numeric", month: "short", timeZone: "UTC" })}</p>
+                  <p className="mt-1 text-[11px] font-bold">{label}</p>
                 </li>
               );
             })}
           </ul>
           <p className="mt-4 text-base font-medium text-snow">{c.highCount(highCount)}</p>
+          {model.weeks && <p className="mt-1 text-xs text-snow/55">{c.modelNote(acc !== undefined ? `${Math.round(acc * 100)} %` : "")}</p>}
+          {model.loading && <p className="mt-1 animate-pulse text-xs text-snow/55">{c.seasonLoading}</p>}
           <p className="mt-3 rounded-2xl border border-amber/40 bg-amber/[0.07] px-4 py-3 text-sm text-snow/85">{c.seasonTip}</p>
 
           {peak && (
@@ -399,6 +449,89 @@ function PlaceRow({ p, active, fires, c, onSelect }: { p: SavedPlace; active: bo
   );
 }
 
+type MapView = { lat: number; lon: number; span: number };
+const WHOLE_SPAN = 14; // por encima de esto se vuelve a la vista de todo el Perú
+
+/**
+ * Mapa del Perú para elegir un punto:
+ *  - rueda del ratón: acerca o aleja justo donde está el cursor; arrastrar: mover el mapa;
+ *  - en el celular, tocar acerca paso a paso y, cuando ya está cerca, el siguiente toque elige el punto.
+ */
+function PickMap({ view, setView, onChoose, children }: { view: MapView | null; setView: (v: MapView | null) => void; onChoose: (lat: number, lon: number) => void; children: (v: MapView | null, onPick: (lat: number, lon: number) => void) => React.ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  const live = useRef({ view, setView });
+  const drag = useRef<{ x: number; y: number; v: MapView; moved: boolean } | null>(null);
+  const [touch, setTouch] = useState(false);
+  const [moved, setMoved] = useState(false);
+  useEffect(() => {
+    live.current = { view, setView };
+  });
+
+  // Rueda del ratón (listener no pasivo para poder evitar que la página se desplace)
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const svg = el.querySelector("svg");
+      if (!svg) return;
+      const r = svg.getBoundingClientRect();
+      const fx = (e.clientX - r.left) / r.width;
+      const fy = (e.clientY - r.top) / r.height;
+      const { view: v, setView: set } = live.current;
+      // punto (en grados) que está bajo el cursor
+      const point = v
+        ? { lat: v.lat - (fy - 0.5) * v.span, lon: v.lon + (fx - 0.5) * v.span }
+        : { lat: -(PERU_VIEWBOX.y + fy * PERU_VIEWBOX.h) / 20, lon: (PERU_VIEWBOX.x + fx * PERU_VIEWBOX.w) / 20 };
+      const span = (v?.span ?? WHOLE_SPAN) * (e.deltaY < 0 ? 0.8 : 1.25);
+      if (span >= WHOLE_SPAN) return set(null);
+      const s2 = Math.max(0.25, span);
+      // el punto bajo el cursor se queda quieto
+      set({ lat: point.lat + (fy - 0.5) * s2, lon: point.lon - (fx - 0.5) * s2, span: s2 });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    setTouch(e.pointerType === "touch");
+    if (e.pointerType === "touch" || !view) return;
+    drag.current = { x: e.clientX, y: e.clientY, v: view, moved: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (!d.moved && Math.hypot(dx, dy) < 5) return;
+    d.moved = true;
+    setMoved(true);
+    const w = e.currentTarget.getBoundingClientRect().width;
+    const k = d.v.span / w;
+    setView({ ...d.v, lon: d.v.lon - dx * k, lat: d.v.lat + dy * k });
+  };
+  const endDrag = () => {
+    window.setTimeout(() => {
+      drag.current = null;
+      setMoved(false);
+    }, 0); // deja pasar el click del final del arrastre
+  };
+
+  const onPick = (lat: number, lon: number) => {
+    if (moved) return;
+    if (!inPeru(lat, lon)) return;
+    const span = view?.span ?? WHOLE_SPAN;
+    if (touch && span > 0.8) setView({ lat, lon, span: Math.max(0.6, span / 2.5) });
+    else onChoose(lat, lon);
+  };
+
+  return (
+    <div ref={box} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag} className={`mx-auto max-w-xs select-none ${view ? "cursor-grab active:cursor-grabbing" : ""}`}>
+      {children(view, onPick)}
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------- página */
 export default function PreventionView() {
   const [lang] = useLang();
@@ -407,7 +540,7 @@ export default function PreventionView() {
   const [temp, setTemp] = useState<Loc | null>(null);
   const [selId, setSelId] = useState<string | null>(null);
   const [changing, setChanging] = useState(true);
-  const [view, setView] = useState<{ lat: number; lon: number; span: number } | null>(null);
+  const [view, setView] = useState<MapView | null>(null);
 
   const fires = useApi<ApiFires>("/fires", { limit: 20000 });
   const events = useApi<ApiEvents>("/events", { limit: 1000 });
@@ -419,13 +552,6 @@ export default function PreventionView() {
 
   const mapFires = useMemo(() => (fires.data?.features ?? []).map((f) => ({ lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] })), [fires.data]);
   const mapEvents = useMemo(() => (events.data?.events ?? []).map((e) => ({ lon: e.centro[0], lat: e.centro[1], n: e.detecciones.total, active: e.activo })), [events.data]);
-  const onMapTap = (lat: number, lon: number) => {
-    if (!inPeru(lat, lon)) return;
-    const span = view?.span ?? 10;
-    if (span > 0.8) setView({ lat, lon, span: Math.max(0.6, span / 2.5) });
-    else pick({ name: c.nameDefault, lat: Number(fmtCoord(lat)), lon: Number(fmtCoord(lon)) });
-  };
-  const zoomBy = (k: number) => setView((v) => (v ? (v.span * k >= 10 ? null : { ...v, span: Math.max(0.3, v.span * k) }) : k < 1 ? { lat: -9.5, lon: -75, span: 10 * k } : null));
   const pick = (l: Loc) => {
     setView(null);
     setTemp(l);
@@ -461,21 +587,17 @@ export default function PreventionView() {
               </div>
             </div>
             <Card className="rounded-3xl p-4">
-              <div className="mx-auto max-w-xs">
-                <FireMap fires={mapFires} events={mapEvents} places={saved} view={view} onPick={onMapTap} aria={c.mapAria} />
+              <PickMap view={view} setView={setView} onChoose={(lat, lon) => pick({ name: c.nameDefault, lat: Number(fmtCoord(lat)), lon: Number(fmtCoord(lon)) })}>
+                {(v, onPick) => <FireMap fires={mapFires} events={mapEvents} places={saved} view={v} onPick={onPick} aria={c.mapAria} />}
+              </PickMap>
+              <div className="mt-3 flex min-h-10 items-center justify-center">
+                {view && (
+                  <button type="button" onClick={() => setView(null)} className={BTN}>
+                    {c.wholePeru}
+                  </button>
+                )}
               </div>
-              <div className="mt-3 flex items-center justify-center gap-2">
-                <button type="button" aria-label={c.zoomIn} onClick={() => zoomBy(0.4)} className={`${BTN} size-10 !p-0 text-lg`}>
-                  +
-                </button>
-                <button type="button" aria-label={c.zoomOut} onClick={() => zoomBy(2.5)} disabled={!view} className={`${BTN} size-10 !p-0 text-lg`}>
-                  −
-                </button>
-                <button type="button" onClick={() => setView(null)} disabled={!view} className={BTN}>
-                  {c.wholePeru}
-                </button>
-              </div>
-              <p className="mt-2 text-center text-[11px] text-snow/55">{view && view.span <= 0.8 ? c.pickHint : c.orTap}</p>
+              <p className="mt-2 text-center text-[11px] text-snow/55">{c.orTap}</p>
               <p className="mt-1 flex items-center justify-center gap-2 text-[11px] text-snow/55">
                 <span className="size-1.5 rounded-full bg-amber" /> {c.legendFires}
               </p>
