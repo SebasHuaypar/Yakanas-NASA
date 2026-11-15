@@ -450,7 +450,8 @@ function PlaceRow({ p, active, fires, c, onSelect }: { p: SavedPlace; active: bo
 }
 
 type MapView = { lat: number; lon: number; span: number };
-const WHOLE_SPAN = 14; // por encima de esto se vuelve a la vista de todo el Perú
+const ASPECT = PERU_VIEWBOX.w / PERU_VIEWBOX.h; // el recuadro conserva la forma del Perú entero
+const WHOLE_SPAN = 18.6; // alto en grados del Perú entero; por encima de esto se vuelve a la vista completa // por encima de esto se vuelve a la vista de todo el Perú
 
 /**
  * Mapa del Perú para elegir un punto:
@@ -481,13 +482,13 @@ function PickMap({ view, setView, onChoose, children }: { view: MapView | null; 
       const { view: v, setView: set } = live.current;
       // punto (en grados) que está bajo el cursor
       const point = v
-        ? { lat: v.lat - (fy - 0.5) * v.span, lon: v.lon + (fx - 0.5) * v.span }
+        ? { lat: v.lat - (fy - 0.5) * v.span, lon: v.lon + (fx - 0.5) * v.span * ASPECT }
         : { lat: -(PERU_VIEWBOX.y + fy * PERU_VIEWBOX.h) / 20, lon: (PERU_VIEWBOX.x + fx * PERU_VIEWBOX.w) / 20 };
       const span = (v?.span ?? WHOLE_SPAN) * (e.deltaY < 0 ? 0.8 : 1.25);
       if (span >= WHOLE_SPAN) return set(null);
       const s2 = Math.max(0.25, span);
       // el punto bajo el cursor se queda quieto
-      set({ lat: point.lat + (fy - 0.5) * s2, lon: point.lon - (fx - 0.5) * s2, span: s2 });
+      set({ lat: point.lat + (fy - 0.5) * s2, lon: point.lon - (fx - 0.5) * s2 * ASPECT, span: s2 });
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
@@ -506,9 +507,8 @@ function PickMap({ view, setView, onChoose, children }: { view: MapView | null; 
     if (!d.moved && Math.hypot(dx, dy) < 5) return;
     d.moved = true;
     setMoved(true);
-    const w = e.currentTarget.getBoundingClientRect().width;
-    const k = d.v.span / w;
-    setView({ ...d.v, lon: d.v.lon - dx * k, lat: d.v.lat + dy * k });
+    const r = e.currentTarget.getBoundingClientRect();
+    setView({ ...d.v, lon: d.v.lon - dx * ((d.v.span * ASPECT) / r.width), lat: d.v.lat + dy * (d.v.span / r.height) });
   };
   const endDrag = () => {
     window.setTimeout(() => {
@@ -588,7 +588,7 @@ export default function PreventionView() {
             </div>
             <Card className="rounded-3xl p-4">
               <PickMap view={view} setView={setView} onChoose={(lat, lon) => pick({ name: c.nameDefault, lat: Number(fmtCoord(lat)), lon: Number(fmtCoord(lon)) })}>
-                {(v, onPick) => <FireMap fires={mapFires} events={mapEvents} places={saved} view={v} onPick={onPick} aria={c.mapAria} />}
+                {(v, onPick) => <FireMap fires={mapFires} events={mapEvents} places={saved} view={v} aspect={ASPECT} onPick={onPick} aria={c.mapAria} />}
               </PickMap>
               <div className="mt-3 flex min-h-10 items-center justify-center">
                 {view && (

@@ -24,6 +24,7 @@ function FireMap({
   pending = null,
   focus = null,
   view = null,
+  aspect = PERU_VIEWBOX.w / PERU_VIEWBOX.h,
   spanDeg = 1.2,
   onPick,
   aria,
@@ -35,6 +36,8 @@ function FireMap({
   pending?: { lat: number; lon: number } | null;
   focus?: { lat: number; lon: number } | null;
   view?: { lat: number; lon: number; span: number } | null;
+  /** ancho/alto del recuadro cuando se usa `view` (por defecto, el mismo del Perú entero, para que no cambie de tamaño al acercar) */
+  aspect?: number;
   spanDeg?: number;
   onPick?: (lat: number, lon: number) => void;
   aria: string;
@@ -42,9 +45,10 @@ function FireMap({
 }) {
   const c = view ?? (focus ? { ...focus, span: spanDeg } : null);
   const s = (c?.span ?? 0) * 20;
-  const vb = c ? { x: X(c.lon) - s / 2, y: Y(c.lat) - s / 2, w: s, h: s } : PERU_VIEWBOX;
+  const sw = view ? s * aspect : s;
+  const vb = c ? { x: X(c.lon) - sw / 2, y: Y(c.lat) - s / 2, w: sw, h: s } : PERU_VIEWBOX;
   const zoomed = !!c;
-  const dot = vb.w * (zoomed ? 0.0095 : 0.0027);
+  const dot = vb.h * (view ? 0.0045 : zoomed ? 0.0095 : 0.0027);
   const pin = vb.w * (zoomed ? 0.03 : 0.016);
   const maxN = Math.max(1, ...events.map((e) => e.n));
 
