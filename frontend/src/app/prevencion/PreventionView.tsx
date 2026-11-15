@@ -89,9 +89,22 @@ function Picker({ c, lang, onPick }: { c: Copy; lang: Lang; onPick: (l: Loc) => 
     setMsg("");
     setResults(null);
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=pe&accept-language=${lang}&q=${encodeURIComponent(text)}`);
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=10&countrycodes=pe&accept-language=${lang}&q=${encodeURIComponent(text)}`);
       const j = (await r.json()) as { display_name: string; lat: string; lon: string }[];
-      setResults(j.map((x) => ({ name: x.display_name.split(",").slice(0, 2).join(",").trim(), lat: Number(x.lat), lon: Number(x.lon) })));
+      const out: Loc[] = [];
+      for (const x of j) {
+        const parts = x.display_name
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v && !/^(per[uú]|peru)$/i.test(v) && !/^\d+$/.test(v));
+        const name = parts.slice(0, 3).join(", ");
+        const lat = Number(x.lat);
+        const lon = Number(x.lon);
+        // Nominatim devuelve varios objetos del mismo sitio (límite, punto, etc.): se descartan los repetidos o a menos de 3 km con el mismo nombre
+        const dup = out.some((o) => o.name === name || (o.name.split(",")[0] === name.split(",")[0] && distanceKm(o.lat, o.lon, lat, lon) < 3));
+        if (!dup) out.push({ name, lat, lon });
+      }
+      setResults(out.slice(0, 5));
     } catch {
       setMsg(c.locationDenied);
     } finally {
