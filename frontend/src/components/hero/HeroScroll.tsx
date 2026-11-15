@@ -169,8 +169,15 @@ export default function HeroScroll({ children }: { children?: ReactNode }) {
 
             {/* Logo + Presenta: centrados entre la línea de NASA y el borde del globo */}
             <div className="flex flex-1 flex-col items-center justify-center">
-              <h1 className="animate-rise font-logo text-[3.4rem] font-normal leading-none text-snow [animation-delay:450ms] sm:text-8xl lg:text-9xl">
-                Yakana&apos;s Team
+              <h1 className="animate-rise [animation-delay:450ms]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/brand/yakana-logotipo.svg"
+                  alt="Yakana's Team"
+                  width={1279}
+                  height={167}
+                  className="h-auto w-[min(82vw,46rem)]"
+                />
               </h1>
 
               <p className="mt-4 animate-rise text-sm tracking-[0.14em] text-snow/65 [animation-delay:800ms] sm:mt-6 sm:text-base">
