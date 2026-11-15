@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import Card from "@/components/Card";
-import Reveal from "@/components/Reveal";
-import SectionDivider from "@/components/SectionDivider";
 import Select from "@/components/Select";
 import type { ApiAlert, ApiEvent, ApiEvents } from "@/lib/api";
 import { fmtCoord } from "@/lib/geo-utils";
@@ -206,6 +204,7 @@ export default function FieldSection({
   const [onlyActive, setOnlyActive] = useState(true);
   const [shown, setShown] = useState(12);
   const [copiedReport, setCopiedReport] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const all = useMemo(() => events.data?.events ?? [], [events.data]);
   const deptOptions = useMemo(() => {
@@ -272,20 +271,14 @@ export default function FieldSection({
   return (
     <section
       id="campo"
-      className="relative scroll-mt-20 px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32"
+      className="relative scroll-mt-20 px-4 pb-12 pt-2 sm:px-6"
     >
       <div className="mx-auto w-full max-w-6xl">
-        <SectionDivider index="02" label={t.s2} className="mb-10 sm:mb-14" />
-        <Reveal className="max-w-3xl">
-          <h2 className="text-[1.9rem] leading-tight tracking-tight sm:text-5xl">
-            {t.s2t}
-          </h2>
-          <p className="mt-4 text-sm leading-relaxed text-snow/70 sm:text-base">
-            {t.s2d}
-          </p>
-        </Reveal>
+        <p className="max-w-3xl text-sm leading-relaxed text-snow/70">
+          {t.s2d}
+        </p>
 
-        <Reveal delay={100} className="mt-10">
+        <div className="mt-4">
           {!d ? (
             <div
               role="status"
@@ -304,7 +297,7 @@ export default function FieldSection({
             </div>
           ) : (
             <>
-              <dl className="grid grid-cols-3 gap-3 sm:gap-5">
+              <dl className="grid grid-cols-3 gap-2 sm:gap-3">
                 {[
                   [d.resumen.eventos, t.events],
                   [d.resumen.activos, t.activeLabel],
@@ -312,9 +305,9 @@ export default function FieldSection({
                 ].map(([v, l]) => (
                   <Card
                     key={String(l)}
-                    className="rounded-3xl px-4 py-5 text-center sm:py-7"
+                    className="rounded-2xl px-3 py-2.5 text-center"
                   >
-                    <dd className="font-heading text-4xl font-bold tabular-nums text-snow sm:text-6xl">
+                    <dd className="font-heading text-2xl font-bold tabular-nums text-snow sm:text-3xl">
                       {nf(Number(v), t.loc)}
                     </dd>
                     <dt className="mt-1 text-xs uppercase tracking-[0.14em] text-snow/60">
@@ -426,13 +419,26 @@ export default function FieldSection({
               )}
 
               {/* Parte de situación: lo único que se imprime */}
-              <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-xl font-semibold">{t.report}</h3>
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+                <button
+                  type="button"
+                  aria-expanded={showReport}
+                  onClick={() => setShowReport((v) => !v)}
+                  className="cursor-pointer text-lg font-semibold text-snow"
+                >
+                  {t.report}{" "}
+                  <span aria-hidden="true" className="text-snow/50">
+                    {showReport ? "▴" : "▾"}
+                  </span>
+                </button>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     className={BTN}
-                    onClick={() => window.print()}
+                    onClick={() => {
+                      setShowReport(true);
+                      setTimeout(() => window.print(), 150);
+                    }}
                   >
                     {t.reportPrint}
                   </button>
@@ -453,94 +459,98 @@ export default function FieldSection({
                 </div>
               </div>
 
-              <article
-                data-print-area
-                className="glass mt-4 rounded-3xl p-6 text-snow print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black print:shadow-none sm:p-8"
-              >
-                <h4 className="font-heading text-2xl font-bold print:text-black">
-                  {t.reportTitle}
-                </h4>
-                <dl className="mt-4 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
-                  <div>
-                    <dt className="text-xs uppercase tracking-[0.12em] text-snow/55 print:text-black/60">
-                      {t.reportScope}
-                    </dt>
-                    <dd className="font-medium">{scope}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs uppercase tracking-[0.12em] text-snow/55 print:text-black/60">
-                      {t.reportWindow}
-                    </dt>
-                    <dd className="font-medium">{win}</dd>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <dt className="text-xs uppercase tracking-[0.12em] text-snow/55 print:text-black/60">
-                      {t.reportTotals}
-                    </dt>
-                    <dd className="font-medium">
-                      {list.length} {t.events} (
-                      {list.filter((e) => e.activo).length} {t.activeLabel}) ·{" "}
-                      {nf(totalDet, t.loc)} {t.detections}
-                    </dd>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <dt className="text-xs uppercase tracking-[0.12em] text-snow/55 print:text-black/60">
-                      {t.reportAbove}
-                    </dt>
-                    <dd className="font-medium">
-                      {above.length
-                        ? above
-                            .map(
-                              (r) =>
-                                `${deptName(r.name, lang)} (${t.state[r.estado]}, ${nf(r.hs, t.loc)} ${t.hs} · ${t.typical} ${nf(r.median, t.loc)})`,
-                            )
-                            .join(" · ")
-                        : t.reportNone}
-                    </dd>
-                  </div>
-                </dl>
+              {showReport && (
+                <article
+                  data-print-area
+                  className="glass mt-4 rounded-3xl p-6 text-snow print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black print:shadow-none sm:p-8"
+                >
+                  <h4 className="font-heading text-2xl font-bold print:text-black">
+                    {t.reportTitle}
+                  </h4>
+                  <dl className="mt-4 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+                    <div>
+                      <dt className="text-xs uppercase tracking-[0.12em] text-snow/55 print:text-black/60">
+                        {t.reportScope}
+                      </dt>
+                      <dd className="font-medium">{scope}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-[0.12em] text-snow/55 print:text-black/60">
+                        {t.reportWindow}
+                      </dt>
+                      <dd className="font-medium">{win}</dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="text-xs uppercase tracking-[0.12em] text-snow/55 print:text-black/60">
+                        {t.reportTotals}
+                      </dt>
+                      <dd className="font-medium">
+                        {list.length} {t.events} (
+                        {list.filter((e) => e.activo).length} {t.activeLabel}) ·{" "}
+                        {nf(totalDet, t.loc)} {t.detections}
+                      </dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="text-xs uppercase tracking-[0.12em] text-snow/55 print:text-black/60">
+                        {t.reportAbove}
+                      </dt>
+                      <dd className="font-medium">
+                        {above.length
+                          ? above
+                              .map(
+                                (r) =>
+                                  `${deptName(r.name, lang)} (${t.state[r.estado]}, ${nf(r.hs, t.loc)} ${t.hs} · ${t.typical} ${nf(r.median, t.loc)})`,
+                              )
+                              .join(" · ")
+                          : t.reportNone}
+                      </dd>
+                    </div>
+                  </dl>
 
-                <p className="mt-6 text-xs uppercase tracking-[0.12em] text-snow/55 print:text-black/60">
-                  {t.reportTop}
-                </p>
-                <table className="mt-2 w-full text-left text-sm">
-                  <thead className="text-snow/55 print:text-black/60">
-                    <tr className="text-xs">
-                      <th className="py-1.5 font-medium">#</th>
-                      <th className="font-medium">{t.dept}</th>
-                      <th className="font-medium">{t.coords}</th>
-                      <th className="text-right font-medium">{t.detections}</th>
-                      <th className="text-right font-medium">MW</th>
-                    </tr>
-                  </thead>
-                  <tbody className="tabular-nums">
-                    {top.map((e, i) => (
-                      <tr
-                        key={e.id}
-                        className="border-t border-snow/10 print:border-black/20"
-                      >
-                        <td className="py-1.5">{i + 1}</td>
-                        <td>
-                          {deptName(e.name, lang)} {e.activo ? "●" : ""}
-                        </td>
-                        <td>
-                          {fmtCoord(e.centro[1])}, {fmtCoord(e.centro[0])}
-                        </td>
-                        <td className="text-right">{e.detecciones.total}</td>
-                        <td className="text-right">
-                          {nf(e.frp_max_mw, t.loc)}
-                        </td>
+                  <p className="mt-6 text-xs uppercase tracking-[0.12em] text-snow/55 print:text-black/60">
+                    {t.reportTop}
+                  </p>
+                  <table className="mt-2 w-full text-left text-sm">
+                    <thead className="text-snow/55 print:text-black/60">
+                      <tr className="text-xs">
+                        <th className="py-1.5 font-medium">#</th>
+                        <th className="font-medium">{t.dept}</th>
+                        <th className="font-medium">{t.coords}</th>
+                        <th className="text-right font-medium">
+                          {t.detections}
+                        </th>
+                        <th className="text-right font-medium">MW</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="mt-5 text-[11px] leading-relaxed text-snow/50 print:text-black/60">
-                  {t.reportSource}
-                </p>
-              </article>
+                    </thead>
+                    <tbody className="tabular-nums">
+                      {top.map((e, i) => (
+                        <tr
+                          key={e.id}
+                          className="border-t border-snow/10 print:border-black/20"
+                        >
+                          <td className="py-1.5">{i + 1}</td>
+                          <td>
+                            {deptName(e.name, lang)} {e.activo ? "●" : ""}
+                          </td>
+                          <td>
+                            {fmtCoord(e.centro[1])}, {fmtCoord(e.centro[0])}
+                          </td>
+                          <td className="text-right">{e.detecciones.total}</td>
+                          <td className="text-right">
+                            {nf(e.frp_max_mw, t.loc)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="mt-5 text-[11px] leading-relaxed text-snow/50 print:text-black/60">
+                    {t.reportSource}
+                  </p>
+                </article>
+              )}
             </>
           )}
-        </Reveal>
+        </div>
       </div>
     </section>
   );

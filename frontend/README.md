@@ -157,6 +157,8 @@ flowchart TB
 
 Built for people who have to **act**: families and farmers, firefighters and local authorities. Everything is live data and nothing is simulated.
 
+It is a **single compact screen with three tabs** (My places · Field view · Season), so nobody has to scroll through a long page. Only the active tab is rendered, the data is loaded once and shared, and the tab lives in the URL hash (`/prevencion#campo`, `#temporada`, `#lugares`) so links open the right view. Details of each place and the situation report are collapsible.
+
 ![Prevention — my places](../docs/images/prevention-places.jpg)
 
 | Section | Audience | What it does | Endpoints |

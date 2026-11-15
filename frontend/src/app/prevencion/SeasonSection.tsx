@@ -2,8 +2,6 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import Card from "@/components/Card";
-import Reveal from "@/components/Reveal";
-import SectionDivider from "@/components/SectionDivider";
 import Select from "@/components/Select";
 import { apiUrl, type ApiRecurrence } from "@/lib/api";
 import type { Lang } from "@/lib/lang";
@@ -283,19 +281,13 @@ export default function SeasonSection({ t, lang }: { t: T; lang: Lang }) {
   return (
     <section
       id="temporada"
-      className="relative scroll-mt-20 px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32"
+      className="relative scroll-mt-20 px-4 pb-12 pt-2 sm:px-6"
     >
       <div className="mx-auto w-full max-w-6xl">
-        <SectionDivider index="03" label={t.s3} className="mb-10 sm:mb-14" />
-        <Reveal className="max-w-3xl">
-          <h2 className="text-[1.9rem] leading-tight tracking-tight sm:text-5xl">
-            {t.s3t}
-          </h2>
-          <p className="mt-4 text-sm leading-relaxed text-snow/70 sm:text-base">
-            {t.s3d}
-          </p>
-        </Reveal>
-        <Reveal delay={100} className="mt-10">
+        <p className="max-w-3xl text-sm leading-relaxed text-snow/70">
+          {t.s3d}
+        </p>
+        <div className="mt-4">
           {mounted ? (
             <SeasonBody
               t={t}
@@ -303,7 +295,7 @@ export default function SeasonSection({ t, lang }: { t: T; lang: Lang }) {
               initialMonth={new Date().getMonth()}
             />
           ) : null}
-        </Reveal>
+        </div>
       </div>
     </section>
   );

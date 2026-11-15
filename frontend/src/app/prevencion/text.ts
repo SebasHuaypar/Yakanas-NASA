@@ -37,8 +37,8 @@ export const TXT = {
     loc: "en-US",
     // hero
     kicker: "Prevention",
-    h1a: "Know about fire",
-    h1b: "before it reaches the people you care about.",
+    h1a: "Fire near the people you care about?",
+    h1b: "Know before it reaches them.",
     lead: "Check the places that matter to you, give firefighters and authorities the coordinates they need, and see where fire usually appears this time of year. Real NASA satellite detections, updated almost in real time.",
     emergency:
       "Seeing fire? Call Bomberos 116 · INDECI 115. This page is not an emergency service.",
@@ -104,6 +104,8 @@ export const TXT = {
     copy: "Copy message",
     copied: "Copied",
     remove: "Remove",
+    moreDetails: "History of this area and details",
+    tabsAria: "Prevention sections",
     caveat:
       "No detection does not prove there is no fire: satellites pass a few times a day and clouds or smoke can hide small fires.",
     msg: (o: {
@@ -201,8 +203,8 @@ export const TXT = {
   es: {
     loc: "es-PE",
     kicker: "Prevención",
-    h1a: "Entérate del fuego",
-    h1b: "antes de que llegue a quienes quieres.",
+    h1a: "¿Fuego cerca de quienes quieres?",
+    h1b: "Entérate antes de que llegue.",
     lead: "Revisa los lugares que te importan, dale a bomberos y autoridades las coordenadas que necesitan y mira dónde suele aparecer el fuego en esta época del año. Detecciones satelitales reales de NASA, casi en tiempo real.",
     emergency:
       "¿Ves fuego? Llama a Bomberos 116 · INDECI 115. Esta página no es un servicio de emergencia.",
@@ -267,6 +269,8 @@ export const TXT = {
     copy: "Copiar mensaje",
     copied: "Copiado",
     remove: "Quitar",
+    moreDetails: "Historia de esta zona y detalles",
+    tabsAria: "Secciones de prevención",
     caveat:
       "Que no haya detecciones no prueba que no haya fuego: los satélites pasan unas veces al día y las nubes o el humo pueden ocultar fuegos pequeños.",
     msg: (o: {

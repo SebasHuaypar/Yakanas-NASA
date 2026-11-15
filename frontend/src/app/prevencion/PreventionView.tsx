@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Footer from "@/components/sections/Footer";
 import type { ApiAlert, ApiEvents, ApiFires, ApiHealth } from "@/lib/api";
 import { useLang } from "@/lib/lang";
@@ -18,85 +19,118 @@ const dayLabel = (iso: string, loc: string) => {
   });
 };
 
-/** Prevención: lugares de la gente, vista de campo para bomberos y autoridades, y temporada de fuego. */
+const TABS = ["lugares", "campo", "temporada"] as const;
+type Tab = (typeof TABS)[number];
+
+/**
+ * Prevención: una sola pantalla con tres pestañas (mis lugares, vista de campo y temporada).
+ * Solo se ve una a la vez para no tener que hacer scroll; la pestaña se guarda en el # de la URL.
+ */
 export default function PreventionView() {
   const [lang] = useLang();
   const t = textFor(lang);
+  const [tab, setTab] = useState<Tab>("lugares");
 
-  // Los datos se piden una sola vez y se comparten entre las secciones
+  // Abrir directamente en la pestaña del enlace (#campo, #temporada…) y seguir los cambios del #
+  useEffect(() => {
+    const read = () => {
+      const h = location.hash.replace("#", "") as Tab;
+      if (TABS.includes(h)) setTab(h);
+    };
+    read();
+    addEventListener("hashchange", read);
+    return () => removeEventListener("hashchange", read);
+  }, []);
+
+  const choose = (next: Tab) => {
+    setTab(next);
+    history.replaceState(null, "", `#${next}`);
+  };
+
+  // Los datos se piden una sola vez y se comparten entre las pestañas
   const fires = useApi<ApiFires>("/fires", { limit: 20000 });
   const events = useApi<ApiEvents>("/events", { limit: 1000 });
   const alert = useApi<ApiAlert>("/alert");
   const health = useApi<ApiHealth>("/health");
-
   const cov = fires.data?.cobertura;
-  const anchors = ["#lugares", "#campo", "#temporada"];
 
   return (
     <div className="flex-1 text-snow">
-      <header className="relative mx-auto w-full max-w-6xl px-4 pb-4 pt-28 text-center sm:px-6 sm:pt-40">
-        <p className="animate-rise text-xs uppercase tracking-[0.22em] text-snow/60">
-          {t.kicker}
-        </p>
-        <h1 className="mx-auto mt-6 max-w-4xl animate-rise text-4xl leading-[1.06] tracking-tight [animation-delay:120ms] sm:text-6xl lg:text-7xl">
-          {t.h1a}
-          <span className="block text-snow/50">{t.h1b}</span>
-        </h1>
-        <p className="mx-auto mt-7 max-w-2xl animate-rise text-base leading-relaxed text-snow/75 [animation-delay:240ms] sm:text-lg">
-          {t.lead}
-        </p>
-
-        <nav
-          aria-label={t.kicker}
-          className="mt-9 flex animate-rise flex-wrap justify-center gap-3 text-sm font-medium [animation-delay:340ms]"
-        >
-          {t.nav.map((label, i) => (
-            <a
-              key={label}
-              href={anchors[i]}
-              className={
-                i === 0
-                  ? "rounded-full bg-snow px-6 py-3 text-ink transition hover:-translate-y-0.5 hover:opacity-90"
-                  : "rounded-full border border-snow/40 px-6 py-3 text-snow transition-colors hover:border-snow"
-              }
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="mt-8 flex animate-rise flex-wrap items-center justify-center gap-3 text-xs text-snow/65 [animation-delay:440ms]">
-          {cov && (
-            <span className="rounded-full border border-snow/20 bg-ink/40 px-3.5 py-1.5">
-              {t.window}: {dayLabel(cov.desde, t.loc)} –{" "}
-              {dayLabel(cov.hasta, t.loc)}
-            </span>
-          )}
-          {health.data?.generated && (
-            <span className="rounded-full border border-snow/20 bg-ink/40 px-3.5 py-1.5">
-              {t.updated}:{" "}
-              {new Date(health.data.generated).toLocaleString(t.loc, {
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}
-            </span>
-          )}
+      <header className="mx-auto w-full max-w-6xl px-4 pt-20 sm:px-6 sm:pt-24">
+        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.22em] text-snow/60">
+              {t.kicker}
+            </p>
+            <h1 className="mt-1 text-2xl leading-tight tracking-tight sm:text-4xl">
+              {t.h1a} <span className="text-snow/50">{t.h1b}</span>
+            </h1>
+          </div>
+          <div className="flex flex-wrap gap-2 text-[11px] text-snow/65">
+            {cov && (
+              <span className="rounded-full border border-snow/20 bg-ink/40 px-3 py-1">
+                {t.window}: {dayLabel(cov.desde, t.loc)} –{" "}
+                {dayLabel(cov.hasta, t.loc)}
+              </span>
+            )}
+            {health.data?.generated && (
+              <span className="rounded-full border border-snow/20 bg-ink/40 px-3 py-1">
+                {t.updated}:{" "}
+                {new Date(health.data.generated).toLocaleString(t.loc, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </span>
+            )}
+          </div>
         </div>
 
-        <p className="mx-auto mt-6 max-w-xl rounded-2xl border border-snow/20 bg-snow/[0.05] px-5 py-3 text-sm text-snow/85">
-          {t.emergency}
+        <p className="mt-2.5 rounded-xl border border-snow/15 bg-snow/[0.04] px-4 py-2 text-xs text-snow/80 sm:text-sm">
+          🔥 {t.emergency}
         </p>
+
+        <div
+          role="tablist"
+          aria-label={t.tabsAria}
+          className="mt-5 grid grid-cols-3 gap-1.5 rounded-full border border-snow/20 bg-ink/50 p-1.5 sm:inline-grid sm:grid-cols-[repeat(3,minmax(9rem,1fr))]"
+        >
+          {TABS.map((id, i) => (
+            <button
+              key={id}
+              role="tab"
+              type="button"
+              id={`tab-${id}`}
+              aria-selected={tab === id}
+              aria-controls={`panel-${id}`}
+              onClick={() => choose(id)}
+              className={`cursor-pointer rounded-full px-3 py-2 text-xs font-semibold transition-colors sm:text-sm ${tab === id ? "bg-snow text-ink" : "text-snow/70 hover:text-snow"}`}
+            >
+              {t.nav[i]}
+            </button>
+          ))}
+        </div>
       </header>
 
-      <PlacesSection
-        t={t}
-        lang={lang}
-        fires={fires}
-        events={events}
-        alert={alert}
-      />
-      <FieldSection t={t} lang={lang} events={events} alert={alert} />
-      <SeasonSection t={t} lang={lang} />
+      <div
+        id={`panel-${tab}`}
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+        className="mt-5"
+      >
+        {tab === "lugares" && (
+          <PlacesSection
+            t={t}
+            lang={lang}
+            fires={fires}
+            events={events}
+            alert={alert}
+          />
+        )}
+        {tab === "campo" && (
+          <FieldSection t={t} lang={lang} events={events} alert={alert} />
+        )}
+        {tab === "temporada" && <SeasonSection t={t} lang={lang} />}
+      </div>
 
       <Footer />
     </div>

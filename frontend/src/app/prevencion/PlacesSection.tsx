@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import Card from "@/components/Card";
-import Reveal from "@/components/Reveal";
-import SectionDivider from "@/components/SectionDivider";
 import type {
   ApiAlert,
   ApiEvents,
@@ -274,17 +272,21 @@ function PlaceCard({
         </p>
       )}
 
-      {dept && (
-        <p className="text-xs text-snow/60">
-          {t.deptNow}: <b className="text-snow/85">{dept.name}</b> ·{" "}
-          {t.state[dept.estado]} ({nf(dept.hs, t.loc)} {t.hs}, {t.typical}{" "}
-          {nf(dept.median, t.loc)})
-        </p>
-      )}
-
-      {rec.data && <WeekChart rec={rec.data} t={t} week={week} />}
-
-      <p className="text-xs leading-relaxed text-snow/50">{t.caveat}</p>
+      <details className="rounded-2xl border border-snow/10 px-4 py-2.5">
+        <summary className="cursor-pointer select-none text-xs font-medium text-snow/70">
+          {t.moreDetails}
+        </summary>
+        <div className="mt-3 space-y-3">
+          {dept && (
+            <p className="text-xs text-snow/60">
+              {t.deptNow}: <b className="text-snow/85">{dept.name}</b> ·{" "}
+              {t.state[dept.estado]} ({nf(dept.hs, t.loc)} {t.hs}, {t.typical}{" "}
+              {nf(dept.median, t.loc)})
+            </p>
+          )}
+          {rec.data && <WeekChart rec={rec.data} t={t} week={week} />}
+        </div>
+      </details>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-snow/10 pt-4">
         <span className="mr-1 text-xs font-medium text-snow/70">
@@ -457,23 +459,14 @@ export default function PlacesSection({
   return (
     <section
       id="lugares"
-      className="relative scroll-mt-20 px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32"
+      className="relative scroll-mt-20 px-4 pb-12 pt-2 sm:px-6"
     >
       <div className="mx-auto w-full max-w-6xl">
-        <SectionDivider index="01" label={t.s1} className="mb-10 sm:mb-14" />
-        <Reveal className="max-w-3xl">
-          <h2 className="text-[1.9rem] leading-tight tracking-tight sm:text-5xl">
-            {t.s1t}
-          </h2>
-          <p className="mt-4 text-sm leading-relaxed text-snow/70 sm:text-base">
-            {t.s1d}
-          </p>
-        </Reveal>
+        <p className="max-w-3xl text-xs leading-relaxed text-snow/60 sm:text-sm">
+          {t.s1d}
+        </p>
 
-        <Reveal
-          delay={100}
-          className="mt-10 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]"
-        >
+        <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
           <Card className="order-2 rounded-3xl p-5 sm:p-7 lg:order-1">
             <h3 className="text-lg font-semibold">{t.addTitle}</h3>
 
@@ -620,9 +613,9 @@ export default function PlacesSection({
               </div>
             )}
           </Card>
-        </Reveal>
+        </div>
 
-        <Reveal delay={150} className="mt-6">
+        <div className="mt-6">
           {places.length ? (
             <ul className="grid gap-4 lg:grid-cols-2">
               {places.map((p) => (
@@ -642,7 +635,12 @@ export default function PlacesSection({
               {t.empty}
             </p>
           )}
-        </Reveal>
+        </div>
+        {places.length > 0 && (
+          <p className="mt-3 max-w-3xl text-xs leading-relaxed text-snow/50">
+            {t.caveat}
+          </p>
+        )}
       </div>
     </section>
   );
