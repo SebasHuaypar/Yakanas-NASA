@@ -173,7 +173,7 @@ export default function HeroScroll({ children }: { children?: ReactNode }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/brand/yakana-logotipo.svg"
-                  alt="Yakana's Team"
+                  alt="Yakana’s Fire Intelligence"
                   width={1279}
                   height={167}
                   className="h-auto w-[min(82vw,46rem)]"

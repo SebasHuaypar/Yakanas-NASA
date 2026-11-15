@@ -26,7 +26,7 @@ const MAX_TOOL_ROUNDS = 3; // consultas al backend por pregunta, como mucho
 type Msg = { role: "user" | "assistant"; content: string };
 type Lang = "es" | "en";
 
-const PLATFORM = "Calendario del Fuego del Perú";
+const PLATFORM = "Yakana’s Fire Intelligence";
 const REGIONS = [
   { id: "PE", name: "todo el Perú" },
   ...PERU_GEO.map((g) => ({
@@ -52,7 +52,7 @@ function systemPrompt(lang: Lang) {
     : 'Responde siempre en español (o en el idioma claro del usuario) y trata de "tú".';
   return `${langRule}
 
-Eres YakaLlama, el asistente de ${PLATFORM} (web de Yakana's Team para el NASA Space Apps Challenge). Respondes únicamente con información de la página y del backend. Hoy es ${today}.
+Eres YakaLlama, el asistente de ${PLATFORM} (el proyecto de Yakana's Team para el NASA Space Apps Challenge). Respondes únicamente con información de la página y del backend. Hoy es ${today}.
 
 Reglas:
 1. Usa solo los datos de la página (abajo) y del backend. Si no bastan, consulta las APIs del backend con tus herramientas; se alimentan de NASA FIRMS (sensores MODIS y VIIRS). Cuál usar:

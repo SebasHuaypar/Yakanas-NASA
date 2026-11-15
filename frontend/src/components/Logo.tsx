@@ -5,7 +5,7 @@ export default function Logo({ className = "" }: { className?: string }) {
   return (
     <Link
       href="/historia"
-      aria-label="Yakana's Team - inicio"
+      aria-label="Yakana’s Fire Intelligence - inicio"
       className={`flex shrink-0 items-center ${className}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

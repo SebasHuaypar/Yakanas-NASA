@@ -27,8 +27,8 @@ const irishGrover = Irish_Grover({
 });
 
 export const metadata: Metadata = {
-  title: "Yakana's Team",
-  description: "Yakana's Team · NASA Space Apps Challenge",
+  title: "Yakana’s Fire Intelligence",
+  description: "Yakana’s Fire Intelligence · NASA Space Apps Challenge",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

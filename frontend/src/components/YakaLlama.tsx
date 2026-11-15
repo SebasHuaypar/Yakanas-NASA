@@ -15,7 +15,7 @@ const TXT = {
   en: {
     chat: "Chat with YakaLlama",
     closeChat: "Close the chat",
-    role: "Yakana's Team assistant",
+    role: "Yakana’s Fire Intelligence assistant",
     hello:
       "Hi! I'm YakaLlama. Ask me about fire in Peru, how the method works, how to use the site, or who built it.",
     placeholder: "Type your question…",
@@ -72,7 +72,7 @@ const TXT = {
   es: {
     chat: "Chat con YakaLlama",
     closeChat: "Cerrar el chat",
-    role: "Asistente de Yakana's Team",
+    role: "Asistente de Yakana’s Fire Intelligence",
     hello:
       "¡Hola! Soy YakaLlama. Pregúntame sobre el fuego en el Perú, cómo funciona el método, cómo usar la web o quién la hizo.",
     placeholder: "Escribe tu pregunta…",

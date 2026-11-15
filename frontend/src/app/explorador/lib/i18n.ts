@@ -81,7 +81,7 @@ const es = {
   copied: "Copiado",
   copyFail: "No se pudo copiar",
   closePanel: "Cerrar",
-  cellSumNote: "Celdas de 0,02° (~2 km) con focos de calor VIIRS · Calendario del Fuego, Yakana's Team",
+  cellSumNote: "Celdas de 0,02° (~2 km) con focos de calor VIIRS · Yakana’s Fire Intelligence",
   stageReset: "Reiniciar vista",
 
   calTitle: "Calendario del fuego",
@@ -184,7 +184,7 @@ const en: Texts = {
   copied: "Copied",
   copyFail: "Could not copy",
   closePanel: "Close",
-  cellSumNote: "0.02° cells (~2 km) with VIIRS fire hotspots · Fire Calendar, Yakana's Team",
+  cellSumNote: "0.02° cells (~2 km) with VIIRS fire hotspots · Yakana’s Fire Intelligence",
   stageReset: "Reset view",
 
   calTitle: "Burning calendar",

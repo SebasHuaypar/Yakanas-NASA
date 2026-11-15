@@ -167,7 +167,7 @@ export const TXT = {
     reportTop: "Largest events",
     reportNone: "None",
     reportSource:
-      "Source: NASA FIRMS (MODIS and VIIRS, near real time) through the Yakana's Team API. Counts are raw detections, not burned area.",
+      "Source: NASA FIRMS (MODIS and VIIRS, near real time) through the Yakana’s Fire Intelligence API. Counts are raw detections, not burned area.",
     state: {
       bajo: "low",
       normal: "normal",
@@ -332,7 +332,7 @@ export const TXT = {
     reportTop: "Eventos más grandes",
     reportNone: "Ninguno",
     reportSource:
-      "Fuente: NASA FIRMS (MODIS y VIIRS, casi en tiempo real) a través de la API de Yakana's Team. Los conteos son detecciones crudas, no superficie quemada.",
+      "Fuente: NASA FIRMS (MODIS y VIIRS, casi en tiempo real) a través de la API de Yakana’s Fire Intelligence. Los conteos son detecciones crudas, no superficie quemada.",
     state: {
       bajo: "bajo",
       normal: "normal",

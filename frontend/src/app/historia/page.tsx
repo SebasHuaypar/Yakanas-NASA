@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Story · Yakana's Team",
+  title: "Story · Yakana’s Fire Intelligence",
   description:
     "Peru burns every year: the story of how we merged MODIS and VIIRS into a single fire-hotspot record.",
 };
