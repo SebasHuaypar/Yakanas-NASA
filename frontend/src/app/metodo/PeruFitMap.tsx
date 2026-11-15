@@ -29,6 +29,9 @@ const TXT = {
     natB: "national fit",
     natEnd: ": few months with fire.",
     months: "months",
+    pa: "base",
+    pd: "high season",
+    pb: "slope",
     of: "of",
     unitsOwn: "units with their own fit",
     hover1: "Hover over the map to see each unit's parameters. The remaining ",
@@ -50,6 +53,9 @@ const TXT = {
     natB: "ajuste nacional",
     natEnd: ": pocos meses con fuego.",
     months: "meses",
+    pa: "base",
+    pd: "temporada alta",
+    pb: "pendiente",
     of: "de",
     unitsOwn: "unidades con ajuste propio",
     hover1:
@@ -197,23 +203,28 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
                 )}
               </p>
               {fit && (
-                <dl className="mt-auto grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <dl className="mt-auto divide-y divide-slate/20 border-t border-slate/20">
                   {(
                     [
-                      ["a", fit.a.toFixed(2)],
-                      ["d", fit.d.toFixed(2)],
-                      ["b", fit.b.toFixed(2)],
-                      [L.months, String(fit.months)],
-                    ] as [string, string][]
-                  ).map(([k, v]) => (
+                      ["a", L.pa, fit.a.toFixed(2)],
+                      ["d", L.pd, fit.d.toFixed(2)],
+                      ["b", L.pb, fit.b.toFixed(2)],
+                      ["n", L.months, String(fit.months)],
+                    ] as [string, string, string][]
+                  ).map(([k, label, v]) => (
                     <div
                       key={k}
-                      className="min-w-0 rounded-2xl border border-slate/25 bg-white/[0.03] px-3 py-2.5"
+                      className="flex items-baseline justify-between gap-4 py-2"
                     >
-                      <dt className={`truncate text-[10px] text-slate ${hud}`}>
-                        {k}
+                      <dt className="flex min-w-0 items-baseline gap-2">
+                        <span className="w-4 font-mono text-sm font-semibold text-navy">
+                          {k}
+                        </span>
+                        <span className={`truncate text-[11px] text-slate ${hud}`}>
+                          {label}
+                        </span>
                       </dt>
-                      <dd className="font-heading text-xl font-bold tabular-nums text-navy">
+                      <dd className="font-heading text-lg font-bold tabular-nums text-navy">
                         {v}
                       </dd>
                     </div>
