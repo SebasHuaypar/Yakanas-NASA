@@ -48,7 +48,7 @@ function FireMap({
   const sw = view ? s * aspect : s;
   const vb = c ? { x: X(c.lon) - sw / 2, y: Y(c.lat) - s / 2, w: sw, h: s } : PERU_VIEWBOX;
   const zoomed = !!c;
-  const dot = vb.h * (view ? 0.0045 : zoomed ? 0.0095 : 0.0027);
+  const dot = vb.h * (view ? 0.0045 : zoomed ? 0.0095 : 0.0019);
   const pin = vb.w * (zoomed ? 0.03 : 0.016);
   const maxN = Math.max(1, ...events.map((e) => e.n));
 
