@@ -1,4 +1,4 @@
-"""Nombre o código de región, recuadro y alerta. No necesita los Parquet."""
+"""Region name or code, bounding box, and alert. Does not need the Parquet files."""
 from datetime import date
 
 import pytest

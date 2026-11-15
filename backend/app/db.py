@@ -1,7 +1,7 @@
-"""DuckDB de solo lectura sobre los focos de la semana.
+"""Read-only DuckDB over the week's hotspots.
 
-Lee el Parquet que escribe run_week.py. Si no está (un clon recién bajado),
-usa data/out/fires.csv, la misma semana que viene en el repositorio.
+Reads the Parquet written by run_week.py. If it is missing (a fresh clone),
+it uses data/out/fires.csv, the same week that ships with the repository.
 """
 import duckdb
 

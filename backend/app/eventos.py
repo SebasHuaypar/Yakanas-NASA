@@ -1,9 +1,9 @@
-"""Eventos: detecciones de la semana agrupadas por cercanía en el espacio y en el tiempo.
+"""Events: the week's detections grouped by closeness in space and time.
 
-Dos detecciones quedan en el mismo evento si están a 1,2 km o menos y a un día
-o menos de distancia. Los grupos se encadenan: un frente que avanza varios días
-es un solo evento. No hay viento ni modelo de propagación: esto describe lo que
-los satélites vieron, no hacia dónde va el fuego.
+Two detections stay in the same event if they are 1.2 km apart or less and one
+day apart or less. Groups chain together: a front that moves over several days
+is one event. There is no wind or spread model: this describes what the
+satellites saw, not where the fire is going.
 """
 import math
 from collections import Counter, defaultdict
@@ -16,9 +16,9 @@ from app.calendario import _nombres, resolver
 
 RADIO_KM = 1.2
 DIAS = 1
-CELDA = 0.012          # grados; un poco más que el radio, para buscar solo en celdas vecinas
-PIXEL_VIIRS = 0.0035   # grados, cerca de 375 m
-PIXEL_MODIS = 0.01     # grados, cerca de 1 km
+CELDA = 0.012          # degrees; a bit more than the radius, so the search stays in neighboring cells
+PIXEL_VIIRS = 0.0035   # degrees, about 375 m
+PIXEL_MODIS = 0.01     # degrees, about 1 km
 HA_VIIRS = 14.0        # 375 m × 375 m
 HA_MODIS = 100.0       # 1 km × 1 km
 CAMPO = {"MODIS": "modis", "VIIRS_NOAA20": "viirs_noaa20", "VIIRS_NOAA21": "viirs_noaa21"}
@@ -31,7 +31,7 @@ def _km(a: dict, b: dict) -> float:
 
 
 def agrupar(puntos: list[dict]) -> list[list[dict]]:
-    """Componentes conexas con la regla de distancia y días. Cada punto trae lat, lon y dia (ordinal)."""
+    """Connected components under the distance and day rule. Each point has lat, lon, and dia (ordinal)."""
     padre = list(range(len(puntos)))
 
     def raiz(i: int) -> int:
@@ -58,7 +58,7 @@ def agrupar(puntos: list[dict]) -> list[list[dict]]:
 
 
 def _area_ha(grupo: list[dict]) -> float:
-    """Superficie de los píxeles con alguna detección. Es un techo aproximado, no área quemada."""
+    """Area of the pixels with at least one detection. An approximate ceiling, not burned area."""
     viirs = {(round(p["lon"] / PIXEL_VIIRS), round(p["lat"] / PIXEL_VIIRS))
              for p in grupo if p["sensor"] != "MODIS"}
     if viirs:
@@ -125,7 +125,7 @@ def _puntos(desde: date | None, hasta: date | None) -> tuple[list[dict], str, st
             FROM fires WHERE {donde}""",
         args,
     ).fetchall()
-    # Solo lo que cae dentro de un departamento: el recuadro de descarga incluye países vecinos.
+    # Only what falls inside a department: the download box includes neighboring countries.
     filas = [f for f in filas if f[6]]
     puntos = [
         {"lat": float(la), "lon": float(lo), "fecha": f, "dia": date.fromisoformat(f).toordinal(),
@@ -173,7 +173,7 @@ def eventos(desde: date | None, hasta: date | None, region_id: str | None,
 
 
 def evento(evento_id: str, desde: date | None, hasta: date | None) -> dict:
-    """Un evento con sus detecciones, como GeoJSON."""
+    """One event with its detections, as GeoJSON."""
     puntos, inicio, fin, _, _ = _puntos(desde, hasta)
     nombres = _nombres()
     for grupo in agrupar(puntos):

@@ -1,4 +1,4 @@
-"""Calendario, anomalía y mapa de la serie armonizada."""
+"""Calendar, anomaly, and map of the harmonized series."""
 import csv
 import io
 import json
@@ -49,13 +49,13 @@ def regiones() -> list[dict]:
 
 
 def _plano(texto: str) -> str:
-    """Minúsculas y sin tildes: 'San Martín' y 'san martin' son lo mismo."""
+    """Lower case and without accents: 'San Martín' and 'san martin' match."""
     base = unicodedata.normalize("NFD", texto.strip().lower())
     return "".join(c for c in base if unicodedata.category(c) != "Mn")
 
 
 def resolver(region_id: str) -> str:
-    """Acepta el código (PE-CUS, pe-cus) o el nombre (Cusco, san martin). PE o Perú es todo el país."""
+    """Accepts the code (PE-CUS, pe-cus) or the name (Cusco, san martin). PE or Perú is the whole country."""
     clave = _plano(region_id)
     if clave in ("pe", "peru"):
         return "PE"
@@ -88,7 +88,7 @@ def _serie(con, region_id: str) -> list[dict]:
 
 
 def _clasificar(filas: list[dict]) -> list[dict]:
-    """Añade a cada mes la mediana 2003–2022, p25, p75 y el estado bajo / normal / alto."""
+    """Adds to each month the 2003–2022 median, p25, p75, and the low / normal / high state."""
     base = [f for f in filas if 2003 <= int(f["year"]) <= 2022]
     clima: dict[int, list[float]] = {}
     for f in base:
@@ -174,7 +174,7 @@ def ranking(desde: date, hasta: date) -> list[dict]:
 
 
 def _recuadro(caja: tuple[float, float, float, float]) -> tuple[str, list]:
-    """Filtro SQL de las celdas cuyo centro cae en (oeste, sur, este, norte)."""
+    """SQL filter for cells whose center falls in (west, south, east, north)."""
     oeste, sur, este, norte = caja
     if not (-180 <= oeste < este <= 180 and -90 <= sur < norte <= 90):
         raise HTTPException(status_code=400, detail="Recuadro inválido: hace falta west < east y south < north, en grados")
@@ -235,7 +235,7 @@ def calor(desde: date, hasta: date, region_id: str = "PE", limite: int = 4000,
 
 
 def area(oeste: float, sur: float, este: float, norte: float) -> dict:
-    """El mismo calendario para un recuadro elegido por el usuario (lat/lon)."""
+    """The same calendar for a box chosen by the user (lat/lon)."""
     con = _conexion()
     sql_caja, args = _recuadro((oeste, sur, este, norte))
     filas = con.execute(
@@ -267,14 +267,14 @@ def area(oeste: float, sur: float, este: float, norte: float) -> dict:
     }
 
 
-ALERTA_DESDE = VIIRS_DESDE + 1   # 2012 está incompleto: VIIRS empieza el 20 de enero
-ALERTA_MINIMO = 10    # con menos hotspots que esto no se llama "alto" ni "inusual"
+ALERTA_DESDE = VIIRS_DESDE + 1   # 2012 is incomplete: VIIRS starts on 20 January
+ALERTA_MINIMO = 10    # below this many hotspots it is not called "high" or "unusual"
 
 
 def _mismo_dia(dia: date, year: int) -> date:
     try:
         return dia.replace(year=year)
-    except ValueError:  # 29 de febrero
+    except ValueError:  # 29 February
         return dia.replace(year=year, day=28)
 
 
@@ -288,10 +288,11 @@ def _cuantil(valores: list[float], p: float) -> float:
 
 
 def alerta(dias: int = 7) -> dict:
-    """Los últimos días frente a esos mismos días del calendario en los años con VIIRS observado.
+    """The latest days against those same calendar days in years with observed VIIRS.
 
-    Compara VIIRS con VIIRS: no usa los años estimados desde MODIS. Es una señal para mirar,
-    no un pronóstico: los últimos días son NRT y el día más reciente puede estar incompleto.
+    Compares VIIRS with VIIRS: it does not use the years estimated from MODIS. It is a
+    signal to look at, not a forecast: the latest days are NRT and the most recent day
+    can be incomplete.
     """
     con = _conexion()
     ultimo = con.execute("SELECT MAX(acq_date_local) FROM fire_cell_day").fetchone()[0]

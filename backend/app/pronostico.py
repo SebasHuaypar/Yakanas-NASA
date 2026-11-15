@@ -1,10 +1,10 @@
-"""Pronóstico mensual por departamento.
+"""Monthly forecast by department.
 
-Es una línea base estacional: para cada mes, la mediana de ese mismo mes en los
-años con VIIRS observado (desde 2012), con el rango entre los percentiles 10 y 90.
-Se probó ajustarla con la actividad de los últimos 12 meses y no mejoró el error,
-así que no se usa. El error se mide pronosticando 2019–2025 solo con los datos
-que había a fines de octubre del año anterior.
+A seasonal baseline: for each month, the median of that same month in the years
+with observed VIIRS (from 2012), with the range between the 10th and 90th
+percentiles. Adjusting it with the last 12 months of activity did not reduce
+the error, so that adjustment is not used. Error is measured by forecasting
+2019–2025 with only the data available at the end of October of the year before.
 """
 from functools import lru_cache
 from statistics import median
@@ -19,14 +19,14 @@ UNIDAD = "hotspots equivalentes VIIRS 375 m"
 
 @lru_cache(maxsize=1)
 def _datos() -> tuple[dict, tuple[int, int]]:
-    """{(dep, año, mes): hs} y el último mes completo de la serie."""
+    """{(dep, year, month): hs} and the last complete month of the series."""
     con = _conexion()
     filas = con.execute(
         "SELECT dep_id, year, month, hs FROM region_month WHERE year >= ?", [DESDE]
     ).fetchall()
     datos = {(d, int(y), int(m)): float(h) for d, y, m, h in filas}
     ultimo_y, ultimo_m = max((y, m) for _, y, m in datos)
-    # El último mes de la serie está en curso: no entra en la historia.
+    # The last month of the series is still in progress: it does not enter the history.
     completo = (ultimo_y, ultimo_m - 1) if ultimo_m > 1 else (ultimo_y - 1, 12)
     for clave in [k for k in datos if (k[1], k[2]) > completo]:
         del datos[clave]
@@ -38,7 +38,7 @@ def _datos() -> tuple[dict, tuple[int, int]]:
 
 
 def _historia(datos: dict, dep: str, mes: int, hasta: tuple[int, int]) -> list[float]:
-    """Ese mes del calendario en cada año disponible hasta el corte (año, mes)."""
+    """That calendar month in every available year up to the cutoff (year, month)."""
     return [
         datos[(dep, y, mes)]
         for y in range(DESDE, hasta[0] + 1)
@@ -101,7 +101,7 @@ def pronostico(region_id: str, year: int | None) -> dict:
     meses = []
     for mes in range(1, 13):
         if (year, mes) <= completo:
-            continue  # ese mes ya está observado: se consulta en /calendar
+            continue  # that month is already observed: it is queried on /calendar
         meses.append({"year": year, "month": mes, **_mes(datos, dep, mes, completo)})
     v = validacion()
     return {

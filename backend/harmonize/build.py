@@ -1,7 +1,7 @@
-"""Convierte los CSV de la semana en Parquet, conteos por departamento y grilla de calor.
+"""Turns the week CSVs into Parquet, department counts, and a heat grid.
 
-Los polígonos salen de web/calendario-del-fuego.html (los mismos que dibuja el mapa),
-con las coordenadas divididas entre 20. Lima Metropolitana se resta de Lima.
+Polygons come from web/calendario-del-fuego.html (the same ones the map draws),
+with coordinates divided by 20. Metropolitan Lima is subtracted from Lima.
 """
 import json
 from datetime import date, datetime, timezone
@@ -196,7 +196,7 @@ def construir(desde: date, hasta: date) -> dict:
     df, stats = normalizar(crudo, vio_type)
     df = df[(df["acq_date"] >= desde.isoformat()) & (df["acq_date"] <= hasta.isoformat())].copy()
     df = asignar(df, deps)
-    ventana = df.copy()
+    focos_nuevos = df.copy()
     previo = PARQUET / "fires.parquet"
     if previo.exists():
         viejo = pd.read_parquet(previo)
@@ -337,7 +337,7 @@ def construir(desde: date, hasta: date) -> dict:
     (OUT / "series.json").write_text(json.dumps(series, ensure_ascii=False), encoding="utf-8")
     (OUT / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
     from harmonize.acumular import incorporar
-    incorporar(ventana)
+    incorporar(focos_nuevos)
     print(f"focos {len(df)} | asignados {totales['asignados']} | fuera {totales['fuera']} | celdas {len(celdas)}")
     print(f"MODIS {totales['modis']}  NOAA-20 {totales['viirs_noaa20']}  NOAA-21 {totales['viirs_noaa21']}")
     return meta

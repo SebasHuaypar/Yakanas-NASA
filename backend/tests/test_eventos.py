@@ -1,4 +1,4 @@
-"""Agrupar detecciones en eventos."""
+"""Grouping detections into events."""
 from app.eventos import _area_ha, _tendencia, agrupar
 
 

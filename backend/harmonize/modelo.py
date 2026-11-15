@@ -1,7 +1,7 @@
-"""Ley de potencia con temporada, la misma que describe NuevoPlan.
+"""Power law with a season term, the same one described in NuevoPlan.
 
 log(V+1) = a + d·alta + b·log(M+1)
-El estimado vuelve a conteos con el smearing de Duan.
+The estimate is turned back into counts with Duan smearing.
 """
 import numpy as np
 
@@ -44,14 +44,14 @@ def predecir(params: dict, m, high):
 
 
 def sirve(params: dict, meses_con_fuego: int, total: float | None = None) -> bool:
-    """Descarta ajustes con pocos meses, poca quema o pendiente fuera de rango."""
+    """Drops fits with too few months, too little burning, or a slope out of range."""
     if total is not None and total < MIN_TOTAL:
         return False
     return meses_con_fuego >= MIN_MESES and B_MIN <= params["b"] <= B_MAX
 
 
 def temporada_alta(por_mes: dict[int, float]) -> list[int]:
-    """Meses cuyo promedio supera el promedio de los doce meses."""
+    """Months whose average is above the average of all twelve months."""
     if not por_mes:
         return []
     media = float(np.mean([por_mes.get(m, 0.0) for m in range(1, 13)]))

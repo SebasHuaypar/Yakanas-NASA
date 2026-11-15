@@ -1,4 +1,4 @@
-"""Comprueba la semana generada: fechas, confianza, sumas y que la clave no quedó en los datos."""
+"""Checks the generated week: dates, confidence, totals, and that the key was not left in the data."""
 import json
 import math
 import sys

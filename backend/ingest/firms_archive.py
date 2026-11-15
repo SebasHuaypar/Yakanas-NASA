@@ -1,8 +1,8 @@
-"""CSV anuales de FIRMS por país. No usa la MAP_KEY.
+"""Annual FIRMS country CSVs. Does not use the MAP_KEY.
 
-MODIS y VIIRS S-NPP salen de las carpetas publicadas. NOAA-20 está como
-viirs-jpss1 (JPSS-1). NOAA-21 no tiene archivo por país; entra solo como
-respaldo NRT de la semana ya descargada.
+MODIS and VIIRS S-NPP come from the published folders. NOAA-20 is stored as
+viirs-jpss1 (JPSS-1). NOAA-21 has no country file; it only comes in as an
+NRT fallback for the week already downloaded.
 """
 import json
 import urllib.request

@@ -1,4 +1,4 @@
-"""API de focos. Las consultas aceptan desde y hasta (fechas inclusive)."""
+"""Hotspot API. Queries accept desde and hasta (dates inclusive)."""
 import csv
 import io
 import json
@@ -66,7 +66,7 @@ def heat(desde: date | None = None, hasta: date | None = None):
 
 @app.get("/export.csv")
 def export_csv(
-    region: str = Query(..., description="PE o un id PE-XXX"),
+    region: str = Query(..., description="PE or a PE-XXX id"),
     desde: date | None = None,
     hasta: date | None = None,
 ):
@@ -145,25 +145,25 @@ def heatmap(
 
 @app.get("/calendar/area")
 def calendar_area(west: float, south: float, east: float, north: float):
-    """Calendario de un recuadro en grados: west, south, east, north."""
+    """Calendar for a box in degrees: west, south, east, north."""
     return calendario.area(west, south, east, north)
 
 
 @app.get("/alert")
 def alert(dias: int = Query(7, ge=1, le=31)):
-    """Los últimos días frente a los mismos días de años anteriores, por departamento."""
+    """The latest days compared with the same calendar days in earlier years, by department."""
     return calendario.alerta(dias)
 
 
 @app.get("/forecast")
 def forecast(region_id: str = "PE", year: int | None = None):
-    """Pronóstico mensual: estimación estadística, separada de la serie observada."""
+    """Monthly forecast: a statistical estimate, separate from the observed series."""
     return pronostico.pronostico(region_id, year)
 
 
 @app.get("/forecast/validation")
 def forecast_validation():
-    """Cuánto se equivocó el pronóstico al probarlo contra años pasados."""
+    """How far off the forecast was when tested against past years."""
     return pronostico.validacion()
 
 
@@ -198,25 +198,25 @@ def events(
     min_detecciones: int = Query(3, ge=1, le=100),
     limit: int = Query(200, ge=1, le=1000),
 ):
-    """Detecciones de la semana agrupadas en eventos, del más grande al más chico."""
+    """The week's detections grouped into events, from largest to smallest."""
     return eventos.eventos(desde, hasta, region_id, min_detecciones, limit)
 
 
 @app.get("/events/{evento_id}")
 def event(evento_id: str, desde: date | None = None, hasta: date | None = None):
-    """Un evento con cada una de sus detecciones."""
+    """One event with each of its detections."""
     return eventos.evento(evento_id, desde, hasta)
 
 
 @app.get("/recurrence")
 def recurrence(
     fecha: date | None = None,
-    ventana: int = Query(15, description="Días a cada lado de la fecha: 7, 15 o 30"),
+    ventana: int = Query(15, description="Days on each side of the date: 7, 15, or 30"),
     region_id: str = "PE",
     minimo: float = Query(0.3, ge=0, le=1),
     limit: int = Query(5000, ge=1, le=20000),
 ):
-    """Zonas donde suele haber fuego alrededor de esa fecha del calendario."""
+    """Zones where fire usually occurs around that calendar date."""
     if ventana not in recurrencia.VENTANAS:
         raise HTTPException(status_code=400, detail="ventana debe ser 7, 15 o 30")
     return recurrencia.mapa(fecha, ventana, region_id, minimo, limit)
@@ -224,13 +224,13 @@ def recurrence(
 
 @app.get("/recurrence/place")
 def recurrence_place(lat: float, lon: float):
-    """Semana por semana, en cuántos años hubo fuego en la zona de ese punto."""
+    """Week by week, how many years had fire in the zone of that point."""
     return recurrencia.lugar(lat, lon)
 
 
 @app.get("/recurrence/validation")
 def recurrence_validation(ventana: int = 15):
-    """De las zonas marcadas con años pasados, cuántas ardieron de verdad."""
+    """Of the zones marked from past years, how many actually burned."""
     if ventana not in recurrencia.VENTANAS:
         raise HTTPException(status_code=400, detail="ventana debe ser 7, 15 o 30")
     return recurrencia.validacion(ventana)
@@ -243,11 +243,11 @@ def prevention_model(
     minimo: float = Query(0.3, ge=0, le=1),
     limit: int = Query(5000, ge=1, le=20000),
 ):
-    """Probabilidad de fuego por zona alrededor de esa fecha (regresión logística entrenada)."""
+    """Fire probability by zone around that date (trained logistic regression)."""
     return modelo.mapa(fecha, region_id, minimo, limit)
 
 
 @app.get("/prevention/model/info")
 def prevention_model_info():
-    """Variables, pesos del modelo y su validación con años que no vio, frente a la recurrencia."""
+    """Features, model weights, and validation on years it did not see, compared with recurrence."""
     return modelo.info()

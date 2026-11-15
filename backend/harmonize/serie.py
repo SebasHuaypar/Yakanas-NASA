@@ -1,9 +1,9 @@
-"""Arma la serie anclada en un solo VIIRS.
+"""Builds the series anchored on a single VIIRS satellite.
 
-Siete pasos del modelo nuevo: esquema común, confianza, vegetación,
-deduplicación, grilla, un satélite VIIRS por día y calibración por
-departamento y temporada. La grilla es de 0,02° (unos 5 km²), el equivalente
-en DuckDB de una celda H3 de resolución 7.
+Seven steps of the new model: a common schema, confidence, vegetation,
+deduplication, a grid, one VIIRS satellite per day, and calibration by
+department and season. The grid is 0.02° (about 5 km²), the DuckDB
+equivalent of an H3 cell at resolution 7.
 """
 import json
 from datetime import datetime, timezone

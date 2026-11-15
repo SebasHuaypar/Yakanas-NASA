@@ -1,7 +1,7 @@
-/* Dirección de la API, compartida por las páginas.
-   En esta computadora usa el puerto 8000. En cualquier otro sitio (el bucket
-   público, por ejemplo) usa la API de Cloud Run. ?api= la reemplaza, y los
-   enlaces entre páginas se la pasan para no volver a buscar el puerto local. */
+/* API address shared by the pages.
+   On this computer it uses port 8000. Anywhere else (the public bucket, for
+   example) it uses the Cloud Run API. ?api= replaces it, and links between
+   pages pass it along so they do not have to look up the local port again. */
 const API_PUBLICA = "https://calendario-fuego-1022991169828.southamerica-west1.run.app";
 const _parametros = new URLSearchParams(location.search);
 const _enLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.protocol === "file:";
