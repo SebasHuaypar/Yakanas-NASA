@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comprobar API · Calendario del Fuego</title>
+<style>
+:root{
+  --bg:#F6F3EF; --surface:#fff; --ink:#211A1F; --muted:#5E555B; --line:#DDD5D0;
+  --crimson:#A3203A; --maize:#E2A52B; --selva:#1E6B52; --costa:#2B5E8C;
+  --ok:#1E6B52; --bad:#A3203A;
+  --f:"Atkinson Hyperlegible", Verdana, sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:17px;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:32px;line-height:1.1;margin:0 0 8px}
+p{margin:0}
+.muted{color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:18px 0}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--muted);flex:1;min-width:160px}
+label.grow{min-width:240px;flex:2}
+input{font:inherit;color:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+button{font:inherit;font-weight:700;color:#fff;background:var(--crimson);border:0;border-radius:999px;padding:11px 18px;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+.score{font-size:20px;font-weight:700;margin:8px 0 16px}
+.score b.ok{color:var(--ok)}
+.score b.bad{color:var(--bad)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,420px);gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.pill{display:inline-block;min-width:2.6em;text-align:center;font-weight:700;border-radius:999px;padding:1px 8px;font-size:13px}
+.pill.ok{background:#E5F3EC;color:var(--ok)}
+.pill.bad{background:#F8E4E8;color:var(--bad)}
+.pill.wait{background:#F1E7E3;color:var(--muted)}
+svg{width:100%;height:auto;display:block;background:#F3EEE9;border-radius:12px}
+.dot{stroke:#fff;stroke-width:.4}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+pre{margin:8px 0 0;font-size:12px;white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:8px}
+@media(max-width:860px){.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Comprobar la API</h1>
+  <p class="muted">Elige el inicio y el fin. La API devuelve solo los focos de ese intervalo, inclusive.</p>
+  <div class="row">
+    <label class="grow">Dirección de la API
+      <input id="base" value="http://127.0.0.1:8000" spellcheck="false">
+    </label>
+    <label>Desde
+      <input id="desde" type="date" value="2026-11-07">
+    </label>
+    <label>Hasta
+      <input id="hasta" type="date" value="2026-11-14">
+    </label>
+    <button id="go" type="button">Comprobar</button>
+  </div>
+  <p class="score" id="score">Pulsa Comprobar.</p>
+  <div class="layout">
+    <div class="card">
+      <table>
+        <thead><tr><th>Prueba</th><th>Estado</th><th>Qué devolvió</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <pre id="csv" hidden></pre>
+    </div>
+    <div class="card">
+      <svg id="map" viewBox="0 0 280 400" role="img" aria-label="Focos de la semana sobre el rectángulo de Perú"></svg>
+      <div class="legend">
+        <span><i class="sw" style="background:#A3203A"></i>NOAA-20</span>
+        <span><i class="sw" style="background:#E2A52B"></i>NOAA-21</span>
+        <span><i class="sw" style="background:#2B5E8C"></i>MODIS</span>
+      </div>
+      <p class="muted" id="mapnote" style="font-size:13px;margin-top:6px">El rectángulo es el área pedida a FIRMS. Un punto fuera de un departamento sigue siendo un foco real.</p>
+    </div>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const WEST = -81.4, SOUTH = -18.4, EAST = -68.6, NORTH = 0;
+const COLORS = {VIIRS_NOAA20:"#A3203A", VIIRS_NOAA21:"#E2A52B", MODIS:"#2B5E8C"};
+
+function xy(lon, lat){
+  const x = (lon - WEST) / (EAST - WEST) * 260 + 10;
+  const y = (NORTH - lat) / (NORTH - SOUTH) * 380 + 10;
+  return [x, y];
+}
+
+function drawMap(features, nota){
+  const svg = $("map");
+  svg.innerHTML = "";
+  const frame = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  frame.setAttribute("x", "10"); frame.setAttribute("y", "10");
+  frame.setAttribute("width", "260"); frame.setAttribute("height", "380");
+  frame.setAttribute("fill", "none"); frame.setAttribute("stroke", "#DDD5D0");
+  svg.appendChild(frame);
+  const counts = {};
+  for(const f of features){
+    const [lon, lat] = f.geometry.coordinates;
+    const sensor = f.properties.sensor;
+    counts[sensor] = (counts[sensor] || 0) + 1;
+    const [x, y] = xy(lon, lat);
+    if(x < 4 || x > 276 || y < 4 || y > 396) continue;
+    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", x.toFixed(1)); c.setAttribute("cy", y.toFixed(1));
+    c.setAttribute("r", "2.2"); c.setAttribute("class", "dot");
+    c.setAttribute("fill", COLORS[sensor] || "#211A1F");
+    const p = f.properties;
+    c.setAttribute("title", `${p.acq_date} ${sensor} ${p.dep_id || "fuera"} ${p.frp_mw} MW`);
+    svg.appendChild(c);
+  }
+  $("mapnote").textContent = features.length
+    ? `${features.length} focos en el mapa. ${Object.entries(counts).map(([k,n]) => k+" "+n).join(", ")}.`
+    : (nota || "La API no devolvió focos.");
+}
+
+function addRow(name, ok, detail){
+  const tr = document.createElement("tr");
+  const cls = ok === null ? "wait" : ok ? "ok" : "bad";
+  const label = ok === null ? "…" : ok ? "bien" : "falló";
+  tr.innerHTML = `<td>${name}</td><td><span class="pill ${cls}">${label}</span></td><td>${detail}</td>`;
+  $("rows").appendChild(tr);
+  return ok;
+}
+
+function rango(){
+  const desde = $("desde").value;
+  const hasta = $("hasta").value;
+  if(!desde || !hasta) throw new Error("Faltan las fechas");
+  if(desde > hasta) throw new Error("El inicio es posterior al fin");
+  return `desde=${desde}&hasta=${hasta}`;
+}
+
+async function get(base, path){
+  const res = await fetch(base.replace(/\/$/, "") + path);
+  const text = await res.text();
+  let json = null;
+  try{ json = JSON.parse(text); }catch(e){}
+  return {res, text, json};
+}
+
+async function run(){
+  const base = $("base").value.trim();
+  const btn = $("go");
+  btn.disabled = true;
+  $("rows").innerHTML = "";
+  $("csv").hidden = true;
+  $("score").textContent = "Consultando…";
+  const results = [];
+  const mark = (name, ok, detail) => { results.push(addRow(name, ok, detail)); };
+  try{
+    const q = rango();
+    const desde = $("desde").value, hasta = $("hasta").value;
+    const health = await get(base, "/health");
+    const h = health.json || {};
+    mark("GET /health", health.res.ok && h.status === "ok",
+      health.res.ok ? `${h.status}, descarga ${h.ventana ? h.ventana.desde+" → "+h.ventana.hasta : "sin ventana"}` : health.res.status);
+
+    const week = await get(base, "/week?"+q);
+    const w = week.json || {};
+    const top = (w.departamentos || []).filter(d => d.total > 0).sort((a,b) => b.total - a.total).slice(0,3)
+      .map(d => `${d.name} ${d.total}`).join(", ");
+    const enRango = week.res.ok && w.desde === desde && w.hasta === hasta;
+    mark("GET /week", enRango,
+      week.res.ok ? `${w.desde} → ${w.hasta}: ${w.totales.asignados} dentro del mapa. ${w.nota || top || "sin focos en departamentos"}` : week.res.status);
+
+    const heat = await get(base, "/heat?"+q);
+    const celdas = heat.json && heat.json.cells ? heat.json.cells.length : 0;
+    mark("GET /heat", heat.res.ok && heat.json && heat.json.desde === desde && heat.json.hasta === hasta,
+      heat.res.ok ? `${celdas} celdas NOAA-20, ${heat.json.desde} → ${heat.json.hasta}` : heat.res.status);
+
+    const fires = await get(base, "/fires?limit=20000&"+q);
+    const feats = fires.json && fires.json.features ? fires.json.features : [];
+    const fechasOk = feats.every(f => f.properties.acq_date >= desde && f.properties.acq_date <= hasta);
+    mark("GET /fires", fires.res.ok && fechasOk && fires.json.desde === desde,
+      fires.res.ok ? `${fires.json.total} focos en el rango, ${feats.length} en el mapa` : fires.res.status);
+    drawMap(feats, w.nota);
+
+    const csv = await get(base, "/export.csv?region=PE-UCA&"+q);
+    const lines = csv.text.trim().split(/\r?\n/).map(l => l.trim());
+    const headerOk = lines[0] === "region_id,acq_date,sensor,hotspots,frp_mw";
+    const diasOk = lines.slice(1).every(l => { const dia = l.split(",")[1]; return dia >= desde && dia <= hasta; });
+    mark("GET /export.csv", csv.res.ok && headerOk && diasOk,
+      csv.res.ok ? `${Math.max(0, lines.length - 1)} filas de Ucayali` : csv.res.status);
+    $("csv").hidden = false;
+    $("csv").textContent = lines.slice(0, 6).join("\n");
+
+    const missing = await get(base, "/export.csv?region=NOPE&"+q);
+    mark("Región desconocida → 404", missing.res.status === 404, String(missing.res.status));
+
+    const invertido = await get(base, "/week?desde=2026-12-01&hasta=2026-11-01");
+    mark("Inicio posterior al fin → 400", invertido.res.status === 400, String(invertido.res.status));
+  }catch(err){
+    mark("Consulta", false, err && err.message ? err.message : "No se pudo llamar a la API.");
+    console.warn(err);
+  }
+  const ok = results.filter(Boolean).length;
+  const bad = results.length - ok;
+  $("score").innerHTML = bad
+    ? `<b class="bad">${bad} fallaron</b> · <b class="ok">${ok} bien</b> de ${results.length}`
+    : `<b class="ok">${ok} de ${results.length} bien</b>`;
+  btn.disabled = false;
+}
+
+$("go").onclick = run;
+run();
+</script>
+</body>
+</html>

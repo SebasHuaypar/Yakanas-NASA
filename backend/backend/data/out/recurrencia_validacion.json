@@ -1,0 +1,164 @@
+{
+ "7": {
+  "prueba": "2019-2025",
+  "ventana_dias": 7,
+  "como": "Cada año de prueba se marcó solo con los años anteriores, en 25 fechas repartidas por el año, y se comparó con lo que ardió ese año en la misma ventana.",
+  "por_frecuencia": [
+   {
+    "desde": 0.0,
+    "hasta": 0.2,
+    "zonas": 599521,
+    "ardieron": 0.118
+   },
+   {
+    "desde": 0.2,
+    "hasta": 0.4,
+    "zonas": 104160,
+    "ardieron": 0.383
+   },
+   {
+    "desde": 0.4,
+    "hasta": 0.6,
+    "zonas": 39465,
+    "ardieron": 0.636
+   },
+   {
+    "desde": 0.6,
+    "hasta": 0.8,
+    "zonas": 18263,
+    "ardieron": 0.806
+   },
+   {
+    "desde": 0.8,
+    "hasta": 1.0,
+    "zonas": 8684,
+    "ardieron": 0.917
+   }
+  ],
+  "por_corte": [
+   {
+    "frecuencia_minima": 0.3,
+    "aciertos": 0.632,
+    "cobertura": 0.33
+   },
+   {
+    "frecuencia_minima": 0.5,
+    "aciertos": 0.779,
+    "cobertura": 0.179
+   },
+   {
+    "frecuencia_minima": 0.7,
+    "aciertos": 0.883,
+    "cobertura": 0.073
+   }
+  ]
+ },
+ "15": {
+  "prueba": "2019-2025",
+  "ventana_dias": 15,
+  "como": "Cada año de prueba se marcó solo con los años anteriores, en 25 fechas repartidas por el año, y se comparó con lo que ardió ese año en la misma ventana.",
+  "por_frecuencia": [
+   {
+    "desde": 0.0,
+    "hasta": 0.2,
+    "zonas": 736485,
+    "ardieron": 0.138
+   },
+   {
+    "desde": 0.2,
+    "hasta": 0.4,
+    "zonas": 174746,
+    "ardieron": 0.406
+   },
+   {
+    "desde": 0.4,
+    "hasta": 0.6,
+    "zonas": 71182,
+    "ardieron": 0.661
+   },
+   {
+    "desde": 0.6,
+    "hasta": 0.8,
+    "zonas": 37468,
+    "ardieron": 0.847
+   },
+   {
+    "desde": 0.8,
+    "hasta": 1.0,
+    "zonas": 26914,
+    "ardieron": 0.951
+   }
+  ],
+  "por_corte": [
+   {
+    "frecuencia_minima": 0.3,
+    "aciertos": 0.677,
+    "cobertura": 0.421
+   },
+   {
+    "frecuencia_minima": 0.5,
+    "aciertos": 0.832,
+    "cobertura": 0.252
+   },
+   {
+    "frecuencia_minima": 0.7,
+    "aciertos": 0.926,
+    "cobertura": 0.126
+   }
+  ]
+ },
+ "30": {
+  "prueba": "2019-2025",
+  "ventana_dias": 30,
+  "como": "Cada año de prueba se marcó solo con los años anteriores, en 25 fechas repartidas por el año, y se comparó con lo que ardió ese año en la misma ventana.",
+  "por_frecuencia": [
+   {
+    "desde": 0.0,
+    "hasta": 0.2,
+    "zonas": 856340,
+    "ardieron": 0.154
+   },
+   {
+    "desde": 0.2,
+    "hasta": 0.4,
+    "zonas": 259714,
+    "ardieron": 0.431
+   },
+   {
+    "desde": 0.4,
+    "hasta": 0.6,
+    "zonas": 125247,
+    "ardieron": 0.679
+   },
+   {
+    "desde": 0.6,
+    "hasta": 0.8,
+    "zonas": 66258,
+    "ardieron": 0.857
+   },
+   {
+    "desde": 0.8,
+    "hasta": 1.0,
+    "zonas": 61246,
+    "ardieron": 0.969
+   }
+  ],
+  "por_corte": [
+   {
+    "frecuencia_minima": 0.3,
+    "aciertos": 0.711,
+    "cobertura": 0.509
+   },
+   {
+    "frecuencia_minima": 0.5,
+    "aciertos": 0.851,
+    "cobertura": 0.323
+   },
+   {
+    "frecuencia_minima": 0.7,
+    "aciertos": 0.948,
+    "cobertura": 0.173
+   }
+  ]
+ }
+}

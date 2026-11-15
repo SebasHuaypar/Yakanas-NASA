@@ -1,0 +1,40 @@
+# Uso:
+#   docker compose up -d --build          API en :8000 y páginas en :5500
+#   docker compose run --rm serie         arma la serie 2003–hoy (necesita backend/.env con FIRMS_MAP_KEY)
+#   docker compose run --rm semana        baja la semana reciente para /week, /heat y /fires
+x-backend: &backend
+  build: .
+  volumes:
+    - ./backend/data:/app/backend/data
+
+services:
+  api:
+    <<: *backend
+    ports: ["8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    working_dir: /app/web
+    volumes:
+      - ./web:/app/web   # los cambios en las páginas se ven sin reconstruir
+    command: ["python", "-m", "http.server", "5500", "--bind", "0.0.0.0"]
+    ports: ["5500:5500"]
+    depends_on:
+      api: { condition: service_healthy }
+
+  serie:
+    <<: *backend
+    profiles: ["datos"]
+    env_file: [{ path: backend/.env, required: false }]
+    command: ["python", "run_serie.py"]
+
+  semana:
+    <<: *backend
+    profiles: ["datos"]
+    env_file: [{ path: backend/.env, required: false }]
+    command: ["python", "run_week.py"]

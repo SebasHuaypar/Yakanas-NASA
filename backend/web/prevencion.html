@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prevención · Calendario del Fuego</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root { --bg:#f6f1e8; --ink:#211a1f; --muted:#6d625c; --card:#fffdf8; --line:#e4d9cc; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  header, main { width:min(1180px, calc(100% - 32px)); margin:0 auto; }
+  header { padding:28px 0 8px; }
+  main { padding-bottom:28px; }
+  h1 { font-size:28px; margin:0 0 6px; }
+  h2 { font-size:13px; margin:0 0 6px; color:var(--muted); }
+  p { margin:0; color:var(--muted); }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin:18px 0; }
+  label { display:flex; flex-direction:column; gap:4px; font-size:13px; font-weight:700; color:var(--muted); }
+  input, select { font:inherit; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px 10px; }
+  button, a.btn { background:#9f1239; color:#fff; border:1px solid #9f1239; border-radius:999px; padding:10px 16px; font:inherit; font-weight:700; text-decoration:none; cursor:pointer; }
+  button.sec, a.btn.sec { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  .derecha { margin-left:auto; display:flex; gap:8px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin:16px 0; }
+  .big { font-size:26px; font-weight:700; }
+  .sub { font-size:13px; color:var(--muted); margin-top:4px; }
+  .grid { display:grid; grid-template-columns:1.3fr 0.7fr; gap:16px; }
+  @media (max-width:900px) { .grid { grid-template-columns:1fr; } }
+  #map { height:560px; border-radius:12px; }
+  .leyenda { display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--muted); margin-bottom:8px; }
+  .sw { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; }
+  .anios { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0; }
+  .anios span { font-size:11px; padding:2px 6px; border-radius:6px; border:1px solid var(--line); color:var(--muted); background:#fff; }
+  .anios span.si { background:#fdba74; border-color:#fdba74; color:var(--ink); font-weight:700; }
+  .bars { display:flex; align-items:flex-end; gap:1px; height:90px; margin-top:6px; border-bottom:1px solid var(--line); }
+  .bars div { flex:1; background:#fdba74; min-height:0; }
+  .bars div.en { background:#9f1239; }
+  .mesesrow { display:flex; font-size:10px; color:var(--muted); margin-bottom:12px; }
+  .mesesrow span { flex:1; text-align:center; }
+  #lista { max-height:210px; overflow:auto; display:grid; gap:6px; }
+  .ev { padding:8px 10px; border:1px solid var(--line); border-radius:10px; cursor:pointer; display:flex; justify-content:space-between; gap:8px; background:#fff; font-size:13px; }
+  .ev:hover { border-color:#9f1239; }
+  .nota { font-size:13px; color:var(--muted); }
+  #error { color:#9f1239; font-weight:700; }
+  #error:empty { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Prevención: dónde suele haber fuego en cada fecha</h1>
+  <p id="lead">Si en un lugar hubo fuego por estas fechas casi todos los años, es probable que vuelva a haberlo. Elige una fecha, de este año o del próximo, y el mapa muestra las zonas donde el fuego se repite, para saber dónde conviene prevenir antes de que empiece.</p>
+</header>
+<main>
+  <div class="row">
+    <label>Región
+      <select id="region"></select>
+    </label>
+    <label>Fecha
+      <input id="fecha" type="date">
+    </label>
+    <label>Días alrededor
+      <select id="ventana">
+        <option value="7">± 7 días</option>
+        <option value="15" selected>± 15 días</option>
+        <option value="30">± 30 días</option>
+      </select>
+    </label>
+    <label>Mostrar zonas desde
+      <select id="minimo">
+        <option value="0.3">3 de cada 10 años</option>
+        <option value="0.5" selected>5 de cada 10 años</option>
+        <option value="0.7">7 de cada 10 años</option>
+      </select>
+    </label>
+    <button id="go" type="button">Ver</button>
+    <span class="derecha">
+      <a class="btn sec" href="armonizado.html" data-pagina="armonizado.html">Serie 2003 a hoy</a>
+      <a class="btn sec" href="radar.html" data-pagina="radar.html">Radar de la semana</a>
+    </span>
+  </div>
+  <p id="resumen"></p>
+  <p id="error"></p>
+
+  <section class="kpis">
+    <div class="card"><h2>Zonas donde el fuego se repite</h2><div class="big" id="kZonas">–</div><div class="sub" id="kZonasSub"></div></div>
+    <div class="card"><h2>Cuántas veces acierta</h2><div class="big" id="kAcierto">–</div><div class="sub" id="kAciertoSub"></div></div>
+    <div class="card"><h2>Cuánto fuego anticipa</h2><div class="big" id="kCobertura">–</div><div class="sub" id="kCoberturaSub"></div></div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <div class="leyenda">
+        <span>Años con fuego en esas fechas:</span>
+        <span><i class="sw" style="background:#f5d9a0"></i>3 a 5 de cada 10</span>
+        <span><i class="sw" style="background:#fb923c"></i>5 a 7</span>
+        <span><i class="sw" style="background:#c2410c"></i>7 a 9</span>
+        <span><i class="sw" style="background:#7f1d1d"></i>9 o más</span>
+        <span>Toca cualquier punto del mapa para ver su historia.</span>
+      </div>
+      <div id="map"></div>
+    </div>
+    <div class="card">
+      <h2>Zona elegida</h2>
+      <div id="detalle" class="nota">Toca una zona del mapa o de la lista.</div>
+      <h2 style="margin-top:16px">Zonas donde más se repite</h2>
+      <div id="lista"></div>
+    </div>
+  </section>
+
+  <p class="nota" id="nota" style="margin-top:16px"></p>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="comun.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const n = v => Math.round(v).toLocaleString("es-PE");
+const pct = v => Math.round(v * 100) + " %";
+const dia = mmdd => `${+mmdd.slice(3)} de ${MESES[+mmdd.slice(0, 2) - 1]}`;
+const color = f => f >= 0.9 ? "#7f1d1d" : f >= 0.7 ? "#c2410c" : f >= 0.5 ? "#fb923c" : "#f5d9a0";
+
+const map = L.map("map", { preferCanvas: true }).setView([-9.2, -75], 5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap" }).addTo(map);
+const capa = L.layerGroup().addTo(map);
+const marca = L.layerGroup().addTo(map);
+let datos = null;
+
+async function get(path) {
+  const res = await fetch(API + path);
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail || res.statusText);
+  return body;
+}
+
+function dibujar() {
+  capa.clearLayers();
+  const minimo = +$("minimo").value, h = datos.zona_grados / 2;
+  const visibles = datos.features.filter(f => f.properties.frecuencia >= minimo);
+  // Las más frecuentes se dibujan al final, para que queden encima.
+  visibles.slice().reverse().forEach(f => {
+    const [lon, lat] = f.geometry.coordinates, p = f.properties;
+    L.rectangle([[lat - h, lon - h], [lat + h, lon + h]], { stroke: false, fillColor: color(p.frecuencia), fillOpacity: .75 })
+      .bindTooltip(`${p.name}: ${p.anios_con_fuego} de ${p.anios} años`)
+      .on("click", ev => { L.DomEvent.stopPropagation(ev); elegir(lat, lon); })
+      .addTo(capa);
+  });
+  $("lista").innerHTML = visibles.length ? "" : '<p class="nota">Ninguna zona llega a esa frecuencia en estas fechas.</p>';
+  visibles.slice(0, 40).forEach(f => {
+    const [lon, lat] = f.geometry.coordinates, p = f.properties;
+    const div = document.createElement("div");
+    div.className = "ev";
+    div.innerHTML = `<span><b>${p.name}</b> <span style="color:var(--muted)">${lat.toFixed(2)}, ${lon.toFixed(2)}</span></span><b>${p.anios_con_fuego} de ${p.anios} años</b>`;
+    div.onclick = () => { map.setView([lat, lon], 10); elegir(lat, lon); };
+    $("lista").appendChild(div);
+  });
+}
+
+async function elegir(lat, lon) {
+  const l = await get(`/recurrence/place?lat=${lat}&lon=${lon}`);
+  marca.clearLayers();
+  L.rectangle([[l.bbox[1], l.bbox[0]], [l.bbox[3], l.bbox[2]]], { color: "#211a1f", weight: 2, fill: false }).addTo(marca);
+  const zona = datos.features.find(f => Math.abs(f.geometry.coordinates[0] - l.centro[0]) < 1e-6 && Math.abs(f.geometry.coordinates[1] - l.centro[1]) < 1e-6);
+  const total = l.anios_base.length;
+  if (!l.anios_con_fuego.length) {
+    $("detalle").className = "nota";
+    $("detalle").textContent = `En esta zona no hay detecciones registradas entre ${l.anios_base[0]} y ${l.anios_base[total - 1]}.`;
+    return;
+  }
+  // Semanas que caen dentro de la ventana elegida, para resaltarlas.
+  const f = new Date(datos.fecha + "T12:00:00"), doy = Math.floor((f - new Date(f.getFullYear(), 0, 0)) / 864e5);
+  const dentro = s => { const c = (s - 1) * 7 + 4, d = Math.abs(c - doy); return Math.min(d, 365 - d) <= datos.ventana_dias; };
+  const max = Math.max(...l.semanas.map(s => s.anios_con_fuego), 1);
+  const enVentana = zona ? zona.properties : null;
+  const pico = l.semanas.reduce((a, b) => b.anios_con_fuego > a.anios_con_fuego ? b : a);
+  $("detalle").className = "";
+  $("detalle").innerHTML = `
+    <div style="font-size:17px; font-weight:700">${l.name}</div>
+    <div class="nota">${l.centro[1].toFixed(2)}, ${l.centro[0].toFixed(2)} · zona de unos 6,6 km de lado</div>
+    <p style="margin-top:10px; color:var(--ink)">${enVentana
+      ? `Entre el ${dia(datos.ventana.desde)} y el ${dia(datos.ventana.hasta)} hubo fuego aquí en <b>${enVentana.anios_con_fuego} de ${enVentana.anios} años</b>.`
+      : `Entre el ${dia(datos.ventana.desde)} y el ${dia(datos.ventana.hasta)} casi no se repite el fuego aquí.`}
+      La semana que más se repite empieza el ${dia(pico.inicia)}: ${pico.anios_con_fuego} de ${total} años.</p>
+    <div class="anios">${l.anios_base.map(y => `<span class="${(enVentana ? enVentana.cuales : []).includes(y) ? "si" : ""}">${y}</span>`).join("")}
+      ${enVentana && enVentana.anios > total ? `<span class="${enVentana.cuales.includes(l.anios_base[total - 1] + 1) ? "si" : ""}">${l.anios_base[total - 1] + 1}</span>` : ""}</div>
+    <p class="nota">En naranja, los años con fuego en esas fechas.</p>
+    <h2 style="margin-top:14px">Semanas del año en que suele arder aquí</h2>
+    <div class="bars">${l.semanas.map(s => `<div class="${dentro(s.semana) ? "en" : ""}" style="height:${100 * s.anios_con_fuego / max}%" title="Semana del ${dia(s.inicia)}: ${s.anios_con_fuego} de ${total} años"></div>`).join("")}</div>
+    <div class="mesesrow">${"EFMAMJJASOND".split("").map(m => `<span>${m}</span>`).join("")}</div>
+    <p class="nota">En granate, las semanas de la fecha elegida. La barra más alta son ${max} de ${total} años.</p>`;
+}
+
+async function cargar() {
+  $("error").textContent = "";
+  marca.clearLayers();
+  $("detalle").className = "nota";
+  $("detalle").textContent = "Toca una zona del mapa o de la lista.";
+  const region = $("region").value, q = $("fecha").value ? `&fecha=${$("fecha").value}` : "";
+  datos = await get(`/recurrence?region_id=${region}&ventana=${$("ventana").value}&minimo=0.3${q}`);
+  if (!$("fecha").value) $("fecha").value = datos.fecha;
+  const a = datos.anios_base, v = datos.validacion, r = datos.resumen;
+  const c70 = v.por_corte.find(c => c.frecuencia_minima === 0.7), c50 = v.por_corte.find(c => c.frecuencia_minima === 0.5);
+  $("resumen").textContent = `Del ${dia(datos.ventana.desde)} al ${dia(datos.ventana.hasta)}, mirando ${a.length} años (${a[0]}–${a[a.length - 1]}). El año de la fecha no importa: se compara el mismo tramo del calendario.`;
+  $("kZonas").textContent = n(r.zonas_desde_70);
+  $("kZonasSub").textContent = `zonas con fuego en 7 de cada 10 años o más en estas fechas. Son ${n(r.zonas_desde_50)} si se cuentan desde 5 de cada 10.`;
+  $("kAcierto").textContent = `${Math.round(c70.aciertos * 10)} de cada 10`;
+  $("kAciertoSub").textContent = `Al probarlo contra ${v.prueba} con solo los años anteriores, ardió el ${pct(c70.aciertos)} de las zonas marcadas desde 7 de cada 10 años, y el ${pct(c50.aciertos)} de las marcadas desde 5 de cada 10.`;
+  $("kCobertura").textContent = pct(c50.cobertura);
+  $("kCoberturaSub").textContent = `de las zonas que ardieron estaban marcadas desde 5 de cada 10 años (${pct(c70.cobertura)} desde 7 de cada 10). El resto del fuego apareció en lugares donde no se repite tanto.`;
+  $("nota").textContent = `${datos.metodo} ${datos.nota}`;
+  dibujar();
+  if (region === "PE") map.setView([-9.2, -75], 5);
+  else if (datos.features.length) map.fitBounds(L.latLngBounds(datos.features.map(f => [f.geometry.coordinates[1], f.geometry.coordinates[0]])), { padding: [30, 30] });
+}
+
+const mostrar = err => { $("error").textContent = mensajeApi(err); };
+$("go").onclick = () => cargar().catch(mostrar);
+$("region").onchange = () => cargar().catch(mostrar);
+$("ventana").onchange = () => cargar().catch(mostrar);
+$("minimo").onchange = () => datos && dibujar();
+map.on("click", ev => datos && elegir(ev.latlng.lat, ev.latlng.lng).catch(mostrar));
+
+get("/regions").then(rs => {
+  $("region").innerHTML = rs.map(r => `<option value="${r.id}">${r.name}</option>`).join("");
+  return cargar();
+}).catch(mostrar);
+</script>
+</body>
+</html>

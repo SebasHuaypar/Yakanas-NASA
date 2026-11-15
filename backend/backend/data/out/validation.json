@@ -1,0 +1,135 @@
+{
+  "version": "v1-2026-11-14",
+  "train": "2012-2019",
+  "test": "2020-2022",
+  "con_temporada": {
+    "error_nacional": 0.13377131955175867,
+    "r2_nacional": 0.9431436459315785,
+    "dentro_p10_p90": 0.6319365798414496,
+    "error_departamento_mes": 0.2434628484348105,
+    "por_zona": {
+      "Selva": 0.18002454068747967,
+      "Sierra": 0.2528166566059777,
+      "Costa": 0.5146157194586691
+    }
+  },
+  "sin_temporada": {
+    "error_nacional": 0.1299360238694576,
+    "r2_nacional": 0.9477379161875309,
+    "error_departamento_mes": 0.23459315366399267,
+    "por_zona": {
+      "Selva": 0.17376278759396407,
+      "Sierra": 0.2657679733335929,
+      "Costa": 0.4069689354276926
+    }
+  },
+  "por_departamento": {
+    "PE-AMA": {
+      "name": "Amazonas",
+      "error": 0.3148578328206111
+    },
+    "PE-ANC": {
+      "name": "Ancash",
+      "error": 0.21775878095597695
+    },
+    "PE-APU": {
+      "name": "Apurímac",
+      "error": 0.2389051733597325
+    },
+    "PE-ARE": {
+      "name": "Arequipa",
+      "error": 1.0528937104192821
+    },
+    "PE-AYA": {
+      "name": "Ayacucho",
+      "error": 0.28739561868100044
+    },
+    "PE-CAJ": {
+      "name": "Cajamarca",
+      "error": 0.2893678856968325
+    },
+    "PE-CAL": {
+      "name": "El Callao",
+      "error": 29.62110642009454
+    },
+    "PE-CUS": {
+      "name": "Cusco",
+      "error": 0.32769897484222404
+    },
+    "PE-HUC": {
+      "name": "Huánuco",
+      "error": 0.20905756707362172
+    },
+    "PE-HUV": {
+      "name": "Huancavelica",
+      "error": 0.300529764866426
+    },
+    "PE-ICA": {
+      "name": "Ica",
+      "error": 0.84151869923655
+    },
+    "PE-JUN": {
+      "name": "Junín",
+      "error": 0.20095492083001265
+    },
+    "PE-LAL": {
+      "name": "La Libertad",
+      "error": 0.277833205199588
+    },
+    "PE-LAM": {
+      "name": "Lambayeque",
+      "error": 0.1979121843257884
+    },
+    "PE-LIM": {
+      "name": "Lima",
+      "error": 1.0966491520097257
+    },
+    "PE-LMA": {
+      "name": "Municipalidad Metropolitana de Lima",
+      "error": 4.073194338018432
+    },
+    "PE-LOR": {
+      "name": "Loreto",
+      "error": 0.2266403166991756
+    },
+    "PE-MDD": {
+      "name": "Madre de Dios",
+      "error": 0.13722556490513985
+    },
+    "PE-MOQ": {
+      "name": "Moquegua",
+      "error": 2.2086320766255954
+    },
+    "PE-PAS": {
+      "name": "Pasco",
+      "error": 0.29236483003223646
+    },
+    "PE-PIU": {
+      "name": "Piura",
+      "error": 0.2752149515324568
+    },
+    "PE-PUN": {
+      "name": "Puno",
+      "error": 0.24361222836633867
+    },
+    "PE-SAM": {
+      "name": "San Martín",
+      "error": 0.19462118334365855
+    },
+    "PE-TAC": {
+      "name": "Tacna",
+      "error": 4.102560102824522
+    },
+    "PE-TUM": {
+      "name": "Tumbes",
+      "error": 0.3283484270240748
+    },
+    "PE-UCA": {
+      "name": "Ucayali",
+      "error": 0.15899445599656842
+    }
+  },
+  "nota": "Serie 2003–2026. Antes del 20 de enero de 2012 la serie es MODIS convertido; desde esa fecha es VIIRS observado. Error nacional en 2020–2022: 13.4%.",
+  "desde": 2003,
+  "hasta": 2026
+}
