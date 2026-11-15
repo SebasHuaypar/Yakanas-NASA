@@ -1,6 +1,24 @@
-import { hud } from "./fonts";
+"use client";
 
-const nf = new Intl.NumberFormat("es");
+import { hud } from "./fonts";
+import { useLang } from "@/lib/lang";
+
+const TXT = {
+  en: {
+    loc: "en",
+    aria: (y: number, m: string, lo: string, hi: string) =>
+      `Estimate for ${y}: ${m} hotspots, with a likely range of ${lo} to ${hi}.`,
+    title: (y: number) => `Estimate for ${y}`,
+    cap: "The mark is the best estimate; the band is the likely range (p10–p90 in the prototype). An estimated year is not a measured year.",
+  },
+  es: {
+    loc: "es",
+    aria: (y: number, m: string, lo: string, hi: string) =>
+      `Estimación de ${y}: ${m} focos, con un rango probable de ${lo} a ${hi}.`,
+    title: (y: number) => `Estimación de ${y}`,
+    cap: "La marca es la mejor estimación; la franja es el rango probable (p10–p90 en el prototipo). Un año estimado no es un año medido.",
+  },
+};
 
 /** Barra de rango: valor estimado (marca) dentro de su intervalo probable (franja). */
 export default function RangeBar({
@@ -14,14 +32,17 @@ export default function RangeBar({
   high: number;
   year: number;
 }) {
+  const [lang] = useLang();
+  const L = TXT[lang];
+  const nf = new Intl.NumberFormat(L.loc);
   const max = high * 1.12;
   const pct = (v: number) => `${(v / max) * 100}%`;
   return (
     <figure
       className="m-0"
-      aria-label={`Estimación de ${year}: ${nf.format(mid)} focos, con un rango probable de ${nf.format(low)} a ${nf.format(high)}.`}
+      aria-label={L.aria(year, nf.format(mid), nf.format(low), nf.format(high))}
     >
-      <p className={`text-xs text-slate ${hud}`}>Estimación de {year}</p>
+      <p className={`text-xs text-slate ${hud}`}>{L.title(year)}</p>
       <div className="relative mt-8 h-3 rounded-full bg-(--mist)">
         <div
           className="absolute inset-y-0 rounded-full bg-navy/25"
@@ -46,10 +67,7 @@ export default function RangeBar({
           {nf.format(high)}
         </span>
       </div>
-      <figcaption className="mt-4 text-sm text-slate">
-        La marca es la mejor estimación; la franja es el rango probable (p10–p90
-        en el prototipo). Un año estimado no es un año medido.
-      </figcaption>
+      <figcaption className="mt-4 text-sm text-slate">{L.cap}</figcaption>
     </figure>
   );
 }

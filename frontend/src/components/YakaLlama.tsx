@@ -2,13 +2,47 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useLang } from "@/lib/lang";
 
 /**
  * YakaLlama: chatbot flotante (por ahora solo avisa que pronto responderá consultas).
  * La llama va sin fondo ni marco; el mensaje y el cuadro de conversación son de cristal,
  * igual que las tarjetas del resto de la web.
  */
+const TXT = {
+  en: {
+    chat: "Chat with YakaLlama",
+    closeChat: "Close the chat",
+    hello: "Hi! I'm YakaLlama and I can help.",
+    soon: "I'll soon be able to answer your questions.",
+    placeholder: "You'll soon be able to write to me…",
+    ask: "Type your question (coming soon)",
+    send: "Send (coming soon)",
+    greetName: "Hi, I'm YakaLlama",
+    greetRest: "and I can help",
+    closeGreet: "Close the greeting",
+    open: "Open the YakaLlama chat",
+    close: "Close the YakaLlama chat",
+  },
+  es: {
+    chat: "Chat con YakaLlama",
+    closeChat: "Cerrar el chat",
+    hello: "¡Hola! Soy YakaLlama y te puedo ayudar.",
+    soon: "Pronto podré responder a tus consultas.",
+    placeholder: "Pronto podrás escribirme…",
+    ask: "Escribe tu pregunta (disponible pronto)",
+    send: "Enviar (disponible pronto)",
+    greetName: "Hola, soy YakaLlama",
+    greetRest: "y te puedo ayudar",
+    closeGreet: "Cerrar el saludo",
+    open: "Abrir el chat de YakaLlama",
+    close: "Cerrar el chat de YakaLlama",
+  },
+};
+
 export default function YakaLlama() {
+  const [lang] = useLang();
+  const L = TXT[lang];
   const [open, setOpen] = useState(false);
   const [greet, setGreet] = useState(false);
 
@@ -39,7 +73,7 @@ export default function YakaLlama() {
         <div
           id="yakallama-chat"
           role="dialog"
-          aria-label="Chat con YakaLlama"
+          aria-label={L.chat}
           aria-hidden={!open}
           className={`glass-dark absolute bottom-full right-0 mb-1 w-[min(21rem,calc(100vw-1.5rem))] origin-bottom-right overflow-hidden rounded-3xl transition duration-300 ${
             open
@@ -60,7 +94,7 @@ export default function YakaLlama() {
               type="button"
               onClick={toggle}
               tabIndex={open ? 0 : -1}
-              aria-label="Cerrar el chat"
+              aria-label={L.closeChat}
               className="grid size-8 place-items-center rounded-full text-snow/60 transition hover:bg-snow/10 hover:text-snow"
             >
               <svg
@@ -82,10 +116,10 @@ export default function YakaLlama() {
 
           <div className="space-y-2.5 px-5 py-5" aria-live="polite">
             <p className="max-w-[85%] rounded-2xl rounded-bl-md border border-snow/10 bg-snow/[0.07] px-4 py-2.5 text-sm leading-relaxed text-snow">
-              ¡Hola! Soy YakaLlama y te puedo ayudar.
+              {L.hello}
             </p>
             <p className="max-w-[85%] rounded-2xl rounded-bl-md border border-snow/10 bg-snow/[0.07] px-4 py-2.5 text-sm leading-relaxed text-snow">
-              Pronto podré responder a tus consultas.
+              {L.soon}
             </p>
           </div>
 
@@ -95,15 +129,15 @@ export default function YakaLlama() {
                 type="text"
                 disabled
                 tabIndex={open ? 0 : -1}
-                placeholder="Pronto podrás escribirme…"
-                aria-label="Escribe tu pregunta (disponible pronto)"
+                placeholder={L.placeholder}
+                aria-label={L.ask}
                 className="min-w-0 flex-1 bg-transparent text-sm text-snow placeholder:text-snow/40 focus:outline-none disabled:cursor-not-allowed"
               />
               <button
                 type="button"
                 disabled
                 tabIndex={-1}
-                aria-label="Enviar (disponible pronto)"
+                aria-label={L.send}
                 className="grid size-8 shrink-0 place-items-center rounded-full bg-snow/20 text-snow/50"
               >
                 <svg
@@ -141,14 +175,13 @@ export default function YakaLlama() {
             tabIndex={greet && !open ? 0 : -1}
             className="text-left"
           >
-            <span className="font-medium">Hola, soy YakaLlama</span> y te puedo
-            ayudar
+            <span className="font-medium">{L.greetName}</span> {L.greetRest}
           </button>
           <button
             type="button"
             onClick={() => setGreet(false)}
             tabIndex={greet && !open ? 0 : -1}
-            aria-label="Cerrar el saludo"
+            aria-label={L.closeGreet}
             className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full border border-snow/20 bg-ink text-[10px] text-snow/70 transition hover:text-snow"
           >
             ×
@@ -161,9 +194,7 @@ export default function YakaLlama() {
           onClick={toggle}
           aria-expanded={open}
           aria-controls="yakallama-chat"
-          aria-label={
-            open ? "Cerrar el chat de YakaLlama" : "Abrir el chat de YakaLlama"
-          }
+          aria-label={open ? L.close : L.open}
           className="pointer-events-auto block origin-bottom animate-bob transition-transform duration-300 group outline-none hover:scale-105"
         >
           <Image

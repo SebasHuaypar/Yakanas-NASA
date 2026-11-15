@@ -11,6 +11,7 @@ import { hasSatellite } from "@/app/pantalla-3/lib/places";
 import { BACKDROP, CARD, fmt, H2_SMALL } from "@/app/pantalla-3/lib/ui";
 import type { FireDataset, FireZone } from "@/app/pantalla-3/lib/types";
 import type { Texts } from "@/app/pantalla-3/lib/i18n";
+import SectionDivider from "@/components/SectionDivider";
 import Select from "@/components/Select";
 import ExportPanel from "./ExportPanel";
 import FireCalendar, { type CalMode } from "./FireCalendar";
@@ -95,15 +96,17 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
   const shape = zoneId !== "PE" ? SHAPE_BY_ID[zoneId] : null;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-16 text-snow sm:pb-24 sm:px-6">
-      <div className="flex animate-rise flex-wrap items-end justify-between gap-4 pb-5 pt-12 [animation-delay:700ms] sm:pt-16">
+    <div className="mx-auto w-full max-w-6xl px-4 pb-16 text-snow sm:px-6 sm:pb-24">
+      <SectionDivider
+        index="01"
+        label={t.exKicker}
+        className="mb-10 sm:mb-14"
+      />
+      <div className="flex flex-wrap items-end justify-between gap-4 pb-5">
         <div>
-          <div className="text-xs uppercase tracking-[0.14em] text-snow/60">
-            {t.exKicker}
-          </div>
           <h2
             key={zoneId}
-            className="mt-1 animate-rise text-3xl leading-[1.1] tracking-tight sm:text-5xl"
+            className="animate-rise text-3xl leading-[1.1] tracking-tight sm:text-5xl"
           >
             {deptName(zoneId)}
           </h2>

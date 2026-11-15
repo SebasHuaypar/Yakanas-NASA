@@ -1,5 +1,8 @@
+"use client";
+
 import { hud } from "./fonts";
 import { PAIRS, PAIR_FIT, PAIR_TOTAL } from "./pairs";
+import { useLang } from "@/lib/lang";
 
 const W = 380;
 const H = 310;
@@ -19,7 +22,36 @@ const TICKS = [0, 10, 100, 1000, 10000];
  * VIIRS (vertical). Casi todos quedan por encima de la diagonal: VIIRS cuenta
  * más. La línea sólida es la relación que aprendemos y usamos para traducir.
  */
+const TXT = {
+  en: {
+    loc: "en",
+    aria: "Scatter of monthly pairs: MODIS count against VIIRS count. Most points sit above the equality diagonal.",
+    x: "Hotspots counted by MODIS (per month and region)",
+    y: "Hotspots counted by VIIRS",
+    same: "would count the same",
+    learned: "learned relationship",
+    cap1: "Each dot is one month of one region (",
+    cap2: " in total; here, a sample). Almost all sit above the dotted line: ",
+    capB: "VIIRS counts more",
+    cap3: ". The solid line is the rule we use to translate.",
+  },
+  es: {
+    loc: "es",
+    aria: "Dispersión de pares mensuales: conteo de MODIS contra conteo de VIIRS. La mayoría de los puntos queda por encima de la diagonal de igualdad.",
+    x: "Focos contados por MODIS (por mes y región)",
+    y: "Focos contados por VIIRS",
+    same: "contarían lo mismo",
+    learned: "relación aprendida",
+    cap1: "Cada punto es un mes de una región (",
+    cap2: " en total; aquí, una muestra). Casi todos quedan por encima de la línea punteada: ",
+    capB: "VIIRS cuenta más",
+    cap3: ". La línea sólida es la regla con la que traducimos.",
+  },
+};
+
 export default function PairsScatter() {
+  const [lang] = useLang();
+  const X = TXT[lang];
   const fitY = (lm: number) => Math.min(MAX, PAIR_FIT.a + PAIR_FIT.b * lm);
   const px = (lm: number) => r2(L + ((W - L - R) * lm) / MAX);
   const py = (lv: number) => r2(T + (H - T - B) * (1 - lv / MAX));
@@ -31,7 +63,7 @@ export default function PairsScatter() {
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label="Dispersión de pares mensuales: conteo de MODIS contra conteo de VIIRS. La mayoría de los puntos queda por encima de la diagonal de igualdad."
+        aria-label={X.aria}
         className="mt-3 block h-auto w-full"
       >
         <g className="fill-slate" fontSize="11">
@@ -60,13 +92,13 @@ export default function PairsScatter() {
             </g>
           ))}
           <text x={(L + W - R) / 2} y={H - 8} textAnchor="middle">
-            Focos contados por MODIS (por mes y región)
+            {X.x}
           </text>
           <text
             transform={`translate(12 ${(T + H - B) / 2}) rotate(-90)`}
             textAnchor="middle"
           >
-            Focos contados por VIIRS
+            {X.y}
           </text>
         </g>
 
@@ -97,7 +129,7 @@ export default function PairsScatter() {
           fontSize="11"
           className="fill-slate"
         >
-          contarían lo mismo
+          {X.same}
         </text>
         {/* relación aprendida */}
         <line
@@ -116,14 +148,15 @@ export default function PairsScatter() {
           fontWeight={600}
           className="fill-navy"
         >
-          relación aprendida
+          {X.learned}
         </text>
       </svg>
       <figcaption className="mt-3 text-sm text-slate">
-        Cada punto es un mes de una región ({PAIR_TOTAL.toLocaleString("es")} en
-        total; aquí, una muestra). Casi todos quedan por encima de la línea
-        punteada: <b className="text-ink">VIIRS cuenta más</b>. La línea sólida
-        es la regla con la que traducimos.
+        {X.cap1}
+        {PAIR_TOTAL.toLocaleString(X.loc)}
+        {X.cap2}
+        <b className="text-ink">{X.capB}</b>
+        {X.cap3}
       </figcaption>
     </figure>
   );

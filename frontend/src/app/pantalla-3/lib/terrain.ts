@@ -55,7 +55,27 @@ type Tile = { tx: number; ty: number; im: ImageBitmap };
  * Es determinista: un <img> decodificado de forma progresiva puede dejar franjas sin pintar
  * al dibujarlo en un lienzo; así, una descarga truncada falla y se reintenta.
  */
+const TILE_CACHE = "yakana-tiles-v1";
+
+/** Caché del navegador (Cache API): los tiles ya vistos cargan al instante, también en visitas futuras. */
+async function openTileCache(): Promise<Cache | null> {
+  try {
+    return typeof caches !== "undefined" ? await caches.open(TILE_CACHE) : null;
+  } catch {
+    return null;
+  }
+}
+
 async function loadImg(src: string): Promise<ImageBitmap> {
+  const store = await openTileCache();
+  const saved = await store?.match(src).catch(() => undefined);
+  if (saved) {
+    try {
+      return await createImageBitmap(await saved.blob());
+    } catch {
+      void store?.delete(src); // copia dañada: se vuelve a bajar
+    }
+  }
   let lastErr: unknown;
   for (let intento = 0; intento < 4; intento++) {
     // Tiempo límite por petición: sin él, una descarga que se cuelga bloquea toda la carga del mosaico.
@@ -64,7 +84,11 @@ async function loadImg(src: string): Promise<ImageBitmap> {
     try {
       const r = await fetch(intento ? `${src}${src.includes("?") ? "&" : "?"}r=${intento}` : src, { mode: "cors", signal: ctl.signal });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return await createImageBitmap(await r.blob());
+      const blob = await r.blob();
+      const im = await createImageBitmap(blob);
+      // Solo se guarda si decodificó bien (una descarga truncada no entra a la caché).
+      void store?.put(src, new Response(blob, { headers: { "Content-Type": blob.type } })).catch(() => {});
+      return im;
     } catch (e) {
       lastErr = e;
       await new Promise((ok) => setTimeout(ok, 250 * (intento + 1)));
@@ -126,7 +150,7 @@ export function getTerrain(shape: DeptShape, satellite: boolean, onProgress?: (t
   const p = buildTerrain(shape, satellite, onProgress);
   cache.set(key, p);
   p.catch(() => cache.delete(key)); // reintentar si falló la red
-  if (cache.size > 4) cache.delete(cache.keys().next().value as string);
+  if (cache.size > 8) cache.delete(cache.keys().next().value as string);
   return p;
 }
 
@@ -136,24 +160,26 @@ async function buildTerrain(shape: DeptShape, wantSatellite: boolean, onProgress
   const [e0, s0] = svgToLonLat(shape.bbox.x1, shape.bbox.y1);
   const bb = { west: w0 - pad, east: e0 + pad, north: n0 + pad, south: s0 - pad };
 
-  // El zoom más fino cuyo mosaico no pase de ~1100 px por lado.
+  // El zoom más fino cuyo mosaico no pase de ~760 px por lado (≈ 2× menos tiles que antes; el 3D se ve igual).
   const sizeAt = (z: number) => {
     const [x0, y0] = px(bb.west, bb.north, z),
       [x1, y1] = px(bb.east, bb.south, z);
     return Math.max(x1 - x0, y1 - y0);
   };
   let z = 10;
-  while (z > 5 && sizeAt(z) > 1100) z--;
+  while (z > 5 && sizeAt(z) > 760) z--;
 
   const [x0, y0] = px(bb.west, bb.north, z),
     [x1, y1] = px(bb.east, bb.south, z);
   const cols = Math.round(x1 - x0),
     rows = Math.round(y1 - y0);
 
-  // La imagen satelital (si se pide) se descarga EN PARALELO con la elevación; si falla se usa el verde.
+  // La imagen satelital (si se pide) se baja justo después de la elevación; si falla se usa el verde.
   let done = 0;
   const tick = () => onProgress?.(++done);
-  const satPromise: Promise<Painted | null> = wantSatellite ? satelliteTexture(shape, bb, z, tick).catch(() => null) : Promise.resolve(null);
+  let startSat: () => void = () => {};
+  const satGate = new Promise<void>((ok) => (startSat = ok));
+  const satPromise: Promise<Painted | null> = wantSatellite ? satGate.then(() => satelliteTexture(shape, bb, z, tick).catch(() => null)) : Promise.resolve(null);
 
   const cv = document.createElement("canvas");
   cv.width = cols;
@@ -167,6 +193,7 @@ async function buildTerrain(shape: DeptShape, wantSatellite: boolean, onProgress
     tick();
     return { tx, ty, im };
   });
+  startSat(); // el relieve ya llegó: ahora sí se baja la imagen satelital
   // Se pinta todo junto cuando ya están todas decodificadas (evita tiles sin pintar).
   for (const { tx, ty, im } of tiles) ctx.drawImage(im, tx * 256 - x0, ty * 256 - y0);
 
@@ -279,8 +306,8 @@ async function satelliteTexture(shape: DeptShape, bb: Terrain["bb"], zDem: numbe
     return Math.max(c - a, d - b);
   };
   let z = zDem;
-  // Suficiente para la vista 3D (≈700 px en pantalla, 2× en retina): 4× menos tiles que el siguiente zoom.
-  while (z < 14 && size(z + 1) <= 1800) z++;
+  // Suficiente para la vista 3D (≈700 px en pantalla): menos tiles que el siguiente zoom.
+  while (z < 14 && size(z + 1) <= 1400) z++;
   const [x0, y0] = px(bb.west, bb.north, z),
     [x1, y1] = px(bb.east, bb.south, z);
   const cv = document.createElement("canvas");

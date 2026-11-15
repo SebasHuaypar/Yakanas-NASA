@@ -1,96 +1,68 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { loadFireDataset } from "@/app/pantalla-3/lib/fire-data";
 import { TEXTS } from "@/app/pantalla-3/lib/i18n";
-import type { Lang } from "@/app/pantalla-3/lib/types";
+import { useLang } from "@/lib/lang";
+import Footer from "@/components/sections/Footer";
 import Explorer from "./Explorer";
 
-const LANG_KEY = "pantalla3-lang";
-
-/* El idioma vive en localStorage; se lee como store externo para evitar desajustes de hidratación. */
-const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((f) => f());
-const subscribe = (cb: () => void) => {
-  listeners.add(cb);
-  addEventListener("storage", cb);
-  return () => {
-    listeners.delete(cb);
-    removeEventListener("storage", cb);
-  };
-};
-const getLang = (): Lang => {
-  try {
-    return localStorage.getItem(LANG_KEY) === "en" ? "en" : "es";
-  } catch {
-    return "es";
-  }
-};
-
-/** Pantalla 3: explorador de datos de fuego (cabecera con idioma + explorador). */
+/** Pantalla 3: explorador de datos de fuego (cabecera con imagen + explorador). El idioma es global (navbar). */
 export default function FireScreen() {
-  const lang = useSyncExternalStore(subscribe, getLang, () => "es" as Lang);
+  const [lang] = useLang();
   // Datos simulados hoy; mañana vienen del backend (ver lib/fire-data.ts).
   const [ds] = useState(loadFireDataset);
   const t = TEXTS[lang];
 
-  useEffect(() => {
-    document.documentElement.lang = lang;
-  }, [lang]);
-
-  const pickLang = (l: Lang) => {
-    try {
-      localStorage.setItem(LANG_KEY, l);
-    } catch {}
-    emit();
-  };
-
   return (
-    <div className="flex-1 pt-14 text-snow">
-      {/* la navbar fija no tiene fondo: este degradado funde el contenido al pasar por debajo */}
-      <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-40 h-20 bg-linear-to-b from-ink via-ink/80 to-transparent" />
-      <header className="mx-auto flex max-w-3xl flex-col items-center px-5 pt-10 text-center sm:pt-14">
-        <p className="flex animate-rise items-center gap-2.5 text-[11px] text-snow/65 [animation-delay:100ms] sm:text-xs">
-          <Image src="/images/nasa-logo-white.svg" alt="NASA" width={110} height={92} unoptimized className="h-6 w-auto sm:h-7" />
-          <span>
-            {t.eyebrow} <span className="font-medium text-snow">NASA Space Apps Challenge 2026</span>
-          </span>
-        </p>
-        <h1 className="mt-5 animate-rise text-[1.9rem] leading-[1.1] tracking-tight text-snow [animation-delay:250ms] sm:text-5xl lg:text-6xl">
-          {t.heroA}
-          <span className="block text-snow/60">{t.heroB}</span>
-        </h1>
-        <p className="mt-5 max-w-[56ch] animate-rise text-sm leading-relaxed text-snow/80 [animation-delay:400ms] sm:mt-6 sm:text-lg">{t.heroLead}</p>
-        <div className="mt-6 flex animate-rise flex-wrap items-center justify-center gap-3 [animation-delay:550ms]">
-          <span className="text-xs tracking-[0.14em] text-snow/60">{t.sub}</span>
-          <span title={t.mockTip} className="cursor-help rounded-full border border-snow/20 bg-ink/40 px-3 py-1 text-[11px] font-medium text-snow/70 backdrop-blur-sm">
-            {t.mock}
-          </span>
-          <div role="group" aria-label="Idioma / Language" className="inline-flex overflow-hidden rounded-full border border-snow/20 bg-ink/40 backdrop-blur-sm">
-            {(["es", "en"] as const).map((l) => (
-              <button
-                key={l}
-                type="button"
-                aria-pressed={lang === l}
-                onClick={() => pickLang(l)}
-                className={`cursor-pointer px-3 py-1 text-[11px] font-medium transition-colors ${lang === l ? "bg-snow text-ink" : "text-snow/70 hover:text-snow"}`}
-              >
-                {l.toUpperCase()}
-              </button>
-            ))}
+    <div className="flex-1 text-snow">
+      <header className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-10 pt-28 sm:px-6 sm:pt-36 lg:grid-cols-[1.1fr_0.9fr] lg:gap-6 lg:pb-16">
+        <div className="text-center lg:text-left">
+          <h1 className="animate-rise text-4xl leading-[1.06] tracking-tight text-snow [animation-delay:100ms] sm:text-6xl lg:text-7xl">
+            {t.heroA}
+            <span className="block text-snow/50">{t.heroB}</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-[52ch] animate-rise text-base leading-relaxed text-snow/75 [animation-delay:250ms] sm:text-lg lg:mx-0">
+            {t.heroLead}
+          </p>
+          <div className="mt-9 animate-rise [animation-delay:400ms]">
+            <a
+              href="#explorer"
+              className="inline-flex items-center gap-2 rounded-full bg-snow px-7 py-3.5 text-sm font-medium text-ink transition hover:-translate-y-0.5 hover:opacity-90"
+            >
+              {t.heroCta}
+              <span aria-hidden="true">↓</span>
+            </a>
           </div>
+        </div>
+
+        {/* Mapa de relieve del Perú: se funde con el fondo (el negro del PNG desaparece con mix-blend) */}
+        <div className="relative mx-auto w-full max-w-[17rem] animate-fade-in [animation-delay:300ms] sm:max-w-sm lg:max-w-none">
+          <div
+            aria-hidden="true"
+            className="absolute inset-[-12%] -z-10 bg-[radial-gradient(ellipse_at_center,rgb(76_102_121/0.35),transparent_68%)]"
+          />
+          <Image
+            src="/explorador/hero-relief.webp"
+            alt={t.heroImgAlt}
+            width={900}
+            height={1220}
+            priority
+            sizes="(min-width: 1024px) 40vw, 320px"
+            className="mx-auto h-auto max-h-[34rem] w-auto object-contain mix-blend-screen [mask-image:linear-gradient(to_bottom,black_82%,transparent_100%)]"
+          />
         </div>
       </header>
 
-      <Explorer ds={ds} t={t} />
+      <div id="explorer" className="scroll-mt-24">
+        <Explorer ds={ds} t={t} />
+      </div>
 
-      <footer className="mt-4 border-t border-snow/10 text-xs text-snow/50">
-        <div className="mx-auto flex w-full max-w-7xl flex-wrap justify-between gap-4 px-4 py-5 sm:px-6">
-          <span>{t.foot}</span>
-          <span>Space Apps 2026 · Lima</span>
-        </div>
-      </footer>
+      <p className="mx-auto mt-4 w-full max-w-6xl px-4 pb-4 text-xs leading-relaxed text-snow/50 sm:px-6">
+        {t.foot}
+      </p>
+      <Footer />
     </div>
   );
 }

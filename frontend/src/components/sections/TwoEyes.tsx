@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Reveal from "@/components/Reveal";
 import SectionDivider from "@/components/SectionDivider";
+import { useLang } from "@/lib/lang";
 import { sceneBus } from "@/lib/scene-bus";
 import Card from "@/components/Card";
 
@@ -18,6 +19,47 @@ const BLOBS = [
   { x: 71, y: 30, r: 5.5 }, // incendio grande: lo ven los dos
   { x: 60, y: 75, r: 1.8 }, // incendio pequeño
 ];
+const TXT = {
+  en: {
+    label: "The satellites",
+    title: "Two eyes in the sky, with different sight",
+    lead: "MODIS has watched the Earth since 2000. VIIRS joined in 2012 with a sharper view. Tap one to see what it sees.",
+    modisNote: "The small fire gets diluted inside one huge square.",
+    viirsNote: "The same fire fills more of the square and lights it up.",
+    see: "See in the lens →",
+    since: "Since",
+    pixel: "Pixel",
+    inLens: "In the lens",
+    hotspot: "hotspot",
+    hotspots: "hotspots",
+    lensAria:
+      "Comparison of what MODIS and VIIRS see over the same fires. Drag the center line.",
+    zoom: "Zoom",
+    drag: "Drag the center line to compare",
+    stat: "VIIRS detects almost five times more hotspots than MODIS over Peru. Comparing them as they are would be unfair, so we merge them into a single record.",
+    dec: ".",
+  },
+  es: {
+    label: "Los satélites",
+    title: "Dos ojos en el cielo, con distinta vista",
+    lead: "MODIS vigila la Tierra desde el año 2000. VIIRS se sumó en 2012 con una mirada más nítida. Toca uno para ver qué ve.",
+    modisNote: "El incendio pequeño se diluye en un cuadro enorme.",
+    viirsNote: "El mismo incendio ocupa más del cuadro y se enciende.",
+    see: "{L.see}",
+    since: "Desde",
+    pixel: "Píxel",
+    inLens: "En la lupa",
+    hotspot: "foco",
+    hotspots: "focos",
+    lensAria:
+      "Comparación de lo que ven MODIS y VIIRS sobre los mismos incendios. Arrastra la línea central.",
+    zoom: "Zoom",
+    drag: "Arrastra la línea central para comparar",
+    stat: "VIIRS detecta casi cinco veces más focos que MODIS sobre el Perú. Compararlos tal cual sería injusto: por eso los unimos en un solo registro.",
+    dec: ",",
+  },
+};
+
 const FOCUS = 51 / N; // el zoom se centra en el incendio pequeño del medio
 
 type Cell = { terrain: number; fire: number };
@@ -67,10 +109,12 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
  */
 export default function TwoEyes() {
   const section = useRef<HTMLElement>(null);
+  const [lang] = useLang();
+  const L = TXT[lang];
+  const [statV, setStatV] = useState(4.8);
   const canvas = useRef<HTMLCanvasElement>(null);
   const lensBox = useRef<HTMLDivElement>(null);
   const statBox = useRef<HTMLDivElement>(null);
-  const statNum = useRef<HTMLSpanElement>(null);
   // Estado de la lupa: valores actuales (z, s) y objetivos (tz, ts); se suavizan en cada cuadro
   const view = useRef({
     z: 1,
@@ -294,8 +338,7 @@ export default function TwoEyes() {
         const step = (now: number) => {
           const k = Math.min(1, (now - t0) / 1600);
           const v = 4.8 * (1 - Math.pow(1 - k, 3));
-          if (statNum.current)
-            statNum.current.textContent = `×${v.toFixed(1).replace(".", ",")}`;
+          setStatV(v);
           if (k < 1) raf = requestAnimationFrame(step);
         };
         raf = requestAnimationFrame(step);
@@ -323,7 +366,7 @@ export default function TwoEyes() {
       since: "2000",
       pixel: "1 km",
       hits: grids.modisHits,
-      note: "El incendio pequeño se diluye en un cuadro enorme.",
+      note: L.modisNote,
     },
     {
       id: "viirs" as const,
@@ -331,7 +374,7 @@ export default function TwoEyes() {
       since: "2012",
       pixel: "375 m",
       hits: grids.viirsHits,
-      note: "El mismo incendio ocupa más del cuadro y se enciende.",
+      note: L.viirsNote,
     },
   ];
 
@@ -342,7 +385,7 @@ export default function TwoEyes() {
       className="relative px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32"
     >
       <div className="mx-auto w-full max-w-6xl">
-        <SectionDivider index="03" label="Los satélites" />
+        <SectionDivider index="03" label={L.label} />
 
         <div className="mt-10 grid gap-8 sm:mt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,33rem)] lg:gap-x-14 lg:gap-y-8">
           {/* Título y los dos satélites */}
@@ -353,11 +396,10 @@ export default function TwoEyes() {
                 className="absolute -inset-x-4 -inset-y-6 -z-10 bg-[radial-gradient(ellipse_at_left,rgb(12_9_10/0.65),transparent_75%)]"
               />
               <h2 className="text-[1.9rem] leading-tight tracking-tight sm:text-5xl">
-                Dos ojos en el cielo, con distinta vista
+                {L.title}
               </h2>
               <p className="mt-4 max-w-[46ch] text-sm leading-relaxed text-snow/75 sm:text-base">
-                MODIS vigila la Tierra desde el año 2000. VIIRS se sumó en 2012
-                con una mirada más nítida. Toca uno para ver qué ve.
+                {L.lead}
               </p>
             </Reveal>
 
@@ -382,21 +424,21 @@ export default function TwoEyes() {
                     </span>
                     <dl className="mt-4 grid grid-cols-3 gap-2 text-xs">
                       <div>
-                        <dt className="text-snow/45">Desde</dt>
+                        <dt className="text-snow/45">{L.since}</dt>
                         <dd className="mt-0.5 text-base font-medium text-snow">
                           {s.since}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-snow/45">Píxel</dt>
+                        <dt className="text-snow/45">{L.pixel}</dt>
                         <dd className="mt-0.5 text-base font-medium text-snow">
                           {s.pixel}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-snow/45">En la lupa</dt>
+                        <dt className="text-snow/45">{L.inLens}</dt>
                         <dd className="mt-0.5 text-base font-medium text-snow">
-                          {s.hits} {s.hits === 1 ? "foco" : "focos"}
+                          {s.hits} {s.hits === 1 ? L.hotspot : L.hotspots}
                         </dd>
                       </div>
                     </dl>
@@ -422,11 +464,11 @@ export default function TwoEyes() {
               </div>
               <canvas
                 ref={canvas}
-                aria-label="Comparación de lo que ven MODIS y VIIRS sobre los mismos incendios. Arrastra la línea central."
+                aria-label={L.lensAria}
                 className="mx-auto block aspect-square w-full max-w-[520px] cursor-ew-resize touch-pan-y rounded-full ring-1 ring-snow/30"
               />
               <label className="mx-auto mt-5 flex max-w-[360px] items-center gap-3 text-xs text-snow/65">
-                <span className="shrink-0">Zoom</span>
+                <span className="shrink-0">{L.zoom}</span>
                 <input
                   type="range"
                   min={1}
@@ -440,9 +482,7 @@ export default function TwoEyes() {
                   className="h-1 w-full cursor-pointer accent-[#F3F9FC]"
                 />
               </label>
-              <p className="mt-4 text-center text-xs text-snow/55">
-                Arrastra la línea central para comparar
-              </p>
+              <p className="mt-4 text-center text-xs text-snow/55">{L.drag}</p>
             </Card>
           </Reveal>
 
@@ -454,12 +494,10 @@ export default function TwoEyes() {
               className="flex items-center gap-5 p-5 sm:gap-7 sm:p-6"
             >
               <p className="font-heading text-5xl font-bold leading-none tracking-tight text-snow sm:text-7xl">
-                <span ref={statNum}>×4,8</span>
+                <span>×{statV.toFixed(1).replace(".", L.dec)}</span>
               </p>
               <p className="text-sm leading-relaxed text-snow/80 sm:text-base">
-                VIIRS detecta casi cinco veces más focos que MODIS sobre el
-                Perú. Compararlos tal cual sería injusto: por eso los unimos en
-                un solo registro.
+                {L.stat}
               </p>
             </Card>
           </Reveal>

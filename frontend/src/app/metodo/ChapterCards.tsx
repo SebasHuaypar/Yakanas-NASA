@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { useState, type ReactNode } from "react";
 import { hud, mont } from "./fonts";
+import { useLang } from "@/lib/lang";
 
 export type Chapter = {
   id: string;
@@ -26,6 +27,8 @@ const wordClass = `${mont} font-bold uppercase leading-[0.98] tracking-tight bg-
  * En móvil funcionan como acordeón.
  */
 export default function ChapterCards({ items }: { items: Chapter[] }) {
+  const [lang] = useLang();
+  const en = lang === "en";
   const [active, setActive] = useState<number | null>(null);
   const anyOpen = active !== null;
 
@@ -81,7 +84,7 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
                 <button
                   type="button"
                   onClick={() => setActive(i)}
-                  aria-label={`Abrir capítulo ${it.n}: ${it.title}`}
+                  aria-label={`${en ? "Open chapter" : "Abrir capítulo"} ${it.n}: ${it.title}`}
                   className="absolute inset-0 z-10 cursor-pointer rounded-4xl outline-none focus-visible:ring-2 focus-visible:ring-navy"
                 />
               )}
@@ -97,7 +100,7 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
                   <button
                     type="button"
                     onClick={() => setActive(null)}
-                    aria-label="Cerrar capítulo"
+                    aria-label={en ? "Close chapter" : "Cerrar capítulo"}
                     className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-navy/50 text-lg text-navy transition-colors hover:bg-navy hover:text-[#0C090A]"
                   >
                     ×

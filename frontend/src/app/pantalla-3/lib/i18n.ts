@@ -6,10 +6,12 @@ import type { Status } from "./stats";
 const es = {
   sub: "MODIS + VIIRS · 2003–2025",
   eyebrow: "Una solución para",
-  heroA: "Explora el fuego del Perú.",
-  heroB: "23 años de focos de calor, región por región.",
+  heroA: "Mira dónde arde el Perú,",
+  heroB: "y cuándo arde más.",
   heroLead:
-    "Elige una región en el mapa, un año y un mes. Verás cuántos focos de calor hubo, si fue un periodo inusual y cómo es el relieve de la zona donde ardió.",
+    "Veintitrés años de focos de calor satelitales, armonizados entre MODIS y VIIRS. Elige una región, un año y un mes para ver cómo se compara esa temporada y cómo es el relieve donde ardió.",
+  heroCta: "Empezar a explorar",
+  heroImgAlt: "Mapa de relieve del Perú",
   mock: "datos simulados",
   mockTip: "Esta pantalla muestra datos de ejemplo. Los reales llegan del backend cuando termine la armonización de MODIS y VIIRS.",
   exKicker: "Explora los datos · FIRMS 2003–2025",
@@ -87,10 +89,12 @@ export type Texts = typeof es;
 const en: Texts = {
   sub: "MODIS + VIIRS · 2003–2025",
   eyebrow: "A solution for",
-  heroA: "Explore Peru's fires.",
-  heroB: "23 years of hotspots, region by region.",
+  heroA: "See where Peru burns,",
+  heroB: "and when it burns most.",
   heroLead:
-    "Pick a region on the map, a year and a month. You'll see how many hotspots there were, whether it was an unusual period, and what the terrain looks like where it burned.",
+    "Twenty-three years of satellite fire hotspots, harmonized across MODIS and VIIRS. Pick a region, a year and a month to see how that season compares and what the land looks like where it burned.",
+  heroCta: "Start exploring",
+  heroImgAlt: "Relief map of Peru",
   mock: "simulated data",
   mockTip: "This screen shows sample data. The real series arrive from the backend once the MODIS and VIIRS harmonization is finished.",
   exKicker: "Explore the data · FIRMS 2003–2025",

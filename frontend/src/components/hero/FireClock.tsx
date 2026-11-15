@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MONTHS_ES, MONTHS_ES_SHORT, formatNumber } from "@/lib/fire-data";
+import {
+  MONTHS_EN,
+  MONTHS_EN_SHORT,
+  MONTHS_ES,
+  MONTHS_ES_SHORT,
+  formatNumber,
+} from "@/lib/fire-data";
+import { useLang } from "@/lib/lang";
 
 type Props = {
   /** 12 valores: focos promedio por mes en un año típico. */
@@ -23,12 +30,17 @@ type Props = {
  */
 export default function FireClock({
   data,
-  place = "el Perú",
+  place,
   size = 420,
   autoPlay = false,
   svgClassName = "max-w-[340px]",
   compact = false,
 }: Props) {
+  const [lang] = useLang();
+  const en = lang === "en";
+  const MONTHS = en ? MONTHS_EN : MONTHS_ES;
+  const MSHORT = en ? MONTHS_EN_SHORT : MONTHS_ES_SHORT;
+  const where = place ?? (en ? "Peru" : "el Perú");
   const max = Math.max(...data);
   const total = data.reduce((s, v) => s + v, 0);
   const peak = data.indexOf(max);
@@ -78,7 +90,11 @@ export default function FireClock({
       <svg
         viewBox={`0 0 ${size} ${size}`}
         role="group"
-        aria-label={`Reloj del fuego de ${place}: focos de calor por mes en un año típico`}
+        aria-label={
+          en
+            ? `Fire clock for ${where}: hotspots per month in a typical year`
+            : `Reloj del fuego de ${where}: focos de calor por mes en un año típico`
+        }
         className={`mx-auto block h-auto w-full ${svgClassName}`}
         onMouseLeave={() => autoPlay && setAuto(true)}
       >
@@ -101,7 +117,7 @@ export default function FireClock({
               d={w.d}
               role="button"
               tabIndex={0}
-              aria-label={`${MONTHS_ES[k]}: ${formatNumber(data[k])} focos`}
+              aria-label={`${MONTHS[k]}: ${formatNumber(data[k])} ${en ? "hotspots" : "focos"}`}
               aria-pressed={active === k}
               onMouseEnter={() => pick(k)}
               onFocus={() => pick(k)}
@@ -123,7 +139,7 @@ export default function FireClock({
               fillOpacity={active === k ? 1 : 0.55}
               className="pointer-events-none select-none font-medium"
             >
-              {MONTHS_ES_SHORT[k]}
+              {MSHORT[k]}
             </text>
           </g>
         ))}
@@ -147,7 +163,7 @@ export default function FireClock({
           fill="currentColor"
           fillOpacity={0.6}
         >
-          {compact ? MONTHS_ES[active] : "focos al año"}
+          {compact ? MONTHS[active] : en ? "hotspots a year" : "focos al año"}
         </text>
       </svg>
 
@@ -156,11 +172,28 @@ export default function FireClock({
           aria-live="polite"
           className="mt-3 min-h-[3.2em] text-center text-sm leading-relaxed text-snow/75"
         >
-          En un <b className="font-medium text-snow">{MONTHS_ES[active]}</b>{" "}
-          típico, los satélites detectan unos{" "}
-          <b className="font-medium text-snow">{formatNumber(data[active])}</b>{" "}
-          focos en {place}
-          {active === peak ? " — el mes con más fuego." : "."}
+          {en ? (
+            <>
+              In a typical{" "}
+              <b className="font-medium text-snow">{MONTHS[active]}</b>,
+              satellites detect about{" "}
+              <b className="font-medium text-snow">
+                {formatNumber(data[active])}
+              </b>{" "}
+              hotspots in {where}
+              {active === peak ? " — the month with the most fire." : "."}
+            </>
+          ) : (
+            <>
+              En un <b className="font-medium text-snow">{MONTHS[active]}</b>{" "}
+              típico, los satélites detectan unos{" "}
+              <b className="font-medium text-snow">
+                {formatNumber(data[active])}
+              </b>{" "}
+              focos en {where}
+              {active === peak ? " — el mes con más fuego." : "."}
+            </>
+          )}
         </p>
       )}
     </div>

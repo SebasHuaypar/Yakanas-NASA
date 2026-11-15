@@ -2,6 +2,7 @@
 
 import { hud } from "./fonts";
 import Card from "@/components/Card";
+import { useLang } from "@/lib/lang";
 
 export type TermKey = "viirs" | "a" | "d" | "b" | "modis";
 
@@ -13,6 +14,37 @@ type Props = {
   high: boolean;
   focus: TermKey | null;
   onFocus: (k: TermKey | null) => void;
+};
+
+const TXT = {
+  en: {
+    loc: "en",
+    title: "The model equation",
+    aria: "natural log of VIIRS plus one equals a plus d times high season plus b times natural log of MODIS plus one",
+    est: "estimated",
+    base: "base",
+    high: "high",
+    slope: "slope",
+    obs: "observed",
+    withVals: "With this region's values",
+    alta: "high",
+    ln1: "is the natural logarithm. ",
+    ln2: " is 1 in a high-season month and 0 if not. To go back to hotspots we apply the inverse operation: VIIRS = e",
+  },
+  es: {
+    loc: "es",
+    title: "La ecuación del modelo",
+    aria: "logaritmo natural de VIIRS más uno es igual a a más d por temporada alta más b por logaritmo natural de MODIS más uno",
+    est: "estimado",
+    base: "base",
+    high: "alta",
+    slope: "pendiente",
+    obs: "observado",
+    withVals: "Con los valores de esta región",
+    alta: "alta",
+    ln1: "es el logaritmo natural. ",
+    ln2: " vale 1 en un mes de temporada alta y 0 si no. Para volver a focos se aplica la operación inversa: VIIRS = e",
+  },
 };
 
 /** Un término de la ecuación: el símbolo grande y, debajo, qué significa. */
@@ -74,43 +106,43 @@ export default function Formula({
   focus,
   onFocus,
 }: Props) {
+  const [lang] = useLang();
+  const L = TXT[lang];
   const f = (n: number) => n.toFixed(2);
   return (
     <Card as="figure" className="rounded-3xl p-5 sm:p-6">
       <figcaption className={`text-[11px] text-slate ${hud}`}>
-        La ecuación del modelo
+        {L.title}
       </figcaption>
 
       <div
         role="math"
-        aria-label="logaritmo natural de VIIRS más uno es igual a a más d por temporada alta más b por logaritmo natural de MODIS más uno"
+        aria-label={L.aria}
         className="mt-4 flex flex-wrap items-start gap-x-0.5 gap-y-3"
       >
-        <Term k="viirs" focus={focus} onFocus={onFocus} label="estimado">
+        <Term k="viirs" focus={focus} onFocus={onFocus} label={L.est}>
           ln(VIIRS + 1)
         </Term>
         <Op>=</Op>
-        <Term k="a" focus={focus} onFocus={onFocus} label="base">
+        <Term k="a" focus={focus} onFocus={onFocus} label={L.base}>
           a
         </Term>
         <Op>+</Op>
-        <Term k="d" focus={focus} onFocus={onFocus} label="alta">
-          d · alta
+        <Term k="d" focus={focus} onFocus={onFocus} label={L.high}>
+          d · {L.alta}
         </Term>
         <Op>+</Op>
-        <Term k="b" focus={focus} onFocus={onFocus} label="pendiente">
+        <Term k="b" focus={focus} onFocus={onFocus} label={L.slope}>
           b
         </Term>
         <Op>×</Op>
-        <Term k="modis" focus={focus} onFocus={onFocus} label="observado">
+        <Term k="modis" focus={focus} onFocus={onFocus} label={L.obs}>
           ln(MODIS + 1)
         </Term>
       </div>
 
       <div className="mt-5 border-t border-slate/20 pt-4">
-        <p className={`text-[11px] text-slate ${hud}`}>
-          Con los valores de esta región
-        </p>
+        <p className={`text-[11px] text-slate ${hud}`}>{L.withVals}</p>
         <p
           aria-hidden
           className="mt-2 break-words font-mono text-sm leading-loose text-ink sm:text-base"
@@ -118,12 +150,12 @@ export default function Formula({
           ln(VIIRS + 1) = <span className="text-navy">{f(a)}</span> +{" "}
           <span className="text-navy">{f(d)}</span> × {high ? 1 : 0} +{" "}
           <span className="text-navy">{f(b)}</span> × ln(
-          {modis.toLocaleString("es")} + 1)
+          {modis.toLocaleString(L.loc)} + 1)
         </p>
         <p className="mt-2 text-xs text-slate">
-          <b className="text-ink">ln</b> es el logaritmo natural.{" "}
-          <b className="text-ink">alta</b> vale 1 en un mes de temporada alta y
-          0 si no. Para volver a focos se aplica la operación inversa: VIIRS = e
+          <b className="text-ink">ln</b> {L.ln1}
+          <b className="text-ink">{L.alta}</b>
+          {L.ln2}
           <sup>…</sup> − 1.
         </p>
       </div>

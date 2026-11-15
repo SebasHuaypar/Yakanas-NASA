@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Historia · Yakana's Team",
+  title: "Story · Yakana's Team",
   description:
-    "El Perú arde cada año: la historia de cómo unimos MODIS y VIIRS en un solo registro de focos de calor.",
+    "Peru burns every year: the story of how we merged MODIS and VIIRS into a single fire-hotspot record.",
 };
 
 import HeroScroll from "@/components/hero/HeroScroll";

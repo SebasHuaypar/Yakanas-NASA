@@ -1,11 +1,32 @@
+"use client";
+
 import { hud } from "./fonts";
+import { useLang } from "@/lib/lang";
 
 type Props = { years: number[]; mid: number[]; low: number[]; high: number[] };
 
-const nf = new Intl.NumberFormat("es");
+const TXT = {
+  en: {
+    loc: "en",
+    title: "Estimated years",
+    aria: (a: number, b: number) =>
+      `Likely range of hotspots for each estimated year, from ${a} to ${b}.`,
+    cap: "From 2012 on there is no bar: those years are measured directly with VIIRS, with no need to estimate.",
+  },
+  es: {
+    loc: "es",
+    title: "Años estimados",
+    aria: (a: number, b: number) =>
+      `Rango probable de focos para cada año estimado, de ${a} a ${b}.`,
+    cap: "Desde 2012 no hay barra: esos años se miden directo con VIIRS, sin necesidad de estimar.",
+  },
+};
 
 /** Rango probable de cada año estimado (sin VIIRS): barra = rango, punto = estimación. */
 export default function RangeYears({ years, mid, low, high }: Props) {
+  const [lang] = useLang();
+  const X = TXT[lang];
+  const nf = new Intl.NumberFormat(X.loc);
   const W = 640;
   const H = 230;
   const L = 52;
@@ -19,12 +40,12 @@ export default function RangeYears({ years, mid, low, high }: Props) {
   return (
     <figure className="m-0">
       <p className={`text-xs text-slate ${hud}`}>
-        Años estimados · {years[0]}–{years[years.length - 1]}
+        {X.title} · {years[0]}–{years[years.length - 1]}
       </p>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label={`Rango probable de focos para cada año estimado, de ${years[0]} a ${years[years.length - 1]}.`}
+        aria-label={X.aria(years[0], years[years.length - 1])}
         className="mt-3 block h-auto w-full"
       >
         <g className="fill-slate" fontSize="12">
@@ -64,10 +85,7 @@ export default function RangeYears({ years, mid, low, high }: Props) {
           </g>
         ))}
       </svg>
-      <figcaption className="mt-3 text-sm text-slate">
-        Desde 2012 no hay barra: esos años se miden directo con VIIRS, sin
-        necesidad de estimar.
-      </figcaption>
+      <figcaption className="mt-3 text-sm text-slate">{X.cap}</figcaption>
     </figure>
   );
 }

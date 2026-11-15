@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLang } from "@/lib/lang";
 import Reveal from "@/components/Reveal";
 import SectionDivider from "@/components/SectionDivider";
 import {
@@ -32,26 +33,60 @@ const line = (series: readonly number[], from = 0) =>
     .map((v, i) => `${i === 0 ? "M" : "L"}${f(x(from + i))},${f(y(v))}`)
     .join("");
 
-const STEPS = [
-  {
-    title: "Mismo mes, dos miradas",
-    text: "Entre 2012 y 2022 los dos satélites miraron el mismo país, pero contaron distinto: VIIRS suma casi cinco veces más focos.",
+const TXT = {
+  en: {
+    label: "The solution",
+    title: "We merge them into one fair record",
+    steps: [
+      {
+        title: "Same month, two views",
+        text: "Between 2012 and 2022 both satellites watched the same country but counted differently: VIIRS adds up almost five times more hotspots.",
+      },
+      {
+        title: "We learn the conversion",
+        text: "With those years we learn what one MODIS hotspot is worth on the VIIRS scale, region by region (Coast, Andes and Amazon) and by season.",
+      },
+      {
+        title: "One single record",
+        text: "That is how we carry VIIRS's sharp view back to 2003, with the uncertainty range for the years when only MODIS existed.",
+      },
+    ],
+    chips: [
+      { v: "0.98", l: "R² on months the model never saw" },
+      { v: "2012–19", l: "years to learn; 2020–22 to check" },
+      { v: "25", l: "departments with a 2003–2025 record" },
+    ],
+    aria: "Hotspots per month in Peru, 2003–2025: MODIS, VIIRS and the harmonized record",
+    both: "Both satellites active",
+    cta: "See the method",
   },
-  {
-    title: "Aprendemos la conversión",
-    text: "Con esos años aprendemos cuánto vale un foco de MODIS en la escala de VIIRS, región por región (Costa, Andes y Amazonía) y según la temporada.",
+  es: {
+    label: "La solución",
+    title: "Los unimos en un solo registro justo",
+    steps: [
+      {
+        title: "Mismo mes, dos miradas",
+        text: "Entre 2012 y 2022 los dos satélites miraron el mismo país, pero contaron distinto: VIIRS suma casi cinco veces más focos.",
+      },
+      {
+        title: "Aprendemos la conversión",
+        text: "Con esos años aprendemos cuánto vale un foco de MODIS en la escala de VIIRS, región por región (Costa, Andes y Amazonía) y según la temporada.",
+      },
+      {
+        title: "Un solo registro",
+        text: "Así llevamos la mirada nítida de VIIRS hasta 2003, con el rango de incertidumbre de los años en que solo había MODIS.",
+      },
+    ],
+    chips: [
+      { v: "0,98", l: "R² en meses que el modelo nunca vio" },
+      { v: "2012–19", l: "años para aprender; 2020–22 para comprobar" },
+      { v: "25", l: "departamentos con registro 2003–2025" },
+    ],
+    aria: "Focos de calor por mes en Perú, 2003–2025: MODIS, VIIRS y el registro armonizado",
+    both: "Ambos satélites activos",
+    cta: "Ver el método",
   },
-  {
-    title: "Un solo registro",
-    text: "Así llevamos la mirada nítida de VIIRS hasta 2003, con el rango de incertidumbre de los años en que solo había MODIS.",
-  },
-] as const;
-
-const CHIPS = [
-  { v: "0,98", l: "R² en meses que el modelo nunca vio" },
-  { v: "2012–19", l: "años para aprender; 2020–22 para comprobar" },
-  { v: "25", l: "departamentos con registro 2003–2025" },
-] as const;
+};
 
 /**
  * La solución: armonizar MODIS y VIIRS en un solo registro.
@@ -59,6 +94,8 @@ const CHIPS = [
  * usuario puede tocar cualquier paso para verlo. Cierra con las métricas y el botón.
  */
 export default function Harmonization() {
+  const [lang] = useLang();
+  const L = TXT[lang];
   const chart = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
   const [step, setStep] = useState(-1); // -1: aún no empieza
@@ -129,19 +166,15 @@ export default function Harmonization() {
       id="solucion"
       className="relative px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32"
     >
-      <SectionDivider
-        index="04"
-        label="La solución"
-        className="mb-10 sm:mb-14"
-      />
+      <SectionDivider index="04" label={L.label} className="mb-10 sm:mb-14" />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
         {/* Texto: título y los tres pasos del método */}
         <Reveal className="lg:w-[34%] lg:pt-6">
           <h2 className="text-[1.75rem] leading-tight tracking-tight sm:text-4xl lg:text-[2.6rem]">
-            Los unimos en un solo registro justo
+            {L.title}
           </h2>
           <ol className="mt-6 space-y-2 sm:mt-8">
-            {STEPS.map((s, i) => {
+            {L.steps.map((s, i) => {
               const active = step === i;
               return (
                 <li key={s.title}>
@@ -196,7 +229,7 @@ export default function Harmonization() {
               <svg
                 viewBox={`0 0 ${W} ${H}`}
                 role="img"
-                aria-label="Focos de calor por mes en Perú, 2003–2025: MODIS, VIIRS y el registro armonizado"
+                aria-label={L.aria}
                 className="block h-auto w-full text-snow"
               >
                 {/* Años en que ambos satélites estaban activos */}
@@ -223,7 +256,7 @@ export default function Harmonization() {
                     transition: "opacity 0.8s ease",
                   }}
                 >
-                  Ambos satélites activos
+                  {L.both}
                 </text>
 
                 {/* Ejes */}
@@ -333,7 +366,9 @@ export default function Harmonization() {
                     fillOpacity={0.9}
                   />
                   <text x={PAD.l + 96} y={PAD.t + 10} fillOpacity={0.75}>
-                    VIIRS · armonizado
+                    {lang === "en"
+                      ? "VIIRS · harmonized"
+                      : "VIIRS · armonizado"}
                   </text>
                 </g>
               </svg>
@@ -342,7 +377,7 @@ export default function Harmonization() {
 
           {/* Métricas y botón */}
           <Reveal delay={250} className="mt-4 grid grid-cols-3 gap-2 sm:gap-4">
-            {CHIPS.map((c) => (
+            {L.chips.map((c) => (
               <div
                 key={c.v}
                 className="rounded-2xl border border-snow/15 bg-snow/[0.05] px-3 py-3 text-center backdrop-blur-md sm:px-4"
@@ -364,7 +399,7 @@ export default function Harmonization() {
               href="/metodo"
               className="group inline-flex items-center gap-2 rounded-full bg-snow px-7 py-3.5 text-sm font-medium text-ink transition duration-300 hover:shadow-[0_0_32px_rgb(243_249_252/0.4)]"
             >
-              Ver el método
+              {L.cta}
               <span
                 aria-hidden="true"
                 className="transition-transform duration-300 group-hover:translate-x-1"

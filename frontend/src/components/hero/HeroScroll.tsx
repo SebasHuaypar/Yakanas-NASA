@@ -7,6 +7,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import Reveal from "@/components/Reveal";
 import SectionDivider from "@/components/SectionDivider";
 import { PERU_MONTHLY_MEAN } from "@/lib/fire-data";
+import { useLang } from "@/lib/lang";
 import { sceneBus } from "@/lib/scene-bus";
 import FireClock from "./FireClock";
 import type { SceneState } from "./GlobeScene";
@@ -14,6 +15,25 @@ import Card from "@/components/Card";
 
 // three.js solo corre en el navegador
 const GlobeScene = dynamic(() => import("./GlobeScene"), { ssr: false });
+
+const TXT = {
+  en: {
+    solution: "A solution for",
+    presents: "Presents",
+    phenomenon: "The phenomenon",
+    title: "Peru burns every year",
+    sub: "This is what a typical year looks like, month by month.",
+    cta: "Explore your region",
+  },
+  es: {
+    solution: "Una solución para",
+    presents: "Presenta",
+    phenomenon: "El fenómeno",
+    title: "El Perú arde cada año",
+    sub: "Así ocurre en un año típico, mes a mes.",
+    cta: "Explora tu región",
+  },
+};
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const smooth = (a: number, b: number, x: number) => {
@@ -29,6 +49,8 @@ const smooth = (a: number, b: number, x: number) => {
  *     siguientes secciones (children) pasan por encima como una landing normal.
  */
 export default function HeroScroll({ children }: { children?: ReactNode }) {
+  const [lang] = useLang();
+  const L = TXT[lang];
   const wrapper = useRef<HTMLDivElement>(null);
   const intro = useRef<HTMLDivElement>(null);
   const dim = useRef<HTMLDivElement>(null);
@@ -151,7 +173,7 @@ export default function HeroScroll({ children }: { children?: ReactNode }) {
                 className="h-6 w-auto sm:h-7"
               />
               <span>
-                Una solución para{" "}
+                {L.solution}{" "}
                 <span className="font-medium text-snow">
                   NASA Space Apps Challenge 2026
                 </span>
@@ -165,7 +187,7 @@ export default function HeroScroll({ children }: { children?: ReactNode }) {
               </h1>
 
               <p className="mt-4 animate-rise text-sm tracking-[0.14em] text-snow/65 [animation-delay:800ms] sm:mt-6 sm:text-base">
-                Presenta
+                {L.presents}
               </p>
             </div>
           </div>
@@ -179,24 +201,24 @@ export default function HeroScroll({ children }: { children?: ReactNode }) {
       >
         <SectionDivider
           index="01"
-          label="El fenómeno"
+          label={L.phenomenon}
           className="mb-10 sm:mb-14"
         />
         <div className="mx-auto grid w-full max-w-6xl items-center gap-10 text-left lg:grid-cols-2 lg:gap-16">
           {/* Texto: centrado verticalmente respecto al reloj, con el botón debajo */}
           <Reveal className="lg:order-2">
             <h2 className="text-[1.9rem] leading-tight tracking-tight text-snow sm:text-5xl">
-              El Perú arde cada año
+              {L.title}
             </h2>
             <p className="mt-3 max-w-[40ch] text-sm leading-relaxed text-snow/70 sm:text-base">
-              Así ocurre en un año típico, mes a mes.
+              {L.sub}
             </p>
 
             <Link
               href="/pantalla-3"
               className="group mt-7 inline-flex items-center gap-2 rounded-full bg-snow px-7 py-3.5 text-sm font-medium text-ink transition duration-300 hover:shadow-[0_0_32px_rgb(243_249_252/0.4)] sm:mt-9"
             >
-              Explora tu región
+              {L.cta}
               <span
                 aria-hidden="true"
                 className="transition-transform duration-300 group-hover:translate-x-1"

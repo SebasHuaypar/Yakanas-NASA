@@ -2,11 +2,18 @@
 
 import { animate, useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { useLang } from "@/lib/lang";
 
-function format(v: number, decimals: number, prefix: string, suffix: string) {
+function format(
+  v: number,
+  decimals: number,
+  prefix: string,
+  suffix: string,
+  loc: string,
+) {
   return (
     prefix +
-    v.toLocaleString("es", {
+    v.toLocaleString(loc, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     }) +
@@ -31,17 +38,19 @@ export default function CountUp({
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   const reduce = useReducedMotion();
-  const [text, setText] = useState(format(value, decimals, prefix, suffix));
+  const [lang] = useLang();
+  const [shown, setShown] = useState(value);
+  const text = format(shown, decimals, prefix, suffix, lang);
 
   useEffect(() => {
     if (!inView || reduce) return;
     const controls = animate(0, value, {
       duration: 1.6,
       ease: "easeOut",
-      onUpdate: (v) => setText(format(v, decimals, prefix, suffix)),
+      onUpdate: (v) => setShown(v),
     });
     return () => controls.stop();
-  }, [inView, reduce, value, decimals, prefix, suffix]);
+  }, [inView, reduce, value]);
 
   return (
     <span ref={ref} className={className}>
