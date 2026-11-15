@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Irish_Grover, Plus_Jakarta_Sans } from "next/font/google";
+import SiteFooter from "@/components/SiteFooter";
 import Navbar from "@/components/Navbar";
 import StarField from "@/components/StarField";
 import YakaLlama from "@/components/YakaLlama";
@@ -27,6 +28,7 @@ const irishGrover = Irish_Grover({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://yakanas.earth"),
   title: "Yakana’s Fire Intelligence",
   description: "Yakana’s Fire Intelligence · NASA Space Apps Challenge",
 };
@@ -42,6 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="nebula" aria-hidden="true" />
         <Navbar />
         <main className="flex flex-1 flex-col">{children}</main>
+        <SiteFooter />
         <YakaLlama />
       </body>
     </html>
