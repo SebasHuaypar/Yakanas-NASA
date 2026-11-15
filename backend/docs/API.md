@@ -314,6 +314,66 @@ How often the marked zones really burned. Each year from 2019 to 2025 was marked
 
 `aciertos`: of the zones marked at that frequency or more, the share that burned. `cobertura`: of the zones that burned, the share that was marked. With ±15 days: zones at 70 % or more burned 82 % of the time and held 28 % of the zones with fire; at 50 % or more, 69 % and 42 %.
 
+### `GET /prevention/model`
+
+The same prevention map as `/recurrence`, but each zone gets a **probability** from a logistic regression trained on the harmonized table instead of a count of years. It is an extra: `/recurrence` stays as it is and can be used as the fallback. The inputs are the recurrence over ±7, ±15 and ±30 days, the neighbouring zones, the past intensity and the time of year; the model learned the weights from 2016 to 2025.
+
+| Parameter | Default | Notes |
+|---|---|---|
+| `fecha` | tomorrow | Only the day of the calendar is used |
+| `region_id` | `PE` | Code or name |
+| `minimo` | `0.3` | Lowest probability to return, 0 to 1 |
+| `limit` | `5000` | 1 to 20000. Most likely first |
+
+```json
+{
+  "type": "FeatureCollection",
+  "tipo": "modelo", "modelo": "regresion_logistica",
+  "fecha": "2026-09-15", "ventana_dias": 15,
+  "region_id": "PE",
+  "anios_base": [2012, "…", 2025],
+  "entrenado_con": "2016-2025",
+  "zona_grados": 0.06,
+  "metodo": "…", "nota": "…",
+  "resumen": {"zonas_con_historia": 16036, "zonas_desde_30": 5262,
+              "zonas_desde_50": 3592, "zonas_desde_70": 2544},
+  "validacion": {"…": "same content as /prevention/model/info → validacion"},
+  "features": [
+    {"type": "Feature",
+     "geometry": {"type": "Point", "coordinates": [-69.9, -12.1]},
+     "properties": {"probabilidad": 0.965, "frecuencia": 1.0,
+                    "region_id": "PE-MDD", "name": "Madre de Dios"}}
+  ]
+}
+```
+
+`probabilidad` is the model's output for that zone and date; `frecuencia` is the plain recurrence (years with fire over years looked at), so both can be shown side by side. The first request after the server starts takes about 2 seconds; the next ones are instant. The model uses only complete years (`anios_base`), so the current year does not enter yet.
+
+Say it as "likelihood of fire here around this date, from past years", not as the chance of a particular wildfire. The probability is relative to this data set and the model uses no weather. It does not cover all the fire (see the validation). Show `nota` with the map. Answers `503` if `python run_modelo.py` has not been run.
+
+### `GET /prevention/model/info`
+
+What the model is and how well it does: variables, weights and the test with years it had not seen.
+
+```json
+{
+  "modelo": "regresion_logistica",
+  "variables": ["f_ventana", "f_ult3", "…"],
+  "entrenado_con": "2016-2025", "filas_de_entrenamiento": 1698408, "tasa_base": 0.1252,
+  "pesos": [{"variable": "f_anual", "peso": 0.455}, {"variable": "f_ancha", "peso": 0.438}],
+  "como_leer_los_pesos": "…",
+  "validacion": {
+    "prueba": "2019-2025", "pregunta": "…", "como_leer": {"…": "…"},
+    "regresion_logistica": {"auc": 0.893, "precision_media": 0.637, "brier": 0.07,
+                            "aciertos_zonas_marcadas": 0.837, "cobertura_zonas_marcadas": 0.284},
+    "recurrencia":         {"auc": 0.857, "precision_media": 0.571, "brier": 0.073,
+                            "aciertos_zonas_marcadas": 0.83, "cobertura_zonas_marcadas": 0.281}
+  }
+}
+```
+
+`pesos` are on standardized variables: positive raises the probability, negative lowers it, larger absolute value weighs more. `f_ventana`, `f_ancha` and `f_angosta` are the same recurrence with different windows and share their weight. In the test the model ranks zones better than the recurrence (average precision 0.64 against 0.57) but marks them right about as often (84 % against 83 %); it covers 28 % of the fire either way.
+
 ### `GET /export/mensual.csv`
 
 The monthly series as a CSV download (`calendario.csv`).

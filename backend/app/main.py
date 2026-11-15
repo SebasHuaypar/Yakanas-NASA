@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from app.config import OUT
-from app import calendario, eventos, pronostico, query, recurrencia
+from app import calendario, eventos, modelo, pronostico, query, recurrencia
 from app.schemas import Health
 
 app = FastAPI(title="Calendario del Fuego", version="0.1.0")
@@ -234,3 +234,20 @@ def recurrence_validation(ventana: int = 15):
     if ventana not in recurrencia.VENTANAS:
         raise HTTPException(status_code=400, detail="ventana debe ser 7, 15 o 30")
     return recurrencia.validacion(ventana)
+
+
+@app.get("/prevention/model")
+def prevention_model(
+    fecha: date | None = None,
+    region_id: str = "PE",
+    minimo: float = Query(0.3, ge=0, le=1),
+    limit: int = Query(5000, ge=1, le=20000),
+):
+    """Probabilidad de fuego por zona alrededor de esa fecha (regresión logística entrenada)."""
+    return modelo.mapa(fecha, region_id, minimo, limit)
+
+
+@app.get("/prevention/model/info")
+def prevention_model_info():
+    """Variables, pesos del modelo y su validación con años que no vio, frente a la recurrencia."""
+    return modelo.info()

@@ -1,0 +1,117 @@
+{
+ "pregunta": "¿Habrá fuego en una zona de 0,06° a 15 días o menos de una fecha, el año siguiente?",
+ "entrada": "data/processed/fire_cell_day.parquet (tabla armonizada por celda y día)",
+ "prueba": "2019-2025, cada año con modelos entrenados solo con años anteriores",
+ "revision_de_repetidos": {
+  "filas": 823513,
+  "comparten_celda_y_dia": 991,
+  "por_limite_entre_departamentos": 991,
+  "nota": "Una celda en el límite entre dos departamentos tiene una fila por departamento, con sus propios hotspots: no es doble conteo. Al pasar a zonas se cuentan una vez."
+ },
+ "variables": [
+  "f_ventana",
+  "f_ult3",
+  "ardio_ult",
+  "anios_desde",
+  "f_vecinos",
+  "f_ancha",
+  "f_angosta",
+  "f_anual",
+  "log_hs",
+  "sin",
+  "cos"
+ ],
+ "como_leer": {
+  "precision_media": "Qué tan bien ordena las zonas de más a menos probable; 1 es perfecto.",
+  "auc": "Probabilidad de que una zona que ardió quede por encima de una que no.",
+  "brier": "Error de la probabilidad; más bajo es mejor.",
+  "aciertos_zonas_marcadas": "De las zonas marcadas, cuántas ardieron. Todos los métodos marcan el mismo número: las que la recurrencia da con 7 de 10 años o más.",
+  "cobertura_zonas_marcadas": "De las zonas que ardieron, cuántas estaban marcadas."
+ },
+ "filas_de_entrenamiento_y_prueba": 1698408,
+ "metodos": {
+  "recurrencia": {
+   "auc": 0.857,
+   "precision_media": 0.571,
+   "brier": 0.073,
+   "aciertos_zonas_marcadas": 0.83,
+   "cobertura_zonas_marcadas": 0.281
+  },
+  "regresion_lineal": {
+   "auc": 0.894,
+   "precision_media": 0.639,
+   "brier": 0.07,
+   "aciertos_zonas_marcadas": 0.84,
+   "cobertura_zonas_marcadas": 0.285
+  },
+  "regresion_logistica": {
+   "auc": 0.893,
+   "precision_media": 0.637,
+   "brier": 0.07,
+   "aciertos_zonas_marcadas": 0.837,
+   "cobertura_zonas_marcadas": 0.284
+  },
+  "bosque_aleatorio": {
+   "auc": 0.894,
+   "precision_media": 0.641,
+   "brier": 0.07,
+   "aciertos_zonas_marcadas": 0.844,
+   "cobertura_zonas_marcadas": 0.286
+  },
+  "gradient_boosting": {
+   "auc": 0.893,
+   "precision_media": 0.638,
+   "brier": 0.07,
+   "aciertos_zonas_marcadas": 0.841,
+   "cobertura_zonas_marcadas": 0.285
+  }
+ },
+ "precision_media_por_anio": {
+  "recurrencia": {
+   "2019": 0.543,
+   "2020": 0.578,
+   "2021": 0.565,
+   "2022": 0.574,
+   "2023": 0.613,
+   "2024": 0.609,
+   "2025": 0.515
+  },
+  "regresion_lineal": {
+   "2019": 0.632,
+   "2020": 0.664,
+   "2021": 0.636,
+   "2022": 0.64,
+   "2023": 0.674,
+   "2024": 0.667,
+   "2025": 0.561
+  },
+  "regresion_logistica": {
+   "2019": 0.633,
+   "2020": 0.665,
+   "2021": 0.633,
+   "2022": 0.639,
+   "2023": 0.671,
+   "2024": 0.666,
+   "2025": 0.554
+  },
+  "bosque_aleatorio": {
+   "2019": 0.629,
+   "2020": 0.668,
+   "2021": 0.637,
+   "2022": 0.643,
+   "2023": 0.677,
+   "2024": 0.669,
+   "2025": 0.565
+  },
+  "gradient_boosting": {
+   "2019": 0.624,
+   "2020": 0.665,
+   "2021": 0.632,
+   "2022": 0.641,
+   "2023": 0.671,
+   "2024": 0.669,
+   "2025": 0.561
+  }
+ },
+ "mejor_por_precision_media": "bosque_aleatorio"
+}

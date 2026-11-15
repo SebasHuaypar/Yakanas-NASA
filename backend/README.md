@@ -52,6 +52,8 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/python run_serie.py      # once: builds the series, 2003 to today
 .venv/bin/python run_week.py       # optional: downloads the recent week
+.venv/bin/pip install -r requirements-modelo.txt
+.venv/bin/python run_modelo.py     # optional, ~3 min: trains the prevention model (/prevention/model)
 .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
@@ -95,6 +97,8 @@ The story page tells the story with a 2003–2025 series embedded in the file an
 The Parquet files are not in git, so a fresh clone has to run this command once before the series routes answer. For 2026, January–July come from the standard product and August onward from the near-real-time feed.
 
 **`run_week.py`** downloads the last 8 days (MODIS, NOAA-20, NOAA-21) and writes `data/parquet/fires.parquet` plus `week.json`, `heat.json`, `series.json` and `meta.json` in `data/out/`. The recent-week routes, the radar and the checker page read it. Without it they fall back to the 7–14 November 2026 week kept in `data/out/fires.csv`.
+
+**`run_modelo.py`** is a second pipeline that reads `fire_cell_day.parquet` (the harmonized output), compares five prediction methods on 2019–2025 with years they had not seen, trains the logistic regression and writes `data/out/modelos_comparacion.json` and `data/out/modelo_logistico.json`. It does not touch the harmonization. See `docs/modelo-predictivo.md`.
 
 ## Tests
 
