@@ -59,10 +59,13 @@ export const TEAM: Member[] = [
     name: "Cesar Correa",
     role: { en: "Backend and data", es: "Backend y datos" },
     contribution: {
-      en: "Built the data pipeline, the MODIS–VIIRS harmonization model and the API that feeds the whole website.",
-      es: "Construyó el pipeline de datos, el modelo de armonización MODIS–VIIRS y la API que alimenta toda la web.",
+      en: "Built the API that serves the historical series, the live week and the prevention model, and configured and deployed it on Google Cloud so the whole platform can query it.",
+      es: "Construyó la API que sirve la serie histórica, la semana en vivo y el modelo de prevención, y la configuró y desplegó en Google Cloud para que toda la plataforma pueda consultarla.",
     },
-    links: { github: "https://github.com/C-M-Cesar" },
+    links: {
+      github: "https://github.com/C-M-Cesar",
+      linkedin: "https://www.linkedin.com/in/cesar-abrahan-correa-mullisaca-5b398939b",
+    },
   },
   {
     id: "isabel",
