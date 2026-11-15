@@ -54,7 +54,7 @@ export const TXT = {
     // section 1
     s1: "My places",
     s1t: "Is there fire near the places you care about?",
-    s1d: "Save your home, your farm or your family's town. We compare them with the latest satellite detections and with the history of that exact area. Your places stay in this browser only.",
+    s1d: "Add your home, your farm or your family's town. We check it against the latest satellite detections and its fire history, and you can send the result to your family. Your places stay on this device.",
     addTitle: "Add a place",
     useLocation: "Use my location",
     locating: "Locating…",
@@ -71,7 +71,8 @@ export const TXT = {
     placeNameDefault: "My place",
     save: "Save place",
     maxPlaces: "You can save up to 8 places.",
-    empty: "No places yet. Add one above and we will check it for you.",
+    empty:
+      "No places yet. Add one above, for example your family's farm or your home, and we will check it for you.",
     mapAria:
       "Map of Peru with fire detections, active events and your places. Tap to choose a point.",
     legendFires: "Detections",
@@ -121,7 +122,7 @@ export const TXT = {
     // section 2
     s2: "Field view",
     s2t: "Coordinates and situation for firefighters and authorities",
-    s2d: "Detections chained into events (≤ 1.2 km and ≤ 1 day apart). Copy coordinates, filter by department, download the data or print a one-page situation report.",
+    s2d: "Active fires seen by satellites, grouped by event. Copy the coordinates into your GPS, radio or chat, filter by department, download the data or print a one-page report.",
     dept: "Department",
     allDepts: "All departments",
     sortBy: "Sort by",
@@ -219,7 +220,7 @@ export const TXT = {
     km: "km",
     s1: "Mis lugares",
     s1t: "¿Hay fuego cerca de los lugares que te importan?",
-    s1d: "Guarda tu casa, tu chacra o el pueblo de tu familia. Los comparamos con las últimas detecciones satelitales y con la historia de esa misma zona. Tus lugares se quedan solo en este navegador.",
+    s1d: "Agrega tu casa, tu chacra o el pueblo de tu familia. Lo revisamos con las últimas detecciones satelitales y su historia de fuego, y puedes enviar el resultado a tu familia. Tus lugares se quedan en este dispositivo.",
     addTitle: "Agregar un lugar",
     useLocation: "Usar mi ubicación",
     locating: "Ubicando…",
@@ -237,7 +238,8 @@ export const TXT = {
     placeNameDefault: "Mi lugar",
     save: "Guardar lugar",
     maxPlaces: "Puedes guardar hasta 8 lugares.",
-    empty: "Aún no hay lugares. Agrega uno arriba y lo revisamos por ti.",
+    empty:
+      "Aún no hay lugares. Agrega uno arriba, por ejemplo la chacra de tu familia o tu casa, y lo revisamos por ti.",
     mapAria:
       "Mapa del Perú con detecciones de fuego, eventos activos y tus lugares. Toca para elegir un punto.",
     legendFires: "Detecciones",
@@ -285,7 +287,7 @@ export const TXT = {
       `Vigilancia de fuego · ${o.name}\n${o.status}\n${o.nearest}\n${o.season}\nUbicación: ${o.coords}\nDatos satelitales (NASA FIRMS) ${o.when}.\nFuente: ${o.url}`,
     s2: "Vista de campo",
     s2t: "Coordenadas y situación para bomberos y autoridades",
-    s2d: "Detecciones encadenadas en eventos (≤ 1,2 km y ≤ 1 día de distancia). Copia coordenadas, filtra por departamento, descarga los datos o imprime un parte de situación de una página.",
+    s2d: "Fuegos activos vistos por satélite, agrupados por evento. Copia las coordenadas a tu GPS, radio o chat, filtra por departamento, descarga los datos o imprime un parte de una página.",
     dept: "Departamento",
     allDepts: "Todos los departamentos",
     sortBy: "Ordenar por",

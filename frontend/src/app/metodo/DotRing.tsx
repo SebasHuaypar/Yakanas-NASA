@@ -39,7 +39,7 @@ export default function DotRing({
               cx={cx}
               cy={cy}
               r={2.6}
-              className="fill-(--accent)"
+              className="fill-amber"
               initial={{ opacity: 0.2 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}

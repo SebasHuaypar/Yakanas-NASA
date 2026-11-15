@@ -8,7 +8,8 @@ export default function Logo({ className = "" }: { className?: string }) {
       aria-label="Yakana's Team - inicio"
       className={`shrink-0 whitespace-nowrap font-logo text-base leading-none text-snow sm:text-xl ${className}`}
     >
-      Yakana&apos;s<span className="hidden min-[400px]:inline"> Team</span>
+      Y<span className="hidden min-[460px]:inline">akana&apos;s</span>
+      <span className="hidden min-[560px]:inline"> Team</span>
     </Link>
   );
 }

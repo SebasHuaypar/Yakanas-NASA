@@ -139,7 +139,8 @@ export default function HarmonizeChart() {
   const jumpRaw = raw[i12] / raw[i11];
   const jumpHarm = harmonized[i12] / harmonized[i11];
 
-  const lineColor = `color-mix(in oklab, var(--navy) ${pct}%, var(--slate))`;
+  // «Como llegan» en brasa; al corregir pasa a blanco (la escala única)
+  const lineColor = `color-mix(in oklab, var(--navy) ${pct}%, var(--color-ember))`;
   const ai = years.indexOf(active);
   const stepNow = pct <= 15 ? 0 : pct >= 85 ? 2 : 1;
 

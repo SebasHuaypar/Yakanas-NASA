@@ -8,6 +8,7 @@ import Logo from "./Logo";
 
 const links = [
   { href: "/historia", label: { en: "Story", es: "Historia" } },
+  { href: "/equipo", label: { en: "Team", es: "Equipo" } },
   { href: "/metodo", label: { en: "Method", es: "Método" } },
   { href: "/explorador", label: { en: "Explorer", es: "Explorador" } },
   { href: "/prevencion", label: { en: "Prevention", es: "Prevención" } },

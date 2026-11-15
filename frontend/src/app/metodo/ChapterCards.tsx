@@ -105,7 +105,7 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
                   >
                     ×
                   </button>
-                  <p className={`text-xs text-slate ${hud}`}>
+                  <p className={`text-xs text-amber ${hud}`}>
                     {it.n} · {it.word}
                   </p>
                   <h3 className="mt-2 max-w-xl text-2xl tracking-tight">
@@ -144,7 +144,7 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
                 </span>
                 <span
                   aria-hidden
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-navy/50 text-lg text-navy"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-amber/60 text-lg text-amber"
                 >
                   {open ? "−" : "+"}
                 </span>

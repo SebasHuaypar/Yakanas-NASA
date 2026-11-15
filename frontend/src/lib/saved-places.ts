@@ -51,17 +51,13 @@ const subscribe = (cb: () => void) => {
   };
 };
 
-export const addPlace = (p: Omit<SavedPlace, "id">) => {
+/** Guarda un lugar y devuelve su id (o null si ya hay el máximo). */
+export const addPlace = (p: Omit<SavedPlace, "id">): string | null => {
   const list = read();
-  if (list.length >= MAX_PLACES) return false;
-  write([
-    ...list,
-    {
-      ...p,
-      id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    },
-  ]);
-  return true;
+  if (list.length >= MAX_PLACES) return null;
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  write([...list, { ...p, id }]);
+  return id;
 };
 
 export const removePlace = (id: string) =>

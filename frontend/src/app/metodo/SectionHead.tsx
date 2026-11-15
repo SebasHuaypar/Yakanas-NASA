@@ -25,7 +25,7 @@ export default function SectionHead({
     <>
       <Reveal>
         <div className="mb-10 flex items-center gap-4 text-[11px] uppercase tracking-[0.22em] text-slate sm:mb-14">
-          <span className="font-heading font-bold text-navy">{index}</span>
+          <span className="font-heading font-bold text-amber">{index}</span>
           <span>{label}</span>
           <span
             aria-hidden

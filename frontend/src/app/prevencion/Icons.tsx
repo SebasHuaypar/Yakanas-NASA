@@ -25,3 +25,27 @@ export const PinIcon = ({ className = "" }: P) => (
     <circle cx="12" cy="10" r="2.6" />
   </svg>
 );
+
+export const HomeIcon = ({ className = "" }: P) => (
+  <svg {...base} className={className}>
+    <path d="M3 11.5 12 4l9 7.5" />
+    <path d="M5.5 10v9.5h13V10" />
+    <path d="M10 19.5v-5h4v5" />
+  </svg>
+);
+
+export const CalendarIcon = ({ className = "" }: P) => (
+  <svg {...base} className={className}>
+    <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
+    <path d="M3.5 10h17M8 3v4M16 3v4" />
+    <path d="M8 14.5h2M12 14.5h2M8 17.5h2" />
+  </svg>
+);
+
+export const SirenIcon = ({ className = "" }: P) => (
+  <svg {...base} className={className}>
+    <path d="M7 18v-6a5 5 0 0 1 10 0v6" />
+    <path d="M5 18h14v2.5H5z" />
+    <path d="M12 3v2M4.5 6l1.4 1.4M19.5 6l-1.4 1.4" />
+  </svg>
+);

@@ -357,7 +357,7 @@ export default function MetodoView() {
                       L.stat1,
                       <span
                         key="a"
-                        className="text-navy/45 line-through decoration-2"
+                        className="text-ember line-through decoration-2"
                       >
                         <CountUp value={jumpRaw} decimals={1} prefix="×" />
                       </span>,
