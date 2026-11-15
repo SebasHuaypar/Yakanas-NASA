@@ -29,8 +29,9 @@ jobs:
             echo "Sin cambios en los datos."
             exit 0
           fi
-          git config user.name "yakana-data-bot"
-          git config user.email "actions@users.noreply.github.com"
+          # Vercel (plan Hobby) solo despliega commits de una cuenta suya: se firma con la del dueño del repo.
+          git config user.name "${{ github.repository_owner }}"
+          git config user.email "${{ github.repository_owner_id }}+${{ github.repository_owner }}@users.noreply.github.com"
           git add frontend/src/lib/api-snapshot.ts
           git commit -m "chore(data): actualizacion diaria de la copia de datos desde la API"
           git push origin main
