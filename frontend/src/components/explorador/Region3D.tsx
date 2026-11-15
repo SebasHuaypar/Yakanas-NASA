@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { samplePoints, type DeptShape } from "@/app/pantalla-3/lib/geo";
-import { PLACES_BY_DEPT, hasSatellite } from "@/app/pantalla-3/lib/places";
-import type { TerrainScene } from "@/app/pantalla-3/lib/terrain-scene";
-import type { Texts } from "@/app/pantalla-3/lib/i18n";
-import { BACKDROP, fmt } from "@/app/pantalla-3/lib/ui";
+import { samplePoints, type DeptShape } from "@/app/explorador/lib/geo";
+import { PLACES_BY_DEPT, hasSatellite } from "@/app/explorador/lib/places";
+import type { TerrainScene } from "@/app/explorador/lib/terrain-scene";
+import type { Texts } from "@/app/explorador/lib/i18n";
+import { BACKDROP, fmt } from "@/app/explorador/lib/ui";
 
 type Status = "loading" | "ready" | "error";
 
@@ -47,8 +47,8 @@ export default function Region3D({
     (async () => {
       try {
         const [{ getTerrain }, { createTerrainScene }] = await Promise.all([
-          import("@/app/pantalla-3/lib/terrain"),
-          import("@/app/pantalla-3/lib/terrain-scene"),
+          import("@/app/explorador/lib/terrain"),
+          import("@/app/explorador/lib/terrain-scene"),
         ]);
         const terrain = await getTerrain(shape, wantsSatellite, (n) => !cancelled && setTiles(n));
         if (cancelled || !host.current) return;

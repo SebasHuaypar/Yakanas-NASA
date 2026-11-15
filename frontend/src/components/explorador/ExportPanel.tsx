@@ -1,8 +1,8 @@
 "use client";
 
 import { apiUrl } from "@/lib/api";
-import type { FireZone } from "@/app/pantalla-3/lib/types";
-import type { Texts } from "@/app/pantalla-3/lib/i18n";
+import type { FireZone } from "@/app/explorador/lib/types";
+import type { Texts } from "@/app/explorador/lib/i18n";
 
 /** Descarga la serie mensual de la región elegida: es un enlace directo al CSV de la API (sin fetch). */
 export default function ExportPanel({ zone, t }: { zone: FireZone; t: Texts }) {

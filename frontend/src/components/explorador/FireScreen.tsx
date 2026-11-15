@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { loadFireDataset } from "@/app/pantalla-3/lib/fire-data";
-import { TEXTS } from "@/app/pantalla-3/lib/i18n";
-import type { FireDataset } from "@/app/pantalla-3/lib/types";
+import { loadFireDataset } from "@/app/explorador/lib/fire-data";
+import { TEXTS } from "@/app/explorador/lib/i18n";
+import type { FireDataset } from "@/app/explorador/lib/types";
 import { useLang } from "@/lib/lang";
 import Footer from "@/components/sections/Footer";
 import Explorer from "./Explorer";

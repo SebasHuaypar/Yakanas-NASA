@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import { memo, useMemo } from "react";
-import { DEPT_SHAPES, RELIEF_VIEWBOX, RELIEF_VIEWBOX_STR } from "@/app/pantalla-3/lib/geo";
-import { heatColor, periodValue } from "@/app/pantalla-3/lib/stats";
-import { BACKDROP, dec, fmt } from "@/app/pantalla-3/lib/ui";
-import relief from "@/app/pantalla-3/assets/peru-relief.webp";
-import type { FireDataset } from "@/app/pantalla-3/lib/types";
-import type { Texts } from "@/app/pantalla-3/lib/i18n";
+import { DEPT_SHAPES, RELIEF_VIEWBOX, RELIEF_VIEWBOX_STR } from "@/app/explorador/lib/geo";
+import { heatColor, periodValue } from "@/app/explorador/lib/stats";
+import { BACKDROP, dec, fmt } from "@/app/explorador/lib/ui";
+import relief from "@/app/explorador/assets/peru-relief.webp";
+import type { FireDataset } from "@/app/explorador/lib/types";
+import type { Texts } from "@/app/explorador/lib/i18n";
 import type { TooltipApi } from "./Tooltip";
 
 export type MapMode = "dep" | "heat";

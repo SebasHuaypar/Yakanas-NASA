@@ -9,10 +9,10 @@ import {
   calColor,
   monthPercentile,
   quant,
-} from "@/app/pantalla-3/lib/stats";
-import { fmt } from "@/app/pantalla-3/lib/ui";
-import type { FireDataset, FireZone } from "@/app/pantalla-3/lib/types";
-import type { Texts } from "@/app/pantalla-3/lib/i18n";
+} from "@/app/explorador/lib/stats";
+import { fmt } from "@/app/explorador/lib/ui";
+import type { FireDataset, FireZone } from "@/app/explorador/lib/types";
+import type { Texts } from "@/app/explorador/lib/i18n";
 import type { TooltipApi } from "./Tooltip";
 
 export type CalMode = "n" | "a";

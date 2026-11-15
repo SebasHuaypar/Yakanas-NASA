@@ -7,10 +7,10 @@ import {
   quant,
   statusOf,
   type Status,
-} from "@/app/pantalla-3/lib/stats";
-import { fmt } from "@/app/pantalla-3/lib/ui";
-import type { FireDataset, FireZone } from "@/app/pantalla-3/lib/types";
-import type { Texts } from "@/app/pantalla-3/lib/i18n";
+} from "@/app/explorador/lib/stats";
+import { fmt } from "@/app/explorador/lib/ui";
+import type { FireDataset, FireZone } from "@/app/explorador/lib/types";
+import type { Texts } from "@/app/explorador/lib/i18n";
 
 const PILL: Record<Status, string> = {
   high: "bg-snow text-ink",

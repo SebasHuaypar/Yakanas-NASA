@@ -522,7 +522,7 @@ export default function MetodoView() {
                 </h2>
                 <div className="mt-12 flex flex-wrap justify-center gap-3 text-sm font-medium">
                   <Link
-                    href="/pantalla-3"
+                    href="/explorador"
                     className="rounded-full bg-(--accent) px-7 py-3.5 text-[#0C090A] transition hover:-translate-y-0.5 hover:opacity-90"
                   >
                     {L.explore}

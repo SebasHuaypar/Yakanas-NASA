@@ -26,7 +26,7 @@ frontend/src/
 │  ├─ globals.css         # paleta, tokens de Tailwind, .bg-stars y .nebula
 │  ├─ historia/page.tsx   # pantalla 1: la historia (landing con globo 3D)
 │  ├─ metodo/             # pantalla 2: el método (page.tsx = metadata, View.tsx = contenido)
-│  ├─ pantalla-3/page.tsx # pantalla 3: explorador del fuego
+│  ├─ explorador/page.tsx # pantalla 3: explorador del fuego
 │  └─ alertas/            # pantalla 4: alertas, fuegos activos y pronóstico
 ├─ components/
 │  ├─ StarField.tsx       # estrellas tenues en canvas, fijas detrás de todo

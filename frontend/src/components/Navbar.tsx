@@ -9,7 +9,7 @@ import Logo from "./Logo";
 const links = [
   { href: "/historia", label: { en: "Story", es: "Historia" } },
   { href: "/metodo", label: { en: "Method", es: "Método" } },
-  { href: "/pantalla-3", label: { en: "Explorer", es: "Explorador" } },
+  { href: "/explorador", label: { en: "Explorer", es: "Explorador" } },
   { href: "/alertas", label: { en: "Alerts", es: "Alertas" } },
 ];
 

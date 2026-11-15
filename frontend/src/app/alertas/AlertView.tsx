@@ -15,6 +15,11 @@ import {
   type ApiHealth,
   type ApiRegion,
 } from "@/lib/api";
+import {
+  DEPT_SHAPES,
+  PERU_VIEWBOX_STR,
+  type DeptShape,
+} from "@/app/explorador/lib/geo";
 import { useLang, type Lang } from "@/lib/lang";
 import { useApi } from "@/lib/use-api";
 
@@ -126,6 +131,9 @@ const TXT = {
       "The alert rule has not yet been tested against past years. Use it to know where to look, and confirm with local authorities.",
     ],
     csv: "Download the series (CSV)",
+    legend: "Map legend",
+    aboveCount: (n: number) =>
+      `${n} department${n === 1 ? "" : "s"} above usual`,
     trendLabel: "trend",
     ruleText:
       "unusual: above the 90th percentile. high: above the 75th. low: below the 25th. With fewer than 10 hotspots nothing is marked high or unusual.",
@@ -213,6 +221,9 @@ const TXT = {
       "La regla de alerta aún no se probó contra años pasados. Úsala para saber dónde mirar y confirma con las autoridades locales.",
     ],
     csv: "Descargar la serie (CSV)",
+    legend: "Leyenda del mapa",
+    aboveCount: (n: number) =>
+      `${n} departamento${n === 1 ? "" : "s"} sobre lo habitual`,
     trendLabel: "tendencia",
     ruleText: "",
     alertNote: "",
@@ -306,21 +317,124 @@ function Loading({
 /* ------------------------------------------------------------------ */
 /* 01 · Semana                                                         */
 /* ------------------------------------------------------------------ */
-/** Una fila: el valor de los últimos días frente al rango habitual (p25–p75) y la mediana. */
-function AlertRow({ row, t, lang }: { row: ApiAlertRow; t: T; lang: Lang }) {
+/** Silueta de un departamento coloreada según su estado. */
+const FILL: Record<string, number> = {
+  inusual: 1,
+  alto: 0.8,
+  normal: 0.22,
+  bajo: 0.08,
+};
+
+function Silhouette({
+  shape,
+  estado,
+  className = "",
+}: {
+  shape: DeptShape;
+  estado: string;
+  className?: string;
+}) {
+  const { x0, y0, x1, y1 } = shape.bbox;
+  const pad = Math.max(x1 - x0, y1 - y0) * 0.08;
+  return (
+    <svg
+      viewBox={`${x0 - pad} ${y0 - pad} ${x1 - x0 + pad * 2} ${y1 - y0 + pad * 2}`}
+      aria-hidden="true"
+      className={`block ${className}`}
+    >
+      <path
+        d={shape.d}
+        fill="#F3F9FC"
+        fillOpacity={FILL[estado] ?? 0.22}
+        stroke="#F3F9FC"
+        strokeOpacity={0.7}
+        strokeWidth={1.2}
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
+/** Mapa del Perú con cada departamento pintado según su estado esta semana. */
+function PeruStateMap({ rows }: { rows: ApiAlertRow[] }) {
+  const state = new Map(rows.map((r) => [r.region_id, r.estado]));
+  return (
+    <svg
+      viewBox={PERU_VIEWBOX_STR}
+      aria-hidden="true"
+      className="block h-full w-auto"
+    >
+      {DEPT_SHAPES.map((s) => (
+        <path
+          key={s.id}
+          d={s.d}
+          fill="#F3F9FC"
+          fillOpacity={FILL[state.get(s.id) ?? "normal"] ?? 0.22}
+          stroke="#F3F9FC"
+          strokeOpacity={0.55}
+          strokeWidth={0.8}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      ))}
+    </svg>
+  );
+}
+
+/** Tarjeta de un departamento: silueta, estado, focos y el valor de los últimos días frente a lo habitual. */
+function DeptCard({
+  row,
+  shape,
+  t,
+  lang,
+}: {
+  row: ApiAlertRow;
+  shape?: DeptShape;
+  t: T;
+  lang: Lang;
+}) {
   const max = Math.max(row.hs, row.p90, row.p75, 1) * 1.08;
   const at = (v: number) => `${Math.min(100, (v / max) * 100)}%`;
-  const ratio = row.pct_mediana;
+  const hot = ORDER[row.estado] >= 2;
   return (
-    <li className="grid items-center gap-x-4 gap-y-1.5 py-3 sm:grid-cols-[11rem_minmax(0,1fr)_9rem]">
-      <div className="flex items-center justify-between gap-3 sm:block">
-        <p className="font-medium text-snow">{deptName(row.name, lang)}</p>
-        <StatePill estado={row.estado} t={t} />
+    <Card
+      as="li"
+      className={`flex h-full flex-col gap-3 rounded-3xl p-4 sm:p-5 ${hot ? "border-snow/50!" : ""}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold leading-tight text-snow">
+            {deptName(row.name, lang)}
+          </p>
+          <div className="mt-1.5">
+            <StatePill estado={row.estado} t={t} />
+          </div>
+        </div>
+        {shape && (
+          <Silhouette
+            shape={shape}
+            estado={row.estado}
+            className="h-14 w-14 shrink-0 sm:h-20 sm:w-20"
+          />
+        )}
+      </div>
+      <div>
+        <p className="font-heading text-3xl font-bold leading-none tabular-nums text-snow">
+          {nfmt(row.hs, t.loc)}{" "}
+          <span className="text-sm font-normal text-snow/60">{t.hs}</span>
+        </p>
+        <p className="mt-1 text-xs text-snow/55">
+          {t.typical} {nfmt(row.median, t.loc)}
+          {row.pct_mediana != null && row.pct_mediana > 0
+            ? ` · ${nfmt(row.pct_mediana, t.loc)} %`
+            : ""}
+        </p>
       </div>
       <div
         role="img"
         aria-label={`${deptName(row.name, lang)}: ${nfmt(row.hs, t.loc)} ${t.hs}, ${t.typical} ${nfmt(row.median, t.loc)}`}
-        className="relative h-3 rounded-full bg-snow/[0.07]"
+        className="relative mt-auto h-2.5 rounded-full bg-snow/[0.07]"
       >
         <div
           className="absolute inset-y-0 rounded-full bg-snow/20"
@@ -341,17 +455,7 @@ function AlertRow({ row, t, lang }: { row: ApiAlertRow; t: T; lang: Lang }) {
           }}
         />
       </div>
-      <p className="text-right text-sm tabular-nums text-snow/70 sm:text-left">
-        <b className="text-base font-semibold text-snow">
-          {nfmt(row.hs, t.loc)}
-        </b>{" "}
-        {t.hs}
-        <span className="block text-xs text-snow/50">
-          {t.typical} {nfmt(row.median, t.loc)}
-          {ratio != null && ratio > 0 ? ` · ${nfmt(ratio, t.loc)} %` : ""}
-        </span>
-      </p>
-    </li>
+    </Card>
   );
 }
 
@@ -373,6 +477,11 @@ function WeekSection({
     );
     return onlyHigh ? all.filter((r) => ORDER[r.estado] >= 2) : all;
   }, [alert.data, onlyHigh]);
+  const shapes = useMemo(() => new Map(DEPT_SHAPES.map((s) => [s.id, s])), []);
+  const d = alert.data;
+  const aboveCount = d
+    ? d.departamentos.filter((r) => ORDER[r.estado] >= 2).length
+    : 0;
 
   return (
     <section className="relative px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32">
@@ -388,76 +497,112 @@ function WeekSection({
         </Reveal>
 
         <Reveal delay={100} className="mt-10">
-          {!alert.data ? (
+          {!d ? (
             <Loading t={t} error={alert.error} onRetry={alert.reload} />
           ) : (
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
-              <Card className="h-fit rounded-3xl p-6">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-snow/60">
-                  {t.country}
-                </p>
-                <p className="mt-3 font-heading text-6xl font-bold leading-none tabular-nums text-snow">
-                  {nfmt(alert.data.peru.hs, t.loc)}
-                </p>
-                <p className="mt-2 text-sm text-snow/65">
-                  {t.hs} · {dayLabel(alert.data.desde, t.loc)} –{" "}
-                  {dayLabel(alert.data.hasta, t.loc)}
-                </p>
-                <div className="mt-4 flex items-center gap-3 text-sm text-snow/70">
-                  <StatePill estado={alert.data.peru.estado} t={t} />
-                  <span>
-                    {alert.data.peru.pct_mediana != null
-                      ? `${nfmt(alert.data.peru.pct_mediana, t.loc)} % ${t.vsTypical}`
-                      : ""}
-                  </span>
+            <>
+              <Card className="grid items-center gap-6 rounded-[2rem] p-6 sm:p-8 md:grid-cols-[minmax(0,1fr)_auto] md:gap-10">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-snow/60">
+                    {t.country}
+                  </p>
+                  <p className="mt-3 font-heading text-6xl font-bold leading-none tabular-nums text-snow sm:text-8xl">
+                    {nfmt(d.peru.hs, t.loc)}
+                  </p>
+                  <p className="mt-2 text-sm text-snow/65">
+                    {t.hs} · {dayLabel(d.desde, t.loc)} –{" "}
+                    {dayLabel(d.hasta, t.loc)}
+                  </p>
+                  <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-snow/75">
+                    <StatePill estado={d.peru.estado} t={t} />
+                    {d.peru.pct_mediana != null && (
+                      <span>
+                        {nfmt(d.peru.pct_mediana, t.loc)} % {t.vsTypical}
+                      </span>
+                    )}
+                    <span className="text-snow/55">
+                      · {t.aboveCount(aboveCount)}
+                    </span>
+                  </div>
+                  <p className="mt-6 max-w-xl border-t border-snow/10 pt-4 text-xs leading-relaxed text-snow/55">
+                    <b className="text-snow/75">{t.rule}:</b>{" "}
+                    {lang === "en" ? t.ruleText : d.regla}
+                  </p>
                 </div>
-                <p className="mt-5 border-t border-snow/10 pt-4 text-xs leading-relaxed text-snow/55">
-                  <b className="text-snow/75">{t.rule}:</b>{" "}
-                  {lang === "en" ? t.ruleText : alert.data.regla}
-                </p>
+                <div className="mx-auto flex flex-col items-center gap-3 md:mx-0">
+                  <div className="h-56 sm:h-72">
+                    <PeruStateMap rows={d.departamentos} />
+                  </div>
+                  <ul
+                    className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-snow/60"
+                    aria-label={t.legend}
+                  >
+                    {(["inusual", "alto", "normal", "bajo"] as const).map(
+                      (k) => (
+                        <li
+                          key={k}
+                          className="inline-flex items-center gap-1.5"
+                        >
+                          <i
+                            className="inline-block size-2.5 rounded-sm border border-snow/50"
+                            style={{
+                              background: `rgb(243 249 252 / ${FILL[k]})`,
+                            }}
+                          />
+                          {t.state[k]}
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </div>
               </Card>
 
-              <Card className="rounded-3xl p-5 sm:p-7">
-                <div
-                  role="group"
-                  aria-label={t.s1}
-                  className="mb-2 flex flex-wrap gap-2"
-                >
-                  {[
-                    [false, t.all],
-                    [true, t.onlyHigh],
-                  ].map(([v, label]) => (
-                    <button
-                      key={String(v)}
-                      type="button"
-                      aria-pressed={onlyHigh === v}
-                      onClick={() => setOnlyHigh(v as boolean)}
-                      className={`cursor-pointer rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
-                        onlyHigh === v
-                          ? "border-snow bg-snow text-ink"
-                          : "border-snow/25 text-snow/75 hover:border-snow/60"
-                      }`}
-                    >
-                      {label as string}
-                    </button>
+              <div
+                role="group"
+                aria-label={t.s1}
+                className="mb-4 mt-8 flex flex-wrap gap-2"
+              >
+                {[
+                  [false, t.all],
+                  [true, t.onlyHigh],
+                ].map(([v, label]) => (
+                  <button
+                    key={String(v)}
+                    type="button"
+                    aria-pressed={onlyHigh === v}
+                    onClick={() => setOnlyHigh(v as boolean)}
+                    className={`cursor-pointer rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
+                      onlyHigh === v
+                        ? "border-snow bg-snow text-ink"
+                        : "border-snow/25 text-snow/75 hover:border-snow/60"
+                    }`}
+                  >
+                    {label as string}
+                  </button>
+                ))}
+              </div>
+
+              {rows.length ? (
+                <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                  {rows.map((r) => (
+                    <DeptCard
+                      key={r.region_id}
+                      row={r}
+                      shape={shapes.get(r.region_id)}
+                      t={t}
+                      lang={lang}
+                    />
                   ))}
-                </div>
-                {rows.length ? (
-                  <ul className="divide-y divide-snow/10">
-                    {rows.map((r) => (
-                      <AlertRow key={r.region_id} row={r} t={t} lang={lang} />
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="py-10 text-center text-sm text-snow/60">
-                    {t.none}
-                  </p>
-                )}
-                <p className="mt-3 border-t border-snow/10 pt-3 text-xs leading-relaxed text-snow/50">
-                  {lang === "en" ? t.alertNote : alert.data.nota}
+                </ul>
+              ) : (
+                <p className="py-10 text-center text-sm text-snow/60">
+                  {t.none}
                 </p>
-              </Card>
-            </div>
+              )}
+              <p className="mt-5 max-w-3xl text-xs leading-relaxed text-snow/50">
+                {lang === "en" ? t.alertNote : d.nota}
+              </p>
+            </>
           )}
         </Reveal>
       </div>
@@ -896,7 +1041,7 @@ export default function AlertView() {
                 {t.csv}
               </a>
               <a
-                href="/pantalla-3"
+                href="/explorador"
                 className="rounded-full border border-snow/40 px-7 py-3.5 text-snow transition-colors hover:border-snow"
               >
                 {t.explore}

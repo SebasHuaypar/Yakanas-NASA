@@ -5,12 +5,12 @@ import {
   DEPT_SHAPES,
   PERU_VIEWBOX_STR,
   SHAPE_BY_ID,
-} from "@/app/pantalla-3/lib/geo";
-import { periodValue } from "@/app/pantalla-3/lib/stats";
-import { hasSatellite } from "@/app/pantalla-3/lib/places";
-import { BACKDROP, CARD, fmt, H2_SMALL } from "@/app/pantalla-3/lib/ui";
-import type { FireDataset, FireZone } from "@/app/pantalla-3/lib/types";
-import type { Texts } from "@/app/pantalla-3/lib/i18n";
+} from "@/app/explorador/lib/geo";
+import { periodValue } from "@/app/explorador/lib/stats";
+import { hasSatellite } from "@/app/explorador/lib/places";
+import { BACKDROP, CARD, fmt, H2_SMALL } from "@/app/explorador/lib/ui";
+import type { FireDataset, FireZone } from "@/app/explorador/lib/types";
+import type { Texts } from "@/app/explorador/lib/i18n";
 import SectionDivider from "@/components/SectionDivider";
 import Select from "@/components/Select";
 import ExportPanel from "./ExportPanel";
@@ -59,8 +59,8 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
     hoverTimer.current = setTimeout(() => {
       const shape = SHAPE_BY_ID[id];
       if (!shape) return;
-      void import("@/app/pantalla-3/lib/terrain-scene");
-      void import("@/app/pantalla-3/lib/terrain")
+      void import("@/app/explorador/lib/terrain-scene");
+      void import("@/app/explorador/lib/terrain")
         .then((m) => m.getTerrain(shape, hasSatellite(id)))
         .catch(() => {});
     }, 300);
@@ -74,10 +74,10 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
   // (contexto WebGL + shaders), para que el primer clic no lo espere.
   useEffect(() => {
     const id = setTimeout(() => {
-      void import("@/app/pantalla-3/lib/terrain-scene").then((m) =>
+      void import("@/app/explorador/lib/terrain-scene").then((m) =>
         m.warmUpRenderer(),
       );
-      void import("@/app/pantalla-3/lib/terrain");
+      void import("@/app/explorador/lib/terrain");
     }, 1200);
     return () => clearTimeout(id);
   }, []);
