@@ -203,8 +203,17 @@ export function ModeloContent() {
       <div className="grid gap-5 md:grid-cols-2">
         <Card className="rounded-3xl p-5">
           <p className={`text-[11px] text-slate ${hud}`}>{L.rule}</p>
-          <code className="mt-2 block break-words font-mono text-[13px] leading-relaxed text-ink">
-            log(VIIRS+1) = a + d·alta + b·log(MODIS+1)
+          <code className="mt-3 block break-words font-mono text-sm leading-loose text-ink">
+            <span className="font-semibold text-[#FF6B2C]">log(VIIRS+1)</span>
+            <span className="text-slate"> = </span>
+            <span className="text-navy">a</span>
+            <span className="text-slate"> + </span>
+            <span className="text-navy">d</span>
+            <span className="text-slate">·</span>
+            {lang === "en" ? "high" : "alta"}
+            <span className="text-slate"> + </span>
+            <span className="text-navy">b</span>
+            <span className="text-slate">·</span>log(MODIS+1)
           </code>
           <p className="mt-3 text-xs text-slate">
             {L.ruleTxt1}
@@ -222,7 +231,7 @@ export function ModeloContent() {
               {L.ex2}
               <b className="text-ink">{modis}</b>
               {L.ex3}
-              <b className="font-heading text-2xl text-navy">
+              <b className="font-heading text-2xl text-[#FF6B2C]">
                 ≈ {est.toLocaleString(L.loc)}
               </b>
               {L.ex4}
