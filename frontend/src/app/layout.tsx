@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Irish_Grover, Plus_Jakarta_Sans } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import StarField from "@/components/StarField";
+import YakaLlama from "@/components/YakaLlama";
 import "./globals.css";
 
 const inter = Inter({
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="nebula" aria-hidden="true" />
         <Navbar />
         <main className="flex flex-1 flex-col">{children}</main>
+        <YakaLlama />
       </body>
     </html>
   );

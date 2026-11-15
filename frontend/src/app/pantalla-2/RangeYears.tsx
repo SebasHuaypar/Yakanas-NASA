@@ -18,7 +18,9 @@ export default function RangeYears({ years, mid, low, high }: Props) {
   const ticks = [0, max / 2, max];
   return (
     <figure className="m-0">
-      <p className={`text-xs text-slate ${hud}`}>Años estimados · {years[0]}–{years[years.length - 1]}</p>
+      <p className={`text-xs text-slate ${hud}`}>
+        Años estimados · {years[0]}–{years[years.length - 1]}
+      </p>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"
@@ -28,17 +30,34 @@ export default function RangeYears({ years, mid, low, high }: Props) {
         <g className="fill-slate" fontSize="12">
           {ticks.map((t) => (
             <g key={t}>
-              <line x1={L} x2={W - 6} y1={y(t)} y2={y(t)} className="stroke-slate/20" />
-              <text x={L - 8} y={y(t) + 4} textAnchor="end">{t === 0 ? "0" : `${Math.round(t / 1000)} mil`}</text>
+              <line
+                x1={L}
+                x2={W - 6}
+                y1={y(t)}
+                y2={y(t)}
+                className="stroke-slate/20"
+              />
+              <text x={L - 8} y={y(t) + 4} textAnchor="end">
+                {t === 0 ? "0" : `${Math.round(t / 1000)} mil`}
+              </text>
             </g>
           ))}
           {years.map((yr, i) => (
-            <text key={yr} x={x(i)} y={H - 8} textAnchor="middle">{yr}</text>
+            <text key={yr} x={x(i)} y={H - 8} textAnchor="middle">
+              {yr}
+            </text>
           ))}
         </g>
         {years.map((yr, i) => (
           <g key={yr}>
-            <rect x={x(i) - 9} y={y(high[i])} width={18} height={Math.max(2, y(low[i]) - y(high[i]))} rx={9} className="fill-navy/25">
+            <rect
+              x={x(i) - 9}
+              y={y(high[i])}
+              width={18}
+              height={Math.max(2, y(low[i]) - y(high[i]))}
+              rx={9}
+              className="fill-navy/25"
+            >
               <title>{`${yr}: ${nf.format(low[i])} – ${nf.format(high[i])}`}</title>
             </rect>
             <circle cx={x(i)} cy={y(mid[i])} r={5} className="fill-navy" />
@@ -46,7 +65,8 @@ export default function RangeYears({ years, mid, low, high }: Props) {
         ))}
       </svg>
       <figcaption className="mt-3 text-sm text-slate">
-        Desde 2012 no hay barra: esos años se miden directo con VIIRS, sin necesidad de estimar.
+        Desde 2012 no hay barra: esos años se miden directo con VIIRS, sin
+        necesidad de estimar.
       </figcaption>
     </figure>
   );

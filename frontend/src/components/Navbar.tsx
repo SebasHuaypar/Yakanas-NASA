@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 import Logo from "./Logo";
 
 const links = [
-  { href: "/pantalla-1", label: "Pantalla 1" },
-  { href: "/pantalla-2", label: "Pantalla 2" },
-  { href: "/pantalla-3", label: "Pantalla 3" },
+  { href: "/pantalla-1", label: "Historia" },
+  { href: "/pantalla-2", label: "Método" },
+  { href: "/pantalla-3", label: "Explorador" },
 ];
 
 /**

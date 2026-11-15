@@ -39,10 +39,16 @@ export default function OverlapTimeline() {
           className="absolute top-14 h-7 origin-left motion-reduce:transform-none! rounded-full bg-navy"
           style={{ left: `${pos(2012)}%`, width: `${pos(2025) - pos(2012)}%` }}
         />
-        <span className="absolute top-4 pl-3 text-xs font-medium text-[#0C090A]" style={{ left: `${pos(2000)}%` }}>
+        <span
+          className="absolute top-4 pl-3 text-xs font-medium text-[#0C090A]"
+          style={{ left: `${pos(2000)}%` }}
+        >
           MODIS
         </span>
-        <span className="absolute top-15 pl-3 text-xs font-medium text-[#0C090A]" style={{ left: `${pos(2012)}%` }}>
+        <span
+          className="absolute top-15 pl-3 text-xs font-medium text-[#0C090A]"
+          style={{ left: `${pos(2012)}%` }}
+        >
           VIIRS
         </span>
 
@@ -57,8 +63,8 @@ export default function OverlapTimeline() {
         ))}
       </div>
       <figcaption className="mt-3 text-sm text-slate">
-        La franja punteada es donde ambos satélites miraron a la vez: ahí aprendemos cómo se
-        traduce uno en otro.
+        La franja punteada es donde ambos satélites miraron a la vez: ahí
+        aprendemos cómo se traduce uno en otro.
       </figcaption>
     </figure>
   );

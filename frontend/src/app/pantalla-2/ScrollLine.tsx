@@ -8,7 +8,11 @@ import { motion, useScroll, useSpring, useTransform } from "motion/react";
  */
 export default function ScrollLine() {
   const { scrollYProgress } = useScroll();
-  const smooth = useSpring(scrollYProgress, { stiffness: 90, damping: 30, mass: 0.4 });
+  const smooth = useSpring(scrollYProgress, {
+    stiffness: 90,
+    damping: 30,
+    mass: 0.4,
+  });
   const drawn = useTransform(smooth, [0, 1], [0.04, 1]);
 
   return (

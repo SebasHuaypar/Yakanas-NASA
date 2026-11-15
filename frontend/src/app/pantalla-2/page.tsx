@@ -13,7 +13,6 @@ import DotRing from "./DotRing";
 import HarmonizeChart from "./HarmonizeChart";
 import Reveal from "./Reveal";
 import ScrollLine from "./ScrollLine";
-import ScrollProgress from "./ScrollProgress";
 import Image from "next/image";
 import Footer from "@/components/sections/Footer";
 import SectionHead from "./SectionHead";
@@ -135,7 +134,6 @@ export default function Pantalla2() {
         style={tones}
         className={`${mono.variable} ${montserrat.variable} relative text-ink leading-relaxed [&_h1]:text-navy [&_h2]:text-navy [&_h3]:text-navy [&_h4]:text-navy`}
       >
-        <ScrollProgress />
         <ScrollLine />
         <div className="relative z-10">
           {/* HERO: centrado, mucho aire; el fondo lo pone el layout global */}
@@ -321,7 +319,7 @@ export default function Pantalla2() {
                   ],
                 ].map(([v, big, label, d], i) => (
                   <Reveal key={String(label)} delay={i * 0.1}>
-                    <div className="h-full rounded-3xl border border-slate/25 bg-snow px-6 py-12 backdrop-blur-md">
+                    <div className="glass-dark h-full rounded-3xl px-6 py-12">
                       <DotRing value={Number(v)} label={String(label)}>
                         {big}
                       </DotRing>

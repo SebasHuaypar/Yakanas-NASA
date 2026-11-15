@@ -23,7 +23,11 @@ export default function DotRing({
   const lit = Math.round(value * DOTS);
   return (
     <div className="relative mx-auto aspect-square w-full max-w-60">
-      <svg viewBox="0 0 200 200" aria-hidden className="absolute inset-0 h-full w-full">
+      <svg
+        viewBox="0 0 200 200"
+        aria-hidden
+        className="absolute inset-0 h-full w-full"
+      >
         {Array.from({ length: DOTS }, (_, i) => {
           const a = (i / DOTS) * Math.PI * 2 - Math.PI / 2;
           // redondeado: Node y el navegador difieren en la última cifra de sin/cos
@@ -47,8 +51,12 @@ export default function DotRing({
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <div className="font-heading text-4xl font-bold text-navy">{children}</div>
-        <p className="mt-1 max-w-32 text-xs leading-tight text-slate">{label}</p>
+        <div className="font-heading text-4xl font-bold text-navy">
+          {children}
+        </div>
+        <p className="mt-1 max-w-32 text-xs leading-tight text-slate">
+          {label}
+        </p>
       </div>
     </div>
   );

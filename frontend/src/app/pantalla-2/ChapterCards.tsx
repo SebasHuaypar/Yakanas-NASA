@@ -41,14 +41,18 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
               key={it.id}
               aria-label={`${it.n} ${it.title}`}
               style={{ flexGrow: open ? 9 : 1 }}
-              className={`relative min-w-26 basis-0 overflow-hidden rounded-4xl border bg-black/60 backdrop-blur-sm transition-[flex-grow,border-color] duration-500 ease-out ${
-                open ? "border-navy/60" : "border-slate/25 hover:border-slate/70"
+              className={`relative min-w-26 basis-0 overflow-hidden glass-dark rounded-4xl transition-[flex-grow,border-color] duration-500 ease-out ${
+                open ? "border-navy/60!" : "hover:border-navy/40!"
               }`}
             >
               {/* imagen o dibujo, fundido a negro por arriba */}
               <div
                 className={`pointer-events-none absolute inset-x-0 bottom-0 h-[62%] mask-[linear-gradient(to_bottom,transparent,black_42%)] transition-opacity duration-500 ${
-                  open ? "opacity-[0.07]" : squeezed ? "opacity-60" : "opacity-100"
+                  open
+                    ? "opacity-[0.07]"
+                    : squeezed
+                      ? "opacity-60"
+                      : "opacity-100"
                 }`}
               >
                 {it.art}
@@ -65,7 +69,9 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
 
               {/* texto corto (solo cuando ninguna está abierta) */}
               {!anyOpen && (
-                <p className={`pointer-events-none absolute right-5 top-9 w-[44%] border-l border-slate/50 pl-4 text-xs leading-relaxed text-slate ${mont}`}>
+                <p
+                  className={`pointer-events-none absolute right-5 top-9 w-[44%] border-l border-slate/50 pl-4 text-xs leading-relaxed text-slate ${mont}`}
+                >
                   {it.blurb}
                 </p>
               )}
@@ -96,9 +102,15 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
                   >
                     ×
                   </button>
-                  <p className={`text-xs text-slate ${hud}`}>{it.n} · {it.word}</p>
-                  <h3 className="mt-2 max-w-xl text-2xl tracking-tight">{it.title}</h3>
-                  <p className="mt-2 max-w-xl text-sm text-slate">{it.summary}</p>
+                  <p className={`text-xs text-slate ${hud}`}>
+                    {it.n} · {it.word}
+                  </p>
+                  <h3 className="mt-2 max-w-xl text-2xl tracking-tight">
+                    {it.title}
+                  </h3>
+                  <p className="mt-2 max-w-xl text-sm text-slate">
+                    {it.summary}
+                  </p>
                   <div className="mt-7">{it.content}</div>
                 </motion.div>
               )}
@@ -112,7 +124,10 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
         {items.map((it, i) => {
           const open = active === i;
           return (
-            <section key={it.id} className="overflow-hidden rounded-4xl border border-slate/25 bg-black/60 backdrop-blur-sm">
+            <section
+              key={it.id}
+              className="glass-dark overflow-hidden rounded-4xl"
+            >
               <button
                 type="button"
                 aria-expanded={open}
@@ -120,10 +135,17 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
                 className="flex w-full items-center justify-between gap-4 p-6 text-left"
               >
                 <span>
-                  <span className={`block text-5xl ${wordClass}`}>{it.word}</span>
-                  <span className={`mt-2 block text-xs text-slate ${mont}`}>{it.blurb}</span>
+                  <span className={`block text-5xl ${wordClass}`}>
+                    {it.word}
+                  </span>
+                  <span className={`mt-2 block text-xs text-slate ${mont}`}>
+                    {it.blurb}
+                  </span>
                 </span>
-                <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-navy/50 text-lg text-navy">
+                <span
+                  aria-hidden
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-navy/50 text-lg text-navy"
+                >
                   {open ? "−" : "+"}
                 </span>
               </button>
@@ -140,7 +162,11 @@ export default function ChapterCards({ items }: { items: Chapter[] }) {
       </div>
 
       {/* paginación */}
-      <div role="group" aria-label="Capítulos" className="mt-8 flex justify-center gap-2.5">
+      <div
+        role="group"
+        aria-label="Capítulos"
+        className="mt-8 flex justify-center gap-2.5"
+      >
         {items.map((it, i) => (
           <button
             key={it.id}

@@ -52,6 +52,16 @@
       rotate: y -360deg;
     }
   }
+  --animate-bob: bob 3.6s ease-in-out infinite;
+  @keyframes bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
   --animate-rise: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 
   @keyframes globe-in {
@@ -103,6 +113,24 @@
     background: var(--navy);
     color: var(--snow);
   }
+}
+
+/* Cristal: el mismo estilo de tarjeta en toda la web. Usan colores fijos (no tokens) para
+   funcionar también dentro de la pantalla 2, donde la paleta está remapeada. */
+.glass,
+.glass-dark {
+  border: 1px solid rgb(243 249 252 / 0.15);
+  box-shadow:
+    0 12px 60px rgb(0 0 0 / 0.4),
+    inset 0 1px 0 rgb(243 249 252 / 0.14);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+.glass {
+  background: rgb(243 249 252 / 0.06);
+}
+.glass-dark {
+  background: rgb(12 9 10 / 0.5);
 }
 
 /* Fondo global fijo: estrellas (canvas) + nebulosa en navy/slate */
