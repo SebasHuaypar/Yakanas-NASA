@@ -154,7 +154,81 @@ export function getTerrain(shape: DeptShape, satellite: boolean, onProgress?: (t
   return p;
 }
 
+/**
+ * Datos pre-generados por región (tools/make_region_assets.py): meta.json + dem.bin + sat.webp.
+ * Reemplazan la descarga y unión de decenas de teselas. Si una región no los tiene (404) o algo
+ * falla, `buildTerrain` sigue por el camino de teselas de siempre.
+ */
+const BAKED = "/explorador/regions/v2"; // v2: recuadros con los contornos de geoBoundaries
+
+type BakedMeta = {
+  cols: number;
+  rows: number;
+  min: number;
+  max: number;
+  bb: Terrain["bb"];
+  wKm: number;
+  hKm: number;
+  dem: { z: number; x0: number; y0: number; sc: number; offset: number; scale: number };
+  sat: { z: number; x0: number; y0: number; w: number; h: number };
+};
+
+async function loadBaked(shape: DeptShape, wantSatellite: boolean, onProgress?: (tiles: number) => void): Promise<Terrain | null> {
+  try {
+    const base = `${BAKED}/${shape.id}`;
+    const mr = await fetch(`${base}/meta.json`);
+    if (!mr.ok || !(mr.headers.get("content-type") ?? "").includes("json")) return null; // sin archivos (o página 404)
+    const meta = (await mr.json()) as BakedMeta;
+    const dr = await fetch(`${base}/dem.bin`);
+    if (!dr.ok) return null;
+    const enc = new Uint16Array(await dr.arrayBuffer());
+    const { cols, rows } = meta;
+    if (enc.length !== cols * rows) return null;
+    onProgress?.(1);
+    // Deshace el delta horizontal (aritmética de 16 bits) y vuelve a metros.
+    const dem = new Float32Array(cols * rows);
+    const { offset, scale } = meta.dem;
+    for (let y = 0; y < rows; y++) {
+      let acc = 0;
+      for (let x = 0; x < cols; x++) {
+        const i = y * cols + x;
+        acc = (acc + enc[i]) & 0xffff;
+        dem[i] = acc / scale - offset;
+      }
+    }
+    const { min, max, bb, wKm, hKm } = meta;
+    const { texture, raw } = paintTexture({ dem, cols, rows, min, max, wKm, hKm }, shape, meta.dem.z, meta.dem.x0, meta.dem.y0, meta.dem.sc);
+    const terrain: Terrain = { dem, cols, rows, min, max, bb, wKm, hKm, texture, edge: shrink(raw, 512), satellite: false };
+    if (wantSatellite) {
+      terrain.upgrade = (async () => {
+        try {
+          const sr = await fetch(`${base}/sat.webp`);
+          if (!sr.ok) return;
+          const im = await createImageBitmap(await sr.blob());
+          const cv = document.createElement("canvas");
+          cv.width = im.width;
+          cv.height = im.height;
+          cv.getContext("2d", { willReadFrequently: true })!.drawImage(im, 0, 0);
+          const s = meta.sat;
+          terrain.texture = clipToShape(cv, shape, s.z, s.x0, s.y0);
+          terrain.edge = shrink(cv, 512);
+          terrain.satellite = true;
+          onProgress?.(2);
+        } catch {
+          /* se queda con el relieve en verde */
+        }
+      })();
+    }
+    return terrain;
+  } catch {
+    return null;
+  }
+}
+
 async function buildTerrain(shape: DeptShape, wantSatellite: boolean, onProgress?: (tiles: number) => void): Promise<Terrain> {
+  const baked = await loadBaked(shape, wantSatellite, onProgress);
+  if (baked) return baked;
+
   const pad = 0.04; // un poco de margen alrededor de la silueta
   const [w0, n0] = svgToLonLat(shape.bbox.x0, shape.bbox.y0);
   const [e0, s0] = svgToLonLat(shape.bbox.x1, shape.bbox.y1);
@@ -242,6 +316,7 @@ function paintTexture(
   z: number,
   x0: number,
   y0: number,
+  sc = 1,
 ): Painted {
   const { dem, cols, rows } = t;
   const cellX = (t.wKm * 1000) / cols,
@@ -274,11 +349,14 @@ function paintTexture(
   raw.height = rows;
   raw.getContext("2d")!.putImageData(img, 0, 0);
 
-  return { texture: clipToShape(raw, shape, z, x0, y0), raw };
+  return { texture: clipToShape(raw, shape, z, x0, y0, sc), raw };
 }
 
-/** Recorta un lienzo con la silueta: afuera queda transparente. `z`,`x0`,`y0`: zoom y origen del mosaico. */
-function clipToShape(src: HTMLCanvasElement, shape: DeptShape, z: number, x0: number, y0: number) {
+/**
+ * Recorta un lienzo con la silueta: afuera queda transparente. `z`,`x0`,`y0`: zoom y origen del mosaico;
+ * `sc`: escala del lienzo respecto al mosaico (1 salvo que esté reducido, como el DEM pre-generado).
+ */
+function clipToShape(src: HTMLCanvasElement, shape: DeptShape, z: number, x0: number, y0: number, sc = 1) {
   const out = document.createElement("canvas");
   out.width = src.width;
   out.height = src.height;
@@ -288,8 +366,8 @@ function clipToShape(src: HTMLCanvasElement, shape: DeptShape, z: number, x0: nu
     ring.forEach(([sx, sy], i) => {
       const [lon, lat] = svgToLonLat(sx, sy);
       const [qx, qy] = px(lon, lat, z);
-      if (i) c2.lineTo(qx - x0, qy - y0);
-      else c2.moveTo(qx - x0, qy - y0);
+      if (i) c2.lineTo((qx - x0) * sc, (qy - y0) * sc);
+      else c2.moveTo((qx - x0) * sc, (qy - y0) * sc);
     });
     c2.closePath();
   }

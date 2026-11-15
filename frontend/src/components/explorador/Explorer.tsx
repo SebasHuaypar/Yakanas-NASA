@@ -222,6 +222,7 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
               year={year}
               month={month}
               t={t}
+              tooltip={tooltip}
               onBack={() => setZoneId("PE")}
             />
           ) : (
