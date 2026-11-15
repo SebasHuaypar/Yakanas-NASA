@@ -55,7 +55,7 @@ function Face({ m }: { m: Member }) {
       alt={m.name}
       fill
       sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 100vw"
-      className="object-cover"
+      className="object-cover object-top"
     />
   ) : (
     <span

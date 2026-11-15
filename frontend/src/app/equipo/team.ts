@@ -62,7 +62,12 @@ export const TEAM: Member[] = [
   {
     id: "isabel",
     name: "Isabel Makishi",
-    role: { en: "Team member", es: "Integrante" },
+    photo: "/equipo/isabel.jpg",
+    role: { en: "Data Scientist", es: "Científica de datos" },
+    contribution: {
+      en: "Engineered the data ingestion pipeline, implemented the MODIS–VIIRS harmonization methodology, ensured data quality, and developed the backend API powering the entire platform.",
+      es: "Construyó el pipeline de ingesta de datos, implementó la metodología de armonización MODIS–VIIRS, aseguró la calidad de los datos y desarrolló la API de backend que alimenta toda la plataforma.",
+    },
     links: {},
   },
   {
