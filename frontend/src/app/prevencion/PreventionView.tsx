@@ -153,7 +153,6 @@ function Picker({ c, lang, onPick }: { c: Copy; lang: Lang; onPick: (l: Loc) => 
           {msg}
         </p>
       )}
-      <p className="text-sm text-snow/60">{c.orTap}</p>
     </div>
   );
 }
@@ -407,7 +406,8 @@ export default function PreventionView() {
   const saved = useSavedPlaces();
   const [temp, setTemp] = useState<Loc | null>(null);
   const [selId, setSelId] = useState<string | null>(null);
-  const [changing, setChanging] = useState(false);
+  const [changing, setChanging] = useState(true);
+  const [view, setView] = useState<{ lat: number; lon: number; span: number } | null>(null);
 
   const fires = useApi<ApiFires>("/fires", { limit: 20000 });
   const events = useApi<ApiEvents>("/events", { limit: 1000 });
@@ -419,7 +419,15 @@ export default function PreventionView() {
 
   const mapFires = useMemo(() => (fires.data?.features ?? []).map((f) => ({ lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] })), [fires.data]);
   const mapEvents = useMemo(() => (events.data?.events ?? []).map((e) => ({ lon: e.centro[0], lat: e.centro[1], n: e.detecciones.total, active: e.activo })), [events.data]);
+  const onMapTap = (lat: number, lon: number) => {
+    if (!inPeru(lat, lon)) return;
+    const span = view?.span ?? 10;
+    if (span > 0.8) setView({ lat, lon, span: Math.max(0.6, span / 2.5) });
+    else pick({ name: c.nameDefault, lat: Number(fmtCoord(lat)), lon: Number(fmtCoord(lon)) });
+  };
+  const zoomBy = (k: number) => setView((v) => (v ? (v.span * k >= 10 ? null : { ...v, span: Math.max(0.3, v.span * k) }) : k < 1 ? { lat: -9.5, lon: -75, span: 10 * k } : null));
   const pick = (l: Loc) => {
+    setView(null);
     setTemp(l);
     setSelId(null);
     setChanging(false);
@@ -433,15 +441,42 @@ export default function PreventionView() {
             <div>
               <h1 className="text-4xl leading-[1.05] tracking-tight sm:text-6xl">{c.h1}</h1>
               <p className="mt-4 max-w-xl text-base leading-relaxed text-snow/75 sm:text-lg">{c.lead}</p>
+              {saved.length > 0 && (
+                <div className="mt-6 max-w-xl">
+                  <p className="mb-2 text-sm font-semibold text-snow">{c.myPlaces}</p>
+                  <ul className="grid gap-2 sm:grid-cols-2">
+                    {saved.map((p) => (
+                      <PlaceRow key={p.id} p={p} active={false} fires={fires.data} c={c} onSelect={() => { setTemp(null); setSelId(p.id); setChanging(false); }} />
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {current && (
+                <button type="button" onClick={() => setChanging(false)} className={`${BTN} mt-4`}>
+                  ← {c.back}
+                </button>
+              )}
               <div className="mt-7 max-w-xl">
                 <Picker c={c} lang={lang} onPick={pick} />
               </div>
             </div>
             <Card className="rounded-3xl p-4">
               <div className="mx-auto max-w-xs">
-                <FireMap fires={mapFires} events={mapEvents} places={saved} onPick={(lat, lon) => (inPeru(lat, lon) ? pick({ name: c.nameDefault, lat: Number(fmtCoord(lat)), lon: Number(fmtCoord(lon)) }) : undefined)} aria={c.mapAria} />
+                <FireMap fires={mapFires} events={mapEvents} places={saved} view={view} onPick={onMapTap} aria={c.mapAria} />
               </div>
-              <p className="mt-2 flex items-center justify-center gap-2 text-[11px] text-snow/55">
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <button type="button" aria-label={c.zoomIn} onClick={() => zoomBy(0.4)} className={`${BTN} size-10 !p-0 text-lg`}>
+                  +
+                </button>
+                <button type="button" aria-label={c.zoomOut} onClick={() => zoomBy(2.5)} disabled={!view} className={`${BTN} size-10 !p-0 text-lg`}>
+                  −
+                </button>
+                <button type="button" onClick={() => setView(null)} disabled={!view} className={BTN}>
+                  {c.wholePeru}
+                </button>
+              </div>
+              <p className="mt-2 text-center text-[11px] text-snow/55">{view && view.span <= 0.8 ? c.pickHint : c.orTap}</p>
+              <p className="mt-1 flex items-center justify-center gap-2 text-[11px] text-snow/55">
                 <span className="size-1.5 rounded-full bg-amber" /> {c.legendFires}
               </p>
             </Card>
