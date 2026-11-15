@@ -18,14 +18,14 @@ export default function Regions() {
   const [lang] = useLang();
   const L = {
     en: {
-      label: "Three regions",
-      title: "Coast, Andes and Amazon burn at different times",
-      sub: "Each region has its own fire season, so we look at them separately.",
+      label: "Three fire seasons",
+      title: "It burns, but not everywhere at once",
+      sub: "The Coast, the Highlands and the Rainforest each have their own fire season. That is why we look at them one by one.",
     },
     es: {
-      label: "Tres regiones",
-      title: "Costa, Andes y Amazonía arden en momentos distintos",
-      sub: "Cada región tiene su propia temporada de fuego, y por eso las miramos por separado.",
+      label: "Tres temporadas de fuego",
+      title: "Arde, pero no en todas partes a la vez",
+      sub: "La Costa, la Sierra y la Selva tienen cada una su propia temporada de fuego. Por eso las miramos una por una.",
     },
   }[lang];
   const shares = regionShares();

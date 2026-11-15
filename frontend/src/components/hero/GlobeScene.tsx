@@ -34,6 +34,32 @@ const smooth = (a: number, b: number, x: number) => {
 };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
+/** Puntos de calor: puntos suaves que laten (cada uno con su propia fase) sobre la superficie. */
+const HOT_VERT = /* glsl */ `
+  attribute float aPhase;
+  uniform float uTime;
+  uniform float uSize;
+  varying float vPulse;
+  void main() {
+    vPulse = 0.5 + 0.5 * sin(uTime * 2.2 + aPhase * 6.2831);
+    gl_PointSize = uSize * (0.75 + 0.55 * vPulse);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+const HOT_FRAG = /* glsl */ `
+  uniform float uOpacity;
+  varying float vPulse;
+  void main() {
+    float d = length(gl_PointCoord - 0.5) * 2.0;
+    if (d > 1.0) discard;
+    float core = smoothstep(1.0, 0.0, d);
+    float a = core * core * (0.45 + 0.55 * vPulse) * uOpacity;
+    vec3 ember = vec3(1.0, 0.478, 0.184);
+    vec3 amber = vec3(1.0, 0.702, 0.278);
+    gl_FragColor = vec4(mix(ember, amber, core * core), a);
+  }
+`;
+
 /** Posición en la esfera unitaria con el mismo mapeo UV que SphereGeometry. */
 function toSphere(
   lat: number,
@@ -121,8 +147,10 @@ const ATMO_FRAG = /* glsl */ `
 function Earth({ stateRef, reducedMotion, onReady }: Omit<Props, "running">) {
   const group = useRef<THREE.Group>(null);
   const bordersRef = useRef<THREE.LineSegments>(null);
-  const smoothed = useRef({ zoom: 0, outline: 0 });
-  const { viewport, gl } = useThree();
+  const hotRef = useRef<THREE.Points>(null);
+  const hotVersion = useRef(0);
+  const smoothed = useRef({ zoom: 0, outline: 0, hot: 0 });
+  const { viewport, gl, size } = useThree();
 
   const [day, night] = useLoader(THREE.TextureLoader, [
     "/images/earth/day.webp",
@@ -161,6 +189,16 @@ function Earth({ stateRef, reducedMotion, onReady }: Omit<Props, "running">) {
     return { geo, vertices: pos.length / 3 };
   }, []);
 
+  const hotUniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uSize: { value: 4 },
+      uOpacity: { value: 0 },
+    }),
+    [],
+  );
+  const hotMat = useRef<THREE.ShaderMaterial>(null);
+
   useFrame((state, dt) => {
     const g = group.current;
     if (!g) return;
@@ -183,6 +221,7 @@ function Earth({ stateRef, reducedMotion, onReady }: Omit<Props, "running">) {
     const k = 1 - Math.exp(-dt * 1.6);
     sm.zoom += (sceneBus.zoom - sm.zoom) * k;
     sm.outline += (sceneBus.outline - sm.outline) * k;
+    sm.hot += (sceneBus.hot - sm.hot) * k;
     const radius = lerp(
       lerp(r0, r1, b) * (1 + 0.3 * s.dive) * (1 + 0.3 * sm.zoom),
       basis * 0.62,
@@ -197,12 +236,49 @@ function Earth({ stateRef, reducedMotion, onReady }: Omit<Props, "running">) {
         0.9 * Math.min(1, sm.outline * 4) * (1 - f);
     }
 
+    // Puntos de calor reales: se reconstruyen solo cuando cambian los datos
+    if (sceneBus.points && hotVersion.current !== sceneBus.pointsVersion) {
+      hotVersion.current = sceneBus.pointsVersion;
+      const src = sceneBus.points;
+      const n = src.length / 2;
+      const pos = new Float32Array(n * 3);
+      const ph = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        const [x, y, z] = toSphere(src[i * 2], src[i * 2 + 1], 1.004);
+        pos[i * 3] = x;
+        pos[i * 3 + 1] = y;
+        pos[i * 3 + 2] = z;
+        ph[i] = (Math.sin(i * 12.9898) * 43758.5453) % 1; // fase estable por punto
+      }
+      const geo = hotRef.current?.geometry;
+      if (geo) {
+        geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute("aPhase", new THREE.BufferAttribute(ph, 1));
+        geo.computeBoundingSphere();
+      }
+    }
+    const hm = hotMat.current;
+    if (hm) {
+      hm.uniforms.uTime.value = reducedMotion ? 0 : t;
+      hm.uniforms.uOpacity.value = sm.hot * (1 - f);
+    }
+    // Tamaño en píxeles proporcional al globo (así crece al acercarse a Perú)
+    const pxPerUnit = size.height / viewport.height;
+    if (hm)
+      hm.uniforms.uSize.value = Math.min(
+        9,
+        Math.max(2.2, radius * pxPerUnit * 0.0062),
+      );
+    if (hotRef.current) hotRef.current.visible = sm.hot > 0.01;
+
     // Posición: el borde superior asoma ~21% de la altura y luego Perú queda un poco abajo del centro
     const y0 = -H * 0.5 + H * 0.21 - r0;
     const y1 = lerp(-H * 0.12, H * 0.0, sm.zoom); // con el zoom, Perú sube para quedar centrado
     // Al alejarse, el borde inferior del globo queda a ~4% del final del escenario
     const yEnd = -H * 0.5 + H * 0.04 + basis * 0.62;
-    g.position.set(0, lerp(lerp(y0, y1, b), yEnd, f), 0);
+    // En pantallas anchas, Perú se corre a la derecha para dejar espacio al texto
+    const xShift = W > H * 1.15 ? W * 0.045 * sm.zoom * (1 - f) : 0;
+    g.position.set(xShift, lerp(lerp(y0, y1, b), yEnd, f), 0);
     g.scale.setScalar(radius);
 
     // Giro: Perú empieza arriba (horizonte) y baja hasta quedar de frente
@@ -236,6 +312,18 @@ function Earth({ stateRef, reducedMotion, onReady }: Omit<Props, "running">) {
           depthWrite={false}
         />
       </mesh>
+      <points ref={hotRef} frustumCulled={false}>
+        <bufferGeometry />
+        <shaderMaterial
+          ref={hotMat}
+          vertexShader={HOT_VERT}
+          fragmentShader={HOT_FRAG}
+          uniforms={hotUniforms}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </points>
       <lineSegments ref={bordersRef} geometry={borders.geo}>
         <lineBasicMaterial
           color="#F3F9FC"

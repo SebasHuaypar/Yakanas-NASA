@@ -23,6 +23,10 @@
   --color-navy: var(--navy);
   --color-ink: var(--ink);
 
+  /* Acento cálido, SOLO para fuego y urgencia (puntos de calor, eventos activos, «en vivo») */
+  --color-ember: #ff7a2f;
+  --color-amber: #ffb347;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 

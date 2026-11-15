@@ -78,7 +78,7 @@ export function formatNumber(n: number): string {
 /** Promedio mensual de un año típico por región natural (costa, sierra y selva), de la API. */
 type Bi = { en: string; es: string };
 export type Region = {
-  id: "costa" | "andes" | "amazonia";
+  id: "costa" | "sierra" | "selva";
   name: Bi;
   sub: Bi;
   desc: Bi;
@@ -100,8 +100,8 @@ export const REGIONS: readonly Region[] = [
     data: SNAPSHOT_TYPICAL.costa,
   },
   {
-    id: "andes",
-    name: { en: "Andes", es: "Andes" },
+    id: "sierra",
+    name: { en: "Highlands", es: "Sierra" },
     sub: {
       en: "Highlands, from Cajamarca to Puno",
       es: "Sierra, de Cajamarca a Puno",
@@ -113,8 +113,8 @@ export const REGIONS: readonly Region[] = [
     data: SNAPSHOT_TYPICAL.sierra,
   },
   {
-    id: "amazonia",
-    name: { en: "Amazon", es: "Amazonía" },
+    id: "selva",
+    name: { en: "Rainforest", es: "Selva" },
     sub: {
       en: "Rainforest: Loreto, Ucayali, San Martín and Madre de Dios",
       es: "Selva: Loreto, Ucayali, San Martín y Madre de Dios",

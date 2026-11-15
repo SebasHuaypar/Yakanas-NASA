@@ -10,4 +10,9 @@ export const sceneBus = {
   zoom: 0,
   /** 0..1: aclara el globo (quita el oscurecimiento) para que Perú se vea en grande. */
   clear: 0,
+  /** 0..1: cuánto se ven los puntos de calor reales sobre Perú (solo en la sección «en vivo»). */
+  hot: 0,
+  /** Detecciones reales como pares [lat, lon, lat, lon, …] y su versión (sube cada vez que cambian). */
+  points: null as Float32Array | null,
+  pointsVersion: 0,
 };

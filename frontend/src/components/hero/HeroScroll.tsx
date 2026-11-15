@@ -2,16 +2,11 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import Link from "next/link";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import Reveal from "@/components/Reveal";
-import SectionDivider from "@/components/SectionDivider";
-import { PERU_MONTHLY_MEAN } from "@/lib/fire-data";
 import { useLang } from "@/lib/lang";
 import { sceneBus } from "@/lib/scene-bus";
-import FireClock from "./FireClock";
+import LiveSection from "./LiveSection";
 import type { SceneState } from "./GlobeScene";
-import Card from "@/components/Card";
 
 // three.js solo corre en el navegador
 const GlobeScene = dynamic(() => import("./GlobeScene"), { ssr: false });
@@ -20,18 +15,10 @@ const TXT = {
   en: {
     solution: "A solution for",
     presents: "Presents",
-    phenomenon: "The phenomenon",
-    title: "Peru burns every year",
-    sub: "This is what a typical year looks like, month by month.",
-    cta: "Explore your region",
   },
   es: {
     solution: "Una solución para",
     presents: "Presenta",
-    phenomenon: "El fenómeno",
-    title: "El Perú arde cada año",
-    sub: "Así ocurre en un año típico, mes a mes.",
-    cta: "Explora tu región",
   },
 };
 
@@ -195,51 +182,7 @@ export default function HeroScroll({ children }: { children?: ReactNode }) {
       </section>
 
       {/* El Perú arde cada año: sección normal (sin altura forzada) sobre el globo */}
-      <section
-        id="reloj"
-        className="relative z-10 px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32"
-      >
-        <SectionDivider
-          index="01"
-          label={L.phenomenon}
-          className="mb-10 sm:mb-14"
-        />
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-10 text-left lg:grid-cols-2 lg:gap-16">
-          {/* Texto: centrado verticalmente respecto al reloj, con el botón debajo */}
-          <Reveal className="lg:order-2">
-            <h2 className="text-[1.9rem] leading-tight tracking-tight text-snow sm:text-5xl">
-              {L.title}
-            </h2>
-            <p className="mt-3 max-w-[40ch] text-sm leading-relaxed text-snow/70 sm:text-base">
-              {L.sub}
-            </p>
-
-            <Link
-              href="/explorador"
-              className="group mt-7 inline-flex items-center gap-2 rounded-full bg-snow px-7 py-3.5 text-sm font-medium text-ink transition duration-300 hover:shadow-[0_0_32px_rgb(243_249_252/0.4)] sm:mt-9"
-            >
-              {L.cta}
-              <span
-                aria-hidden="true"
-                className="transition-transform duration-300 group-hover:translate-x-1"
-              >
-                →
-              </span>
-            </Link>
-          </Reveal>
-
-          {/* Reloj */}
-          <Reveal delay={150} className="lg:order-1">
-            <Card className="mx-auto w-full max-w-[560px] rounded-[2rem] p-4 sm:p-7">
-              <FireClock
-                data={PERU_MONTHLY_MEAN}
-                autoPlay
-                svgClassName="max-w-[480px]"
-              />
-            </Card>
-          </Reveal>
-        </div>
-      </section>
+      <LiveSection />
 
       {/* Siguientes secciones: landing normal por encima del globo */}
       <div className="relative z-10">{children}</div>
