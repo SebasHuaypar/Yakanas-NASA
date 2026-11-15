@@ -57,6 +57,7 @@ export const TEAM: Member[] = [
   {
     id: "cesar",
     name: "Cesar Correa",
+    photo: "/equipo/cesar.jpg",
     role: { en: "Backend and data", es: "Backend y datos" },
     contribution: {
       en: "Built the API that serves the historical series, the live week and the prevention model, and configured and deployed it on Google Cloud so the whole platform can query it.",
