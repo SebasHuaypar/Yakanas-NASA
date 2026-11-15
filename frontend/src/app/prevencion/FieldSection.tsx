@@ -107,7 +107,7 @@ function EventCard({ e, t, lang }: { e: ApiEvent; t: T; lang: Lang }) {
   return (
     <Card as="li" className="flex h-full flex-col gap-3 rounded-3xl p-5">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-lg font-semibold leading-tight text-snow">
             {deptName(e.name, lang)}
           </p>
@@ -126,7 +126,7 @@ function EventCard({ e, t, lang }: { e: ApiEvent; t: T; lang: Lang }) {
         </span>
       </div>
 
-      <dl className="grid grid-cols-3 gap-2">
+      <dl className="grid grid-cols-3 gap-3 [&>div]:min-w-0">
         <div>
           <dd className="font-heading text-2xl font-bold tabular-nums text-snow">
             {nf(e.detecciones.total, t.loc)}
@@ -142,10 +142,10 @@ function EventCard({ e, t, lang }: { e: ApiEvent; t: T; lang: Lang }) {
           </dt>
         </div>
         <div>
-          <dd className="font-heading text-2xl font-bold text-snow">
+          <dd className="font-heading text-sm font-bold leading-8 text-snow min-[420px]:text-base sm:text-lg">
             {t.trend[e.tendencia] ?? e.tendencia}
           </dd>
-          <dt className="text-[11px] text-snow/55">trend</dt>
+          <dt className="text-[11px] text-snow/55">{lang === "es" ? "tendencia" : "trend"}</dt>
         </div>
       </dl>
 

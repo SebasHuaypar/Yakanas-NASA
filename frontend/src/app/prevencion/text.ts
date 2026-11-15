@@ -309,8 +309,8 @@ export const TXT = {
     trend: {
       estable: "estable",
       creciendo: "creciendo",
-      decreciendo: "apagándose",
-      bajando: "apagándose",
+      decreciendo: "en baja",
+      bajando: "en baja",
       nuevo: "nuevo",
     } as Record<string, string>,
     coords: "Coordenadas",
