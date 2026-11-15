@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { DeptShape } from "./geo";
-import type { Place } from "./places";
+import { groundKm, nearestTown, type Place } from "./places";
 import { svgToLonLat, type Terrain } from "./terrain";
 
 /**
@@ -10,6 +10,19 @@ import { svgToLonLat, type Terrain } from "./terrain";
  * que el usuario elige un departamento.
  */
 
+/** Una celda de calor bajo el cursor: id (para resaltarla), focos, altitud (m) y centro de la celda. */
+export type SpotCell = { id: number; hs: number; alt: number; lon: number; lat: number };
+
+/** "3d": maqueta con relieve que se puede girar. "2d": vista cenital plana, norte arriba. */
+export type ViewMode = "3d" | "2d";
+
+/** Lo que hay bajo el cursor: las celdas cercanas (de más a menos focos), su suma y el poblado más cercano. */
+export type SpotPick = {
+  cells: SpotCell[];
+  total: number;
+  near: { name: string; km: number } | null;
+};
+
 export type TerrainScene = {
   dispose: () => void;
   resetView: () => void;
@@ -17,7 +30,25 @@ export type TerrainScene = {
   refreshTexture: () => void;
   /** Celdas con focos de calor reales: [x, y, focos] con x, y en coordenadas de la silueta (grados × 20). */
   setHotspots: (cells: [number, number, number][]) => void;
+  /** Celdas de calor visibles bajo el punto (x, y), en píxeles relativos al visor; null si no hay ninguna. */
+  pick: (x: number, y: number) => SpotPick | null;
+  /** Resalta las celdas `ids` (el grupo elegido) y, más fuerte, `focus` (la fila elegida). [] quita el resaltado. */
+  highlight: (ids: number[], focus: number | null) => void;
+  /** Cambia entre la maqueta 3D y la vista 2D, con una transición suave. */
+  setMode: (mode: ViewMode) => void;
 };
+
+/** Radio (px) alrededor del cursor en el que se buscan celdas: las que caen dentro se agrupan en el tooltip. */
+const PICK_PX = 12;
+/** Más lejos que esto, nombrar el "poblado más cercano" no orienta: se omite. */
+const NEAR_MAX_KM = 30;
+/**
+ * Las celdas bajo el cursor solo se agrupan si además están cerca EN EL TERRENO (km): con la perspectiva,
+ * celdas lejanas (por ejemplo una en el valle y otra en la puna) pueden caer en el mismo punto de la pantalla.
+ */
+const GROUP_KM = 5;
+/** Duración (ms) del cambio entre 3D y 2D. */
+const MODE_MS = 800;
 
 const KM = 1 / 1000;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -46,6 +77,9 @@ function getRenderer() {
   return sharedRenderer;
 }
 
+/** Lado mínimo, en píxeles, con el que se dibuja una celda de calor (entero y par: va dentro del shader). */
+const SPOT_MIN_PX = 6;
+
 export function makeSpotMaterial() {
   return new THREE.ShaderMaterial({
     transparent: true,
@@ -53,22 +87,55 @@ export function makeSpotMaterial() {
     polygonOffset: true,
     polygonOffsetFactor: -3,
     polygonOffsetUnits: -3,
+    // Todas las celdas miden lo mismo (la celda real de la API); los focos de cada una se leen por la
+    // intensidad (instanceColor.r = 0..1): más focos → núcleo amarillo más extenso y color más opaco.
+    // uPx = unidades de escena por píxel a profundidad 1; uShow = 0..1 (entrada animada).
+    // Tamaño mínimo en pantalla (SPOT_MIN_PX): de lejos la celda real (≈3 px) casi no se vería; al acercarse
+    // el cuadrado vuelve a medir exactamente su celda.
+    // instanceColor.g = resaltado (0 nada, 0,5 parte del grupo elegido, 1 la celda elegida): aro blanco y algo
+    // más grande, para que se distinga aunque la celda mida pocos píxeles.
+    uniforms: { uPx: { value: 0 }, uShow: { value: 1 } },
     vertexShader: `
-      varying float vR;
+      uniform float uPx;
+      uniform float uShow;
+      varying vec2 vP;
+      varying float vI;
+      varying float vH;
       void main() {
-        vR = length(position.xz);
-        gl_Position = projectionMatrix * viewMatrix * modelMatrix * instanceMatrix * vec4(position, 1.0);
+        vP = position.xz;
+        vI = 1.0;
+        vH = 0.0;
+        #ifdef USE_INSTANCING_COLOR
+        vI = instanceColor.r;
+        vH = instanceColor.g;
+        #endif
+        vec4 ctr = viewMatrix * modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+        float minHalf = -ctr.z * uPx * ${SPOT_MIN_PX / 2}.0 * uShow * (1.0 + 0.7 * vH);
+        float hx = max(length(instanceMatrix[0].xyz), 1e-6), hz = max(length(instanceMatrix[2].xyz), 1e-6);
+        vec3 p = vec3(position.x * max(1.0, minHalf / hx), position.y, position.z * max(1.0, minHalf / hz));
+        gl_Position = projectionMatrix * viewMatrix * modelMatrix * instanceMatrix * vec4(p, 1.0);
       }`,
     fragmentShader: `
-      varying float vR;
+      varying vec2 vP;
+      varying float vI;
+      varying float vH;
       void main() {
+        float vR = max(abs(vP.x), abs(vP.y)); // distancia "cuadrada": el degradado y el aro siguen el borde del cuadrado
+        float vc = vR * (1.5 - 0.9 * vI);     // con más focos el núcleo claro ocupa más de la celda
         vec3 core = vec3(1.0, 0.90, 0.55), mid = vec3(0.96, 0.42, 0.14), edge = vec3(0.64, 0.17, 0.09);
-        vec3 c = mix(core, mid, smoothstep(0.10, 0.45, vR));
-        c = mix(c, edge, smoothstep(0.45, 0.85, vR));
-        float body = 1.0 - smoothstep(0.55, 0.88, vR);          // mancha que se desvanece hacia el borde
+        vec3 c = mix(core, mid, smoothstep(0.10, 0.45, vc));
+        c = mix(c, edge, smoothstep(0.45, 0.85, vc));
+        float body = 1.0 - smoothstep(0.70, 0.96, vR);          // la celda se rellena casi entera y se suaviza en el borde
         float ring = smoothstep(0.86, 0.90, vR) * (1.0 - smoothstep(0.96, 1.0, vR)); // aro fino
-        float a = max(body * 0.92, ring * 0.9);
-        gl_FragColor = vec4(mix(c, vec3(1.0, 0.55, 0.28), ring), a);
+        float k = 0.55 + 0.45 * vI;                              // pocos focos → más tenue
+        float a = max(body * 0.92 * k, ring * 0.9 * k);
+        vec3 col = mix(c, vec3(1.0, 0.55, 0.28), ring);
+        if (vH > 0.25) {                                         // resaltada: aro blanco más grueso, opaca
+          float hr = smoothstep(vH > 0.75 ? 0.62 : 0.74, vH > 0.75 ? 0.70 : 0.80, vR);
+          col = mix(c, vec3(1.0), hr);
+          a = max(body * 0.95, hr * (vH > 0.75 ? 1.0 : 0.8));
+        }
+        gl_FragColor = vec4(col, a);
       }`,
   });
 }
@@ -103,10 +170,12 @@ export async function warmUpRenderer() {
   );
   const spotMat = makeSpotMaterial();
   const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
+  const spotWarm = new THREE.InstancedMesh(new THREE.PlaneGeometry(2, 2), spotMat, 1);
+  spotWarm.setColorAt(0, new THREE.Color(1, 0, 0)); // la escena real usa color por instancia: se compila esa variante
   const meshes = [
     new THREE.Mesh(new THREE.PlaneGeometry(1, 1), terrainMat),
     new THREE.Mesh(wallGeo, wallMat),
-    new THREE.InstancedMesh(new THREE.CircleGeometry(1, 8), spotMat, 1),
+    spotWarm,
     new THREE.LineLoop(wallGeo, lineMat),
   ];
   meshes.forEach((m) => sc.add(m));
@@ -124,7 +193,11 @@ export function createTerrainScene(
   host: HTMLElement,
   terrain: Terrain,
   shape: DeptShape,
-  opts: { reduceMotion: boolean; places?: Place[] },
+  /**
+   * places: los que se rotulan; towns: referencias para "a X km de …" en el tooltip (si falta, usa places);
+   * mode: vista inicial (en 2D se abre directo, sin la animación de entrada).
+   */
+  opts: { reduceMotion: boolean; places?: Place[]; towns?: Place[]; mode?: ViewMode },
 ): TerrainScene {
   const { dem, cols, rows, bb, min, max } = terrain;
   const W = terrain.wKm,
@@ -150,6 +223,11 @@ export function createTerrainScene(
   controls.maxPolarAngle = Math.PI * 0.49;
   controls.minDistance = D * 0.2;
   controls.maxDistance = D * 4;
+  // Zoom hacia donde apunta el cursor (no hacia el centro). Con el desplazamiento paralelo al suelo, el
+  // punto de giro queda sobre el terreno, y no se aleja más allá de la región.
+  controls.zoomToCursor = true;
+  controls.screenSpacePanning = false;
+  controls.maxTargetRadius = D * 0.6;
 
   /* ---------- geometría ---------- */
   const base = min - 100; // metros: el “suelo” de la maqueta queda un poco bajo el punto más bajo
@@ -284,33 +362,83 @@ export function createTerrainScene(
   computeWallTone();
 
   /* ---------- marcadores de focos de calor ---------- */
-  // Un foco de calor es, en origen, un píxel térmico del satélite: se dibuja así, como una mancha de
-  // calor pegada al terreno (núcleo amarillo → naranja → rojo que se desvanece) con un aro fino.
+  // Cada marcador es UNA celda de la cuadrícula de la API (0,02° ≈ 2,2 km por lado), con su tamaño real y
+  // alineada con los ejes del mapa: pegada al terreno, con núcleo amarillo → naranja → rojo y un aro fino.
+  // Todas miden lo mismo (no se solapan); los focos de cada celda se leen por la intensidad del color.
   // Estático y discreto: sin animación.
-  const spotGeo = new THREE.CircleGeometry(1, 36).rotateX(-Math.PI / 2);
+  const CELL_DEG = 0.02;
+  const spotGeo = new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2); // lado 2 → se escala a media celda
   const spotMat = makeSpotMaterial();
-  type Marker = { x: number; z: number; r: number };
+  type Marker = {
+    id: number;
+    x: number;
+    z: number;
+    hx: number;
+    hz: number;
+    t: number;
+    hs: number;
+    alt: number;
+    lon: number;
+    lat: number;
+  };
   let markers: Marker[] = [];
   let spotMesh: THREE.InstancedMesh | null = null;
   let pillarS = 0;
-  const SPOT_R = D * 0.0075;
   const m4 = new THREE.Matrix4(),
     sc = new THREE.Vector3(),
     ps = new THREE.Vector3(),
+    pv = new THREE.Vector3(),
     qid = new THREE.Quaternion();
 
+  const markerMatrix = (p: Marker, s: number) => {
+    ps.set(p.x, yOf(p.alt) + D * 0.0008, p.z);
+    return m4.compose(ps, qid, sc.set(p.hx * s, 1, p.hz * s));
+  };
   const placePillars = () => {
     if (!spotMesh) return;
     const s = Math.max(0.001, pillarS);
-    markers.forEach((p, i) => {
-      ps.set(p.x, yOf(elevAt(p.x, p.z)) + D * 0.0008, p.z);
-      m4.compose(ps, qid, sc.set(SPOT_R * p.r * s, 1, SPOT_R * p.r * s));
-      spotMesh!.setMatrixAt(i, m4);
-    });
+    spotMat.uniforms.uShow.value = Math.min(1, s);
+    markers.forEach((p, i) => spotMesh!.setMatrixAt(i, markerMatrix(p, s)));
     spotMesh.instanceMatrix.needsUpdate = true;
     spotMesh.visible = pillarS > 0.02;
+    if (hlMesh) {
+      hlIds.forEach((id, i) => markers[id] && hlMesh!.setMatrixAt(i, markerMatrix(markers[id], s)));
+      hlMesh.instanceMatrix.needsUpdate = true;
+      hlMesh.visible = spotMesh.visible;
+    }
   };
+
+  // Celdas resaltadas (las del panel): una capa aparte que se dibuja encima de las demás.
+  let hlMesh: THREE.InstancedMesh | null = null;
+  let hlIds: number[] = [];
+  let hlFocus: number | null = null;
+  const disposeHighlight = () => {
+    if (!hlMesh) return;
+    relief.remove(hlMesh);
+    hlMesh.dispose();
+    hlMesh = null;
+  };
+  const buildHighlight = () => {
+    disposeHighlight();
+    // La celda elegida va al final: se dibuja encima de las del grupo.
+    hlIds = hlIds.filter((id) => markers[id] && id !== hlFocus);
+    if (hlFocus !== null && markers[hlFocus]) hlIds.push(hlFocus);
+    if (hlIds.length) {
+      hlMesh = new THREE.InstancedMesh(spotGeo, spotMat, hlIds.length);
+      const tint = new THREE.Color();
+      hlIds.forEach((id, i) => hlMesh!.setColorAt(i, tint.setRGB(markers[id].t, id === hlFocus ? 1 : 0.5, 0)));
+      hlMesh.frustumCulled = false;
+      hlMesh.renderOrder = 2;
+      relief.add(hlMesh);
+      placePillars();
+    }
+    dirty = true;
+  };
+
   const disposeMarkers = () => {
+    disposeHighlight();
+    hlIds = [];
+    hlFocus = null;
     if (!spotMesh) return;
     relief.remove(spotMesh);
     spotMesh.dispose();
@@ -342,17 +470,18 @@ export function createTerrainScene(
       return { el, x, z, m, len: p.name.length, v: new THREE.Vector3() };
     });
   const tmp = new THREE.Vector3();
-  const occluded = (l: (typeof labels)[number]) => {
+  /** true si el relieve tapa el punto `v` visto desde la cámara (se usa para nombres y celdas de calor). */
+  const occluded = (v: THREE.Vector3) => {
     const cp = camera.position,
       eps = 0.01 * (D / 20);
     for (let t = 0.03; t < 0.97; t += 0.03) {
-      const x = cp.x + (l.v.x - cp.x) * t,
-        y = cp.y + (l.v.y - cp.y) * t,
-        z = cp.z + (l.v.z - cp.z) * t;
+      const x = cp.x + (v.x - cp.x) * t,
+        y = cp.y + (v.y - cp.y) * t,
+        z = cp.z + (v.z - cp.z) * t;
       if (
         Math.abs(x) < W / 2 &&
         Math.abs(z) < H / 2 &&
-        yOf(elevAt(x, z)) > y + eps
+        yOf(elevAt(x, z)) * relief.scale.y > y + eps // en 2D el relieve está aplanado
       )
         return true;
     }
@@ -363,13 +492,13 @@ export function createTerrainScene(
       h = host.clientHeight;
     const boxes: number[][] = [];
     for (const l of labels) {
-      l.v.set(l.x, yOf(l.m) + 0.02 * (D / 20), l.z);
+      l.v.set(l.x, yOf(l.m) * relief.scale.y + 0.02 * (D / 20), l.z);
       tmp.copy(l.v).project(camera);
       let on =
         tmp.z < 1 &&
         Math.abs(tmp.x) < 1.1 &&
         Math.abs(tmp.y) < 1.1 &&
-        !occluded(l);
+        !occluded(l.v);
       const x = (tmp.x * 0.5 + 0.5) * w,
         y = (-tmp.y * 0.5 + 0.5) * h;
       if (on) {
@@ -446,6 +575,8 @@ export function createTerrainScene(
   };
 
   /* ---------- cámara ---------- */
+  let mode: ViewMode = opts.mode ?? "3d";
+  const FLAT = 0.02; // altura del relieve en 2D (prácticamente plano)
   const target = new THREE.Vector3();
   const home = new THREE.Vector3();
   const homeSph = new THREE.Spherical();
@@ -457,23 +588,80 @@ export function createTerrainScene(
     home.set(-D * 0.14 * k, D * 1.0 * k, D * 1.12 * k).add(target);
     homeSph.setFromVector3(home.clone().sub(target));
   };
+  /** Encuadre de inicio del modo actual: 3D oblicuo, o 2D cenital con el norte arriba y la región entera. */
+  const goal = () => {
+    if (mode === "3d") {
+      computeHome();
+      return { target: target.clone(), sph: homeSph.clone(), s: 1 };
+    }
+    const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const r = Math.max(H / 2 / tanH, W / 2 / (tanH * camera.aspect)) * 1.25; // margen para los botones de arriba
+    return { target: new THREE.Vector3(), sph: new THREE.Spherical(r, 0.0001, 0), s: FLAT };
+  };
+  /** En 2D no se gira: arrastrar desplaza el mapa y la cámara queda mirando hacia abajo. */
+  const applyControls = () => {
+    const flat = mode === "2d";
+    controls.enableRotate = !flat;
+    controls.maxPolarAngle = flat ? 0 : Math.PI * 0.49;
+    controls.mouseButtons.LEFT = flat ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
+    controls.touches.ONE = flat ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
+  };
   const resetView = () => {
-    computeHome();
-    controls.target.copy(target);
-    camera.position.copy(home);
+    if (anim) return;
+    const g = goal();
+    relief.scale.y = g.s;
+    controls.target.copy(g.target);
+    camera.position.setFromSpherical(g.sph).add(g.target);
+    camera.lookAt(g.target);
     controls.update();
     dirty = true;
   };
+
+  // Transición entre 3D y 2D: el relieve se aplana (o crece) mientras la cámara pasa a la vista de ese modo.
+  type ModeAnim = {
+    t0: number;
+    fromS: number;
+    toS: number;
+    fromT: THREE.Vector3;
+    toT: THREE.Vector3;
+    fromSph: THREE.Spherical;
+    toSph: THREE.Spherical;
+  };
+  let anim: ModeAnim | null = null;
+  const startMode = (animate: boolean) => {
+    if (!animate || opts.reduceMotion) {
+      applyControls();
+      resetView();
+      return;
+    }
+    const g = goal();
+    const from = (anim ? animTarget : controls.target).clone(); // si ya había una transición, sigue desde donde va
+    anim = {
+      t0: performance.now(),
+      fromS: relief.scale.y,
+      toS: g.s,
+      fromT: from,
+      toT: g.target,
+      fromSph: new THREE.Spherical().setFromVector3(camera.position.clone().sub(from)),
+      toSph: g.sph,
+    };
+    controls.enabled = false;
+    dirty = true;
+  };
+  const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const animTarget = new THREE.Vector3();
 
   /* ---------- bucle ---------- */
   let dirty = true;
   let disposed = false;
   const DURATION = opts.reduceMotion ? 0 : 1500;
   const t0 = performance.now();
-  let intro = DURATION > 0;
+  // La animación de entrada (del plano al relieve) solo tiene sentido si se abre en 3D.
+  let intro = DURATION > 0 && mode === "3d";
 
   computeHome();
   applyRelief();
+  applyControls();
   if (intro) {
     controls.enabled = false;
     relief.scale.y = 0.02;
@@ -485,6 +673,27 @@ export function createTerrainScene(
   const sph = new THREE.Spherical();
   const frame = (now: number) => {
     if (disposed) return;
+    if (anim) {
+      const a = anim;
+      const k = easeInOut(clamp((now - a.t0) / MODE_MS, 0, 1));
+      relief.scale.y = a.fromS + (a.toS - a.fromS) * k;
+      animTarget.lerpVectors(a.fromT, a.toT, k);
+      const dTheta = ((a.toSph.theta - a.fromSph.theta + Math.PI * 3) % (Math.PI * 2)) - Math.PI; // giro corto
+      sph.set(
+        a.fromSph.radius + (a.toSph.radius - a.fromSph.radius) * k,
+        a.fromSph.phi + (a.toSph.phi - a.fromSph.phi) * k,
+        a.fromSph.theta + dTheta * k,
+      );
+      camera.position.setFromSpherical(sph).add(animTarget);
+      camera.lookAt(animTarget);
+      dirty = true;
+      if (k >= 1) {
+        anim = null;
+        applyControls();
+        controls.enabled = true;
+        resetView(); // deja la cámara y los controles exactamente en el encuadre del modo
+      }
+    }
     if (intro) {
       const t = clamp((now - t0) / DURATION, 0, 1);
       const e = easeOut(t);
@@ -505,9 +714,11 @@ export function createTerrainScene(
         controls.enabled = true;
         resetView();
         labelLayer.style.opacity = "1";
+        if (mode === "2d") startMode(true); // se pidió 2D durante la entrada
       }
     }
-    if (controls.update()) dirty = true;
+    // Durante las animaciones la cámara la mueve este bucle, no los controles.
+    if (!anim && !intro && controls.update()) dirty = true;
     if (dirty) {
       renderer.render(scene, camera);
       dirty = false;
@@ -523,11 +734,13 @@ export function createTerrainScene(
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    spotMat.uniforms.uPx.value = (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / h; // para el tamaño mínimo de las celdas
     dirty = true;
   };
   const ro = new ResizeObserver(resize);
   ro.observe(host);
   resize();
+  if (!intro) resetView(); // ya con la proporción real del visor (el encuadre 2D la necesita)
 
   // Resolución adaptativa: al mover la cámara (arrastrar o zoom) se dibuja a menor resolución y se
   // restaura la nitidez a los ~250 ms de soltar. El zoom/giro se siente fluido aunque la GPU sea modesta.
@@ -568,21 +781,84 @@ export function createTerrainScene(
     setHotspots(cells) {
       disposeMarkers();
       const top = Math.max(1, ...cells.map((c) => c[2]));
-      markers = cells.map(([sx, sy, hs]) => {
-        const [x, z] = toXZ(...svgToLonLat(sx, sy));
-        // El tamaño crece con los focos de la celda (raíz, para que las grandes no tapen todo)
-        return { x, z, r: 0.45 + 0.85 * Math.sqrt(hs / top) };
+      markers = cells.map(([sx, sy, hs], id) => {
+        const [lon, lat] = svgToLonLat(sx, sy); // centro de la celda
+        const [x, z] = toXZ(lon, lat);
+        const [x1, z1] = toXZ(lon + CELL_DEG / 2, lat + CELL_DEG / 2); // media celda, en unidades de la escena (km)
+        // La intensidad crece con los focos de la celda (raíz, para que unas pocas no apaguen al resto)
+        return {
+          id,
+          x,
+          z,
+          hx: Math.abs(x1 - x),
+          hz: Math.abs(z1 - z),
+          t: Math.sqrt(hs / top),
+          hs,
+          alt: elevAt(x, z),
+          lon,
+          lat,
+        };
       });
       spotMesh = new THREE.InstancedMesh(
         spotGeo,
         spotMat,
         Math.max(1, markers.length),
       );
+      const tint = new THREE.Color();
+      markers.forEach((p, i) => spotMesh!.setColorAt(i, tint.setRGB(p.t, 0, 0)));
+      if (spotMesh.instanceColor) spotMesh.instanceColor.needsUpdate = true;
       spotMesh.frustumCulled = false;
+      spotMesh.renderOrder = 1;
       relief.add(spotMesh);
       if (!intro) pillarS = 1;
       placePillars();
       dirty = true;
+    },
+    pick(px, py) {
+      if (disposed || intro || anim || !spotMesh || !markers.length) return null;
+      const w = host.clientWidth,
+        h = host.clientHeight;
+      const uPx = spotMat.uniforms.uPx.value as number;
+      if (!w || !h || !uPx) return null;
+      camera.updateMatrixWorld();
+      const cand: { m: Marker; d: number }[] = [];
+      for (const m of markers) {
+        pv.set(m.x, (yOf(m.alt) + D * 0.0008) * relief.scale.y, m.z);
+        const depth = -tmp.copy(pv).applyMatrix4(camera.matrixWorldInverse).z;
+        if (depth <= 0) continue;
+        tmp.copy(pv).project(camera);
+        if (tmp.z > 1) continue;
+        const sx = (tmp.x * 0.5 + 0.5) * w,
+          sy = (-tmp.y * 0.5 + 0.5) * h;
+        // Medio lado del cuadrado en pantalla (el mismo mínimo que usa el shader).
+        const half = Math.max(SPOT_MIN_PX / 2, Math.max(m.hx, m.hz) / (depth * uPx));
+        const d = Math.hypot(sx - px, sy - py);
+        if (d > Math.max(PICK_PX, half)) continue;
+        if (!occluded(pv)) cand.push({ m, d }); // una celda tapada por una montaña no responde
+      }
+      if (!cand.length) return null;
+      // La celda más cercana al cursor manda; se le suman solo las que están cerca en el terreno.
+      const anchor = cand.reduce((a, b) => (b.d < a.d ? b : a)).m;
+      const hits = cand.map((c) => c.m).filter((m) => groundKm(m, anchor) <= GROUP_KM);
+      hits.sort((a, b) => b.hs - a.hs);
+      // Poblado más cercano a la celda con más focos.
+      const near = nearestTown(hits[0], opts.towns ?? opts.places ?? [], NEAR_MAX_KM);
+      return {
+        cells: hits.map(({ id, hs, alt, lon, lat }) => ({ id, hs, alt, lon, lat })),
+        total: hits.reduce((s, m) => s + m.hs, 0),
+        near,
+      };
+    },
+    highlight(ids, focus) {
+      hlIds = ids;
+      hlFocus = focus;
+      buildHighlight();
+    },
+    setMode(next) {
+      if (disposed || next === mode) return;
+      mode = next;
+      if (intro) return; // la animación de entrada termina en el modo que toque
+      startMode(true);
     },
     dispose() {
       disposed = true;

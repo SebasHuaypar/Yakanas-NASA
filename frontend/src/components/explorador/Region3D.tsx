@@ -1,18 +1,70 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import type { DeptShape } from "@/app/explorador/lib/geo";
-import { PLACES_BY_DEPT, hasSatellite } from "@/app/explorador/lib/places";
-import type { TerrainScene } from "@/app/explorador/lib/terrain-scene";
+import {
+  PLACES_BY_DEPT,
+  hasSatellite,
+  townsOf,
+} from "@/app/explorador/lib/places";
+import type {
+  SpotCell,
+  SpotPick,
+  TerrainScene,
+  ViewMode,
+} from "@/app/explorador/lib/terrain-scene";
 import type { Texts } from "@/app/explorador/lib/i18n";
 import { BACKDROP, fmt } from "@/app/explorador/lib/ui";
 import type { ApiHeatmap } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
+import CellPanel from "./CellPanel";
+import Seg from "./Seg";
+import type { TooltipApi } from "./Tooltip";
 
 type Status = "loading" | "ready" | "error";
 
+/** La vista elegida (2D o 3D) se recuerda al cambiar de región. Se empieza en 2D. */
+let lastMode: ViewMode = "2d";
+
 const BTN =
   "cursor-pointer rounded-full border border-snow/20 bg-ink/50 px-3.5 py-1.5 text-xs font-medium text-snow transition-colors hover:border-snow/60";
+
+/**
+ * Texto del tooltip de las celdas de calor. Una celda: sus focos, el periodo, la altitud y el poblado
+ * más cercano. Varias juntas bajo el cursor: cuántas son y su suma, y las 3 con más focos (ninguna se pierde).
+ */
+function cellTip(hit: SpotPick, t: Texts, when: string) {
+  const f = (n: number) => fmt(n, t.loc);
+  const muted = (s: string) =>
+    `<span style="color:rgb(243 249 252 / .65)">${s}</span>`;
+  const near = hit.near
+    ? muted(t.cellNear(hit.near.name, f(hit.near.km), hit.near.km < 1))
+    : "";
+  if (hit.cells.length === 1) {
+    const c = hit.cells[0];
+    return [
+      `<b>${t.cellHs(f(c.hs), c.hs)}</b> · ${when}`,
+      t.cellAlt(f(c.alt)),
+      near,
+    ]
+      .filter(Boolean)
+      .join("<br>");
+  }
+  const rows = hit.cells
+    .slice(0, 3)
+    .map((c) => `• ${t.cellHs(f(c.hs), c.hs)} · ${f(c.alt)} m`);
+  const more =
+    hit.cells.length > 3 ? [muted(t.cellMore(hit.cells.length - 3))] : [];
+  return [
+    `<b>${t.cellGroup(hit.cells.length, t.cellHs(f(hit.total), hit.total))}</b>`,
+    muted(when),
+    ...rows,
+    ...more,
+    near,
+  ]
+    .filter(Boolean)
+    .join("<br>");
+}
 
 /**
  * Maqueta 3D con el relieve real del departamento (three.js + elevación AWS).
@@ -25,6 +77,7 @@ export default function Region3D({
   year,
   month,
   t,
+  tooltip,
   onBack,
 }: {
   shape: DeptShape;
@@ -33,10 +86,50 @@ export default function Region3D({
   year: number;
   month: number;
   t: Texts;
+  /** El mismo tooltip del mapa y el calendario. */
+  tooltip: TooltipApi;
   onBack: () => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<TerrainScene | null>(null);
+  const down = useRef<{ x: number; y: number } | null>(null);
+  const when = month >= 0 ? `${t.months[month]} ${year}` : `${year}`;
+
+  // Tooltip de las celdas: al pasar el cursor (mouse) o al tocar sin arrastrar (pantallas táctiles).
+  const showCell = (e: PointerEvent<HTMLDivElement>) => {
+    const el = host.current,
+      s = scene.current;
+    if (!el || !s) return;
+    const r = el.getBoundingClientRect();
+    const hit = s.pick(e.clientX - r.left, e.clientY - r.top);
+    el.style.cursor = hit ? "pointer" : "";
+    if (hit) tooltip.show(e, cellTip(hit, t, when));
+    else tooltip.hide();
+  };
+  const hideCell = () => {
+    tooltip.hide();
+    if (host.current) host.current.style.cursor = "";
+  };
+
+  // Vista 2D / 3D. La escena se crea con la vista actual (ref) y luego se cambia sin recrearla.
+  const [mode, setMode] = useState<ViewMode>(() => lastMode);
+  const modeRef = useRef(mode);
+  useEffect(() => {
+    modeRef.current = mode;
+    scene.current?.setMode(mode);
+  }, [mode]);
+  const changeMode = (m: ViewMode) => {
+    lastMode = m;
+    setMode(m);
+  };
+
+  // Celdas fijadas con un clic (se muestran en el panel de abajo y se resaltan en el mapa).
+  const [pin, setPin] = useState<{ src: unknown; cells: SpotCell[] } | null>(
+    null,
+  );
+  const [focus, setFocus] = useState<number | null>(null);
+  const towns = useMemo(() => townsOf(shape.id), [shape.id]);
+
   const [status, setStatus] = useState<Status>("loading");
   const [tiles, setTiles] = useState(0);
   const [range, setRange] = useState<{ min: number; max: number } | null>(null);
@@ -64,6 +157,8 @@ export default function Region3D({
         handle = createTerrainScene(host.current, terrain, shape, {
           reduceMotion: reduce,
           places: PLACES_BY_DEPT[shape.id],
+          towns: townsOf(shape.id),
+          mode: modeRef.current,
         });
         setSat(terrain.satellite);
         scene.current = handle;
@@ -121,6 +216,36 @@ export default function Region3D({
       scene.current?.setHotspots(cells.shown);
   }, [cells, status, heat.data]);
 
+  const pickCells = (e: PointerEvent<HTMLDivElement>) => {
+    const el = host.current,
+      s = scene.current;
+    if (!el || !s) return;
+    const r = el.getBoundingClientRect();
+    const hit = s.pick(e.clientX - r.left, e.clientY - r.top);
+    tooltip.hide();
+    if (hit) {
+      setPin({ src: cells, cells: hit.cells });
+      setFocus(hit.cells[0].id);
+    } else setPin(null); // clic en un lugar sin celdas: se cierra el detalle
+  };
+
+  // Lo fijado vale solo para las celdas con que se eligió: al cambiar el periodo, el detalle se cierra solo.
+  const pinned = pin && pin.src === cells ? pin.cells : null;
+  useEffect(() => {
+    scene.current?.highlight(
+      pinned ? pinned.map((c) => c.id) : [],
+      pinned ? focus : null,
+    );
+  }, [pinned, focus]);
+  useEffect(() => {
+    if (!pinned) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPin(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pinned]);
+
   const { x0, y0, x1, y1 } = shape.bbox;
   const pad = Math.max(x1 - x0, y1 - y0) * 0.06;
 
@@ -160,29 +285,71 @@ export default function Region3D({
           }`}
           role="img"
           aria-label={`${t.stageTitle}: ${name}`}
+          onPointerMove={(e) => {
+            if (e.buttons)
+              hideCell(); // arrastrando: girar la cámara, sin tooltip
+            else if (e.pointerType === "mouse") showCell(e);
+          }}
+          onPointerDown={(e) => {
+            down.current = { x: e.clientX, y: e.clientY };
+            hideCell();
+          }}
+          onPointerUp={(e) => {
+            const d = down.current;
+            down.current = null;
+            // un clic o toque sin arrastrar fija la celda (o el grupo) en el panel de abajo
+            if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6)
+              pickCells(e);
+          }}
+          onPointerLeave={hideCell}
+          onWheel={hideCell}
         />
 
-        <div className="pointer-events-none absolute left-3 top-3">
+        {/* Título y botones en una misma fila: un nombre largo se recorta en vez de montarse sobre los botones. */}
+        <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start gap-3">
           <div
-            className="text-xl font-bold text-snow"
+            className="min-w-0 flex-1 truncate text-xl font-bold text-snow"
             style={{ fontFamily: "var(--font-jakarta), system-ui" }}
+            title={name}
           >
             {name}
           </div>
-        </div>
-        <div className="absolute right-3 top-3 flex flex-wrap justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => scene.current?.resetView()}
-            className={BTN}
-          >
-            {t.stageReset}
-          </button>
-          <button type="button" onClick={onBack} className={BTN}>
-            {t.stageBack}
-          </button>
+          <div className="pointer-events-auto flex shrink-0 flex-wrap justify-end gap-2">
+            <Seg<ViewMode>
+              label={t.viewLabel}
+              value={mode}
+              onChange={changeMode}
+              options={[
+                { value: "3d", label: "3D" },
+                { value: "2d", label: "2D" },
+              ]}
+            />
+            <button
+              type="button"
+              onClick={() => scene.current?.resetView()}
+              className={BTN}
+            >
+              {t.stageReset}
+            </button>
+            <button type="button" onClick={onBack} className={BTN}>
+              {t.stageBack}
+            </button>
+          </div>
         </div>
       </div>
+
+      {pinned && (
+        <CellPanel
+          cells={pinned}
+          focus={focus}
+          onFocus={setFocus}
+          onClose={() => setPin(null)}
+          towns={towns}
+          zoneName={name}
+          when={when}
+          t={t}
+        />
+      )}
 
       {range && (
         <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-snow/60">

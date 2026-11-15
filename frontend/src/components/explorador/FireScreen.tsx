@@ -31,16 +31,35 @@ export default function FireScreen() {
 
   return (
     <div className="flex-1 text-snow">
-      <header className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-10 pt-28 sm:px-6 sm:pt-36 lg:grid-cols-[1.1fr_0.9fr] lg:gap-6 lg:pb-16">
-        <div className="text-center lg:text-left">
-          <h1 className="animate-rise text-4xl leading-[1.06] tracking-tight text-snow [animation-delay:100ms] sm:text-6xl lg:text-7xl">
+      {/* Cabecera con el mismo diseño que la de Método: centrada, a casi toda la pantalla, con la imagen
+          satelital del Perú de fondo que se desvanece hacia el explorador (el mapa ya está más abajo). */}
+      <header className="relative flex min-h-[92vh] flex-col justify-center">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent_0%,black_16%,black_48%,transparent_100%)]"
+        >
+          <Image
+            src="/metodo/hero-peru.webp"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-[68%_42%] opacity-75"
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_50%_45%,rgb(12_9_10/0.6),transparent_78%)]" />
+        </div>
+        <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-36 text-center sm:px-6 sm:pt-44">
+          <p className="animate-rise text-xs uppercase tracking-[0.22em] text-snow/60 [animation-delay:50ms]">
+            {t.heroKicker}
+          </p>
+          <h1 className="mx-auto mt-8 max-w-5xl animate-rise text-5xl leading-[1.04] tracking-tight text-snow [animation-delay:100ms] sm:text-7xl lg:text-8xl">
             {t.heroA}
             <span className="block text-snow/50">{t.heroB}</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-[52ch] animate-rise text-base leading-relaxed text-snow/75 [animation-delay:250ms] sm:text-lg lg:mx-0">
+          <p className="mx-auto mt-8 max-w-xl animate-rise text-lg leading-relaxed text-snow/70 [animation-delay:250ms] sm:text-xl">
             {t.heroLead}
           </p>
-          <div className="mt-9 animate-rise [animation-delay:400ms]">
+          <div className="mt-12 flex animate-rise justify-center [animation-delay:400ms]">
             <a
               href="#explorer"
               className="inline-flex items-center gap-2 rounded-full bg-snow px-7 py-3.5 text-sm font-medium text-ink transition hover:-translate-y-0.5 hover:opacity-90"
@@ -49,23 +68,6 @@ export default function FireScreen() {
               <span aria-hidden="true">↓</span>
             </a>
           </div>
-        </div>
-
-        {/* Mapa de relieve del Perú: se funde con el fondo (el negro del PNG desaparece con mix-blend) */}
-        <div className="relative mx-auto w-full max-w-[17rem] animate-fade-in [animation-delay:300ms] sm:max-w-sm lg:max-w-none">
-          <div
-            aria-hidden="true"
-            className="absolute inset-[-12%] -z-10 bg-[radial-gradient(ellipse_at_center,rgb(76_102_121/0.35),transparent_68%)]"
-          />
-          <Image
-            src="/explorador/hero-relief.webp"
-            alt={t.heroImgAlt}
-            width={900}
-            height={1220}
-            priority
-            sizes="(min-width: 1024px) 40vw, 320px"
-            className="mx-auto h-auto max-h-[34rem] w-auto object-contain mix-blend-screen [mask-image:linear-gradient(to_bottom,black_82%,transparent_100%)]"
-          />
         </div>
       </header>
 

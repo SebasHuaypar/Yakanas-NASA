@@ -24,5 +24,30 @@ export const PLACES_BY_DEPT: Record<string, Place[]> = {
   "PE-CUS": CUSCO,
 };
 
+/**
+ * Poblados para decir "a X km de …" en el tooltip de las celdas: la lista curada y la generada juntas
+ * (sin repetir nombres), así hay más referencias que solo las que se rotulan.
+ */
+export function townsOf(id: string): Place[] {
+  const seen = new Set<string>();
+  return [...(PLACES_BY_DEPT[id] ?? []), ...(GENERATED_PLACES[id] ?? [])].filter((p) =>
+    seen.has(p.name) ? false : (seen.add(p.name), true),
+  );
+}
+
+/** Distancia aproximada en km entre dos puntos cercanos (lon/lat en grados). */
+export const groundKm = (a: { lon: number; lat: number }, b: { lon: number; lat: number }) =>
+  Math.hypot((a.lon - b.lon) * 111.32 * Math.cos((a.lat * Math.PI) / 180), (a.lat - b.lat) * 110.57);
+
+/** El poblado más cercano a un punto, si está a `maxKm` o menos (más lejos no orienta). */
+export function nearestTown(p: { lon: number; lat: number }, towns: Place[], maxKm = 30) {
+  let best: { name: string; km: number } | null = null;
+  for (const t of towns) {
+    const km = groundKm(p, t);
+    if (km <= maxKm && (!best || km < best.km)) best = { name: t.name, km };
+  }
+  return best;
+}
+
 /** Todas las regiones usan imagen satelital (el diseño de Cusco). */
 export const hasSatellite = (id: string) => Boolean(id);
