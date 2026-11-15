@@ -189,6 +189,9 @@ export type ApiEvent = {
   confianza_alta: number;
   frp_total_mw: number;
   frp_max_mw: number;
+  bbox?: [number, number, number, number];
+  area_pixeles_ha?: number;
+  por_dia?: { fecha: string; detecciones: number; frp_mw: number }[];
 };
 
 export type ApiEvents = {
@@ -269,4 +272,34 @@ export type ApiFires = {
       dep_id: string;
     };
   }[];
+};
+
+/** Zonas de 0,06° donde suele haber fuego alrededor de una fecha del calendario (/recurrence). */
+export type ApiRecurrence = {
+  fecha: string;
+  ventana_dias: number;
+  ventana: { desde: string; hasta: string };
+  anios_base: number[];
+  zona_grados: number;
+  nota: string;
+  resumen: { zonas_con_historia: number; zonas_desde_30: number; zonas_desde_50: number; zonas_desde_70: number };
+  validacion: {
+    prueba: string;
+    por_frecuencia: { desde: number; hasta: number; zonas: number; ardieron: number }[];
+    por_corte: { frecuencia_minima: number; aciertos: number; cobertura: number }[];
+  };
+  features: {
+    geometry: { coordinates: [number, number] };
+    properties: { frecuencia: number; anios_con_fuego: number; anios: number; region_id: string; name: string };
+  }[];
+};
+
+/** Semana por semana, en cuántos años hubo fuego en la zona de un punto (/recurrence/place). */
+export type ApiPlaceRecurrence = {
+  region_id: string;
+  name: string;
+  anios_base: number[];
+  anios_con_fuego: number[];
+  semanas_mas_frecuentes: number[];
+  semanas: { semana: number; inicia: string; anios_con_fuego: number; frecuencia: number; cuales: number[] }[];
 };

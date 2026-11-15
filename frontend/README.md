@@ -1,6 +1,6 @@
 # Frontend · Yakana's Team
 
-The website of the **Fire Calendar of Peru**: four bilingual (EN/ES) pages that explain, explore and monitor Peru's satellite fire hotspots, harmonized across NASA's MODIS and VIIRS sensors.
+The website of the **Fire Calendar of Peru**: four bilingual (EN/ES) pages that explain, explore and help people act on Peru's satellite fire hotspots, harmonized across NASA's MODIS and VIIRS sensors.
 
 > Project overview, the science and the full architecture are in the [root README](../README.md). This document is about **how the frontend is built and how to work on it**.
 
@@ -84,10 +84,11 @@ Without it the site uses the current deployment. When the API moves to its final
 ```mermaid
 flowchart LR
     Home["/"] -- redirect --> S
-    S["/historia<br/>Story"] --> M["/metodo<br/>Method"] --> E["/explorador<br/>Explorer"] --> A["/alertas<br/>Alerts"]
+    S["/historia<br/>Story"] --> M["/metodo<br/>Method"] --> E["/explorador<br/>Explorer"] --> A["/prevencion<br/>Prevention"]
     O1["/pantalla-1"] -. 301 .-> S
     O2["/pantalla-2"] -. 301 .-> M
     O3["/pantalla-3"] -. 301 .-> E
+    O4["/alertas"] -. 301 .-> A
 ```
 
 Old working names (`/pantalla-N`) permanently redirect, so shared links keep working (see [`next.config.ts`](next.config.ts)).
@@ -152,19 +153,85 @@ flowchart TB
 - **Statuses** (high / low / normal) are computed from the baseline years 2003–2022, the same baseline the API uses.
 - Loading and error states with a retry button; nothing renders from invented data.
 
-### 3.4 Alerts — `/alertas`
+### 3.4 Prevention — `/prevencion`
 
-For the public and authorities. Everything is live.
+Built for people who have to **act**: families and farmers, firefighters and local authorities. Everything is live data and nothing is simulated.
 
-| Section | Endpoint | Notes |
-| --- | --- | --- |
-| Hero chips | `/health`, `/alert` | Window and last update time |
-| 01 This week | `/alert` | A full-width Peru card with a state-coloured map, then a grid of department cards (silhouette, state, hotspots, bar vs. the usual 25–75 % range). Filter: *only above usual* |
-| 02 Active fires | `/events` | Detections chained into events (≤ 1.2 km, ≤ 1 day apart) with a "open on map" link |
-| 03 Forecast | `/forecast`, `/regions` | Monthly statistical forecast with p10–p90 whiskers **and its measured error** |
-| 04 Before you read | – | Plain statements of what the numbers are and are not |
+![Prevention — my places](../docs/images/prevention-places.jpg)
 
-States: `bajo` (low) · `normal` · `alto` (high, > p75) · `inusual` (unusual, > p90). Departments with fewer than 10 hotspots are never marked high or unusual — that rule comes from the API.
+| Section | Audience | What it does | Endpoints |
+| --- | --- | --- | --- |
+| **01 My places** | Families, farmers | Save places (use my location, search, or tap the map). Each place is compared with the last week of satellite detections and with the history of its ~6 km zone, then can be shared with family. | `/fires`, `/events`, `/alert`, `/recurrence/place` |
+| **02 Field view** | Firefighters, authorities | Active fire events with copy-ready coordinates, department/sort/active filters, CSV and GeoJSON download, and a one-page printable **situation report**. | `/events`, `/alert` |
+| **03 Season** | Planners, farmers | Map of zones where fire usually appears around a chosen date, ranked by department, with the measured reliability of that history. | `/recurrence` |
+
+```mermaid
+flowchart LR
+    subgraph Sources
+      F["/fires"]
+      EV["/events"]
+      AL["/alert"]
+      RP["/recurrence/place"]
+      RC["/recurrence"]
+    end
+    F & EV & AL --> V[PreventionView<br/>loads once, shares]
+    V --> P[01 My places]
+    V --> FD[02 Field view]
+    RP --> P
+    RC --> SE[03 Season]
+    P -- "WhatsApp / share / copy" --> FAM((Family))
+    FD -- "CSV / GeoJSON / print" --> AUT((Authorities))
+```
+
+**My places in detail**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Person
+    participant P as PlacesSection
+    participant LS as localStorage (saved-places.ts)
+    participant API as Backend API
+    participant OSM as OpenStreetMap Nominatim
+
+    alt use my location
+        U->>P: tap "Use my location"
+        P->>P: browser geolocation (stays on the device)
+    else search
+        U->>P: type a town
+        P->>OSM: GET /search?countrycodes=pe&q=…
+        OSM-->>P: up to 5 candidates
+    else map
+        U->>P: tap the map (x,y → lat,lon)
+    end
+    P->>LS: save {name, lat, lon}  (max 8, this browser only)
+    P->>P: nearest detection, counts within 10 / 25 km (haversine)
+    P->>API: GET /recurrence/place?lat&lon
+    API-->>P: share of years with fire per week of the year
+    P-->>U: status + nearest fire + season history + share buttons
+```
+
+- **Status** is computed in the browser from `/fires`: detection within **10 km** → *Fire detected nearby*, within **25 km** → *in the area*, otherwise *no detections within 25 km*. An active event (`/events`) within 25 km is called out with its size.
+- **Season history** uses the API's week-of-year frequency for the ~6 km zone around the point and highlights the current week.
+- **Share**: a plain-text message with the real facts (status, nearest detection, history, coordinates, data window and a link) is sent through WhatsApp (`wa.me`), the system share sheet or the clipboard. **No message is sent from our servers** — there is no server.
+- **Privacy**: saved places never leave the browser (`localStorage`). Coordinates are sent to the team's API only to read the history of the zone, and a search text is sent to OpenStreetMap. The page says so.
+- **Limits**: *no detection does not prove there is no fire* (satellites pass a few times a day, clouds and smoke hide small fires). The page repeats this on every place and shows the national emergency numbers (Bomberos 116 · INDECI 115).
+
+**Field view in detail**
+
+- Events come from `/events` (detections ≤ 1.2 km and ≤ 1 day apart chained together). Each card shows size, peak fire power (MW), trend, sensor split, high-confidence count, pixel area, and **coordinates with a copy button and a map link**.
+- The filtered list downloads as **CSV** or **GeoJSON** (generated in the browser).
+- The **situation report** (`data-print-area`) summarizes scope, satellite window, totals, departments above their usual level and the five largest events. *Print / save as PDF* uses a print stylesheet that hides everything else (see `globals.css`); *Copy as text* produces the same report as plain text for radio or chat.
+
+**Season in detail**
+
+- `/recurrence?fecha&ventana&minimo` returns 0.06° zones (≈ 6.6 km) with the share of past years that had fire within ± *window* days of the date.
+- The page also shows the API's own back-test (2019–2025): for example, zones with a 60–80 % history burned about 85 % of the time in the test years. It is history that repeats, **not** a weather forecast.
+- Month, window (7/15/30 days) and minimum frequency are adjustable; the default month is the current one.
+
+Shared pieces: [`FireMap`](src/app/prevencion/FireMap.tsx) draws the department outlines with any mix of detections, active events, zones and saved places; [`lib/geo-utils.ts`](src/lib/geo-utils.ts) has haversine distance, bearing and compass; [`lib/saved-places.ts`](src/lib/saved-places.ts) is the `localStorage` store.
+
+> **Not built on purpose:** automatic alerts to a phone. They need a server that watches the API and writes to people; a fake "notify me" button would mislead users. That service is a task for the backend team (for example, a Telegram bot).
 
 ### 3.5 YakaLlama
 
@@ -182,7 +249,7 @@ flowchart TB
         R1["historia/page.tsx"]
         R2["metodo/page.tsx → View.tsx"]
         R3["explorador/page.tsx → FireScreen"]
-        R4["alertas/page.tsx → AlertView"]
+        R4["prevencion/page.tsx → PreventionView"]
       end
     end
     subgraph Shared["Shared (src/components, src/lib)"]
@@ -213,13 +280,13 @@ Principles:
 - `API_URL` from `NEXT_PUBLIC_API_URL` (default: current Cloud Run deployment).
 - `apiGet<T>(path, params, signal)` — GET with a 30 s timeout; API errors (`{"detail": "…"}`) become `ApiError`.
 - `apiUrl(path, params)` — a plain URL for download links (CSV needs no `fetch`).
-- **Typed responses** (`ApiCalendar`, `ApiAlert`, `ApiForecast`, `ApiEvents`, `ApiFires`, …) because the API's OpenAPI document does not describe its responses.
+- **Typed responses** (`ApiCalendar`, `ApiAlert`, `ApiPlaceRecurrence`, `ApiEvents`, `ApiFires`, …) because the API's OpenAPI document does not describe its responses.
 
 ### 5.2 The hook — [`lib/use-api.ts`](src/lib/use-api.ts)
 
 ```ts
 const { data, error, loading, reload } = useApi<ApiAlert>("/alert");
-const f = useApi<ApiForecast>("/forecast", { region_id: "PE-UCA" });
+const h = useApi<ApiPlaceRecurrence>("/recurrence/place", { lat: -9.5, lon: -74.9 });
 ```
 
 It cancels the previous request when the path or params change and keeps the result keyed to its request, so the UI never shows stale data for a new selection.
@@ -246,13 +313,14 @@ API=https://my-api.example node scripts/snapshot-api.mjs
 
 | Endpoint | Used by |
 | --- | --- |
-| `/regions` | Explorer selectors, Alerts forecast selector |
+| `/regions` | Explorer selectors |
 | `/calendar?region_id=` | Explorer (every region), Method, snapshot |
 | `/heatmap?start&end&region_id` | Explorer heat layer (year) and 3D hotspots (period + region) |
-| `/export/mensual.csv?region_id=` | Explorer and Alerts download buttons |
-| `/alert`, `/events`, `/forecast`, `/health` | Alerts |
+| `/export/mensual.csv?region_id=` | Explorer and Prevention download buttons |
+| `/fires`, `/events`, `/alert`, `/health` | Prevention: my places, field view |
+| `/recurrence`, `/recurrence/place` | Prevention: season map, history of a place |
 | `/calibration`, `/validation` | Method |
-| `/fires` | Story lens (last week, individual detections) |
+| `/fires` | Story lens and Prevention (last week, individual detections) |
 
 > `/fires` and `/heat` only cover the **recent window** the backend downloaded (about one week). Historical locations use `/heatmap`, which accepts any date range.
 
@@ -428,7 +496,7 @@ frontend/
 │  │  ├─ historia/           Story page
 │  │  ├─ metodo/             Method page (View.tsx + charts + TechPanel)
 │  │  ├─ explorador/         Explorer: page + lib/ (data, geo, terrain, i18n, stats)
-│  │  └─ alertas/            Alerts page (AlertView.tsx)
+│  │  └─ prevencion/         Prevention page: PreventionView, Places/Field/Season sections, FireMap
 │  ├─ components/
 │  │  ├─ Card · Select · Reveal · SectionDivider · Navbar · Logo · StarField · YakaLlama
 │  │  ├─ hero/               globe, fire clock, region card, scroll orchestration
@@ -525,7 +593,7 @@ The build is static and needs no server runtime. CORS on the API is open, so the
 
 | Symptom | Cause / fix |
 | --- | --- |
-| Explorer or Alerts show "could not reach the data" | The API is down or the URL is wrong: check `NEXT_PUBLIC_API_URL` and `GET /health`. The retry button reloads. |
+| Explorer or Prevention show "could not reach the data" | The API is down or the URL is wrong: check `NEXT_PUBLIC_API_URL` and `GET /health`. The retry button reloads. |
 | Method/Story numbers look stale | Regenerate the snapshot: `node scripts/snapshot-api.mjs` (live data replaces it after load anyway). |
 | 3D region is slow the first time | Tiles are downloading from AWS/EOX; the second visit is cached. Hover a department to pre-load it. |
 | 3D has no hotspots | The API returned no cells for that region and period ("No hotspots detected in this period"). |

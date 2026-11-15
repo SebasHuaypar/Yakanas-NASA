@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
       { source: "/pantalla-1", destination: "/historia", permanent: true },
       { source: "/pantalla-2", destination: "/metodo", permanent: true },
       { source: "/pantalla-3", destination: "/explorador", permanent: true },
+      // La página de alertas pasó a ser la de prevención
+      { source: "/alertas", destination: "/prevencion", permanent: true },
     ];
   },
 };

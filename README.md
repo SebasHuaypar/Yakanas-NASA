@@ -68,7 +68,7 @@ A full-stack product with a **backend** (data pipeline + API, built by the backe
 | 1 | **Story** | `/historia` | A scroll-driven 3D globe travels to Peru, a "fire clock" shows a typical year, a real MODIS-vs-VIIRS lens shows why the cameras disagree, and an animated chart shows how we merge them. |
 | 2 | **Method** | `/metodo` | The harmonization explained and *auditable*: before/after chart, validation on years the model never saw, per-region parameters, an interactive simulator of the formula. |
 | 3 | **Explorer** | `/explorador` | Pick a region, a year and a month: summary, department map, **real 3D terrain with the real hotspot cells**, a 23-year monthly calendar, CSV export. |
-| 4 | **Alerts** | `/alertas` | Where fire is above normal *this week*, active fire events, and a statistical forecast with its honest error. For the public and for authorities. |
+| 4 | **Prevention** | `/prevencion` | For families, farmers, firefighters and authorities: check *your places* against nearby fire, copy field coordinates and print a situation report, and see where fire usually appears this time of year. |
 | – | **YakaLlama** | every page | Floating chatbot mascot (UI ready, answers coming soon). |
 
 Everything shown is **real data** from the team's API. Nothing is simulated or illustrative.
@@ -88,7 +88,7 @@ Everything shown is **real data** from the team's API. Nothing is simulated or i
 </tr>
 <tr>
 <td><b>Explorer — 23-year monthly calendar</b><br><img src="docs/images/explorer-calendar.jpg" alt="Year × month calendar"></td>
-<td><b>Alerts — this week by department</b><br><img src="docs/images/alerts-cards.jpg" alt="Department alert cards with silhouettes"></td>
+<td><b>Prevention — my places</b><br><img src="docs/images/prevention-places.jpg" alt="A saved place with nearest detection, season history and share buttons"></td>
 </tr>
 </table>
 
@@ -115,7 +115,7 @@ flowchart LR
         C1["/historia"]
         C2["/metodo"]
         C3["/explorador"]
-        C4["/alertas"]
+        C4["/prevencion"]
         C5[lib/api.ts<br/>+ snapshot]
     end
 
@@ -148,7 +148,7 @@ sequenceDiagram
     Note over U,A: if the API is down, the snapshot stays — nothing breaks
 ```
 
-The **Method** and **Story** pages use this *snapshot-then-live* pattern. The **Explorer** and **Alerts** pages always load live (with loading and retry states), because their numbers change.
+The **Method** and **Story** pages use this *snapshot-then-live* pattern. The **Explorer** and **Prevention** pages always load live (with loading and retry states), because their numbers change.
 
 ### What each page asks the API
 
@@ -158,7 +158,7 @@ flowchart TB
       P1[Story]
       P2[Method]
       P3[Explorer]
-      P4[Alerts]
+      P4[Prevention]
     end
     subgraph Endpoints["Backend endpoints"]
       E1["/calendar"]
@@ -169,14 +169,15 @@ flowchart TB
       E6["/export/mensual.csv"]
       E7["/alert"]
       E8["/events"]
-      E9["/forecast"]
       E10["/fires"]
       E11["/health"]
+      E12["/recurrence"]
+      E13["/recurrence/place"]
     end
     P1 --> E10
     P2 --> E1 & E2 & E3
     P3 --> E4 & E1 & E5 & E6
-    P4 --> E7 & E8 & E9 & E4 & E11
+    P4 --> E10 & E8 & E7 & E11 & E12 & E13
 ```
 
 ---
@@ -217,7 +218,7 @@ flowchart LR
 | Average error per department and month | ≈ 24 % |
 | Error by zone | Rainforest 18 % · Highlands 25 % · Coast 51 % (very little fire there) |
 
-The forecast is validated too: tested on 2019–2025 it was off by **22 %** on the national yearly total and the range held the real value **67 %** of the time. We show those numbers on the page, next to the forecast.
+The seasonal history page is validated too: zones that had fire in 60–80 % of past years actually burned about **85 %** of the time in the 2019–2025 tests (the API's own back-test).
 
 Full details live in [`backend/docs/metodo.md`](backend/docs/metodo.md) and [`backend/docs/API.md`](backend/docs/API.md).
 
@@ -231,7 +232,7 @@ Yakanas-NASA/
 ├─ docs/
 │  └─ images/                 ← screenshots used in the READMEs
 ├─ frontend/                  ← Next.js app (see frontend/README.md)
-│  ├─ src/app/                  routes: historia, metodo, explorador, alertas
+│  ├─ src/app/                  routes: historia, metodo, explorador, prevencion
 │  ├─ src/components/           shared UI + per-page components
 │  ├─ src/lib/                  API client, i18n, data hooks, snapshot
 │  ├─ scripts/                  snapshot-api.mjs
@@ -306,6 +307,6 @@ The NASA logo is used only to name the challenge; it does not imply NASA's endor
 
 Built by **Yakana's Team**: Darcy Ortega · Sebastián Huaypar · Giordano Medrano · Isabel Makishi · Cesar Correa · Isaac Martel.
 
-- **Frontend:** Sebastián Huaypar (Story page, shared design system, global language system, Alerts, data integration), Giordano Medrano (Method page), Darcy Ortega (Explorer).
+- **Frontend:** Sebastián Huaypar (Story page, shared design system, global language system, Prevention, data integration), Giordano Medrano (Method page), Darcy Ortega (Explorer).
 - **Backend and data:** Cesar Correa and team (pipeline, model, API).
 
