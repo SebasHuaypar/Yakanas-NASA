@@ -26,15 +26,7 @@ const TXT = {
     high: "high",
     slope: "slope",
     obs: "observed",
-    withVals: "With this region's values",
     alta: "high",
-    lnT: "Natural logarithm",
-    lnD: "Compresses counts so a few huge months don't dominate the fit.",
-    highT: "High season",
-    highD: "1 in a high-season month, 0 if not.",
-    invT: "Back to hotspots",
-    invD: "We undo the logarithm and apply the Duan correction:",
-    inv: "VIIRS = smear × e^(…) − 1",
   },
   es: {
     loc: "es",
@@ -45,15 +37,7 @@ const TXT = {
     high: "alta",
     slope: "pendiente",
     obs: "observado",
-    withVals: "Con los valores de esta región",
     alta: "alta",
-    lnT: "Logaritmo natural",
-    lnD: "Comprime los conteos para que unos pocos meses enormes no dominen el ajuste.",
-    highT: "Temporada alta",
-    highD: "Vale 1 en un mes de temporada alta y 0 si no.",
-    invT: "De vuelta a focos",
-    invD: "Se deshace el logaritmo y se aplica la corrección de Duan:",
-    inv: "VIIRS = smear × e^(…) − 1",
   },
 };
 
@@ -164,31 +148,6 @@ export default function Formula({
         <Term k="modis" focus={focus} onFocus={onFocus} label={L.obs} value={f(u)}>
           ln(MODIS + 1)
         </Term>
-      </div>
-
-      <div className="mt-5 border-t border-slate/20 pt-4">
-        <dl className="grid gap-3 text-left sm:grid-cols-3">
-          {(
-            [
-              ["ln", L.lnT, L.lnD],
-              [L.alta, L.highT, L.highD],
-              ["e^(…)", L.invT, `${L.invD} ${L.inv}`],
-            ] as [string, string, string][]
-          ).map(([sym, t, d]) => (
-            <div
-              key={t}
-              className="rounded-2xl border border-slate/20 bg-white/[0.03] p-4"
-            >
-              <dt className="flex items-baseline gap-2">
-                <span className="font-mono text-sm font-semibold text-navy">
-                  {sym}
-                </span>
-                <span className={`text-[11px] text-slate ${hud}`}>{t}</span>
-              </dt>
-              <dd className="mt-1.5 text-xs leading-relaxed text-slate">{d}</dd>
-            </div>
-          ))}
-        </dl>
       </div>
     </Card>
   );
