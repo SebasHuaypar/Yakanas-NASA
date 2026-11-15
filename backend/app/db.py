@@ -9,6 +9,8 @@ from app.config import OUT, PARQUET
 
 
 def connect():
+    from app.almacen import bajar
+    bajar()
     parquet = PARQUET / "fires.parquet"
     csv = OUT / "fires.csv"
     con = duckdb.connect()

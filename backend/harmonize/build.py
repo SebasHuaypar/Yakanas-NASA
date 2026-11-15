@@ -196,6 +196,14 @@ def construir(desde: date, hasta: date) -> dict:
     df, stats = normalizar(crudo, vio_type)
     df = df[(df["acq_date"] >= desde.isoformat()) & (df["acq_date"] <= hasta.isoformat())].copy()
     df = asignar(df, deps)
+    ventana = df.copy()
+    previo = PARQUET / "fires.parquet"
+    if previo.exists():
+        viejo = pd.read_parquet(previo)
+        df = pd.concat([viejo, df], ignore_index=True)
+        df = df.drop_duplicates(
+            subset=["lat", "lon", "acq_date", "acq_time", "satellite", "fuente"], keep="last"
+        )
 
     OUT.mkdir(parents=True, exist_ok=True)
     PARQUET.mkdir(parents=True, exist_ok=True)
@@ -328,6 +336,8 @@ def construir(desde: date, hasta: date) -> dict:
     (OUT / "heat.json").write_text(json.dumps(calor), encoding="utf-8")
     (OUT / "series.json").write_text(json.dumps(series, ensure_ascii=False), encoding="utf-8")
     (OUT / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    from harmonize.acumular import incorporar
+    incorporar(ventana)
     print(f"focos {len(df)} | asignados {totales['asignados']} | fuera {totales['fuera']} | celdas {len(celdas)}")
     print(f"MODIS {totales['modis']}  NOAA-20 {totales['viirs_noaa20']}  NOAA-21 {totales['viirs_noaa21']}")
     return meta
