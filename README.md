@@ -1,112 +1,311 @@
-# Yakana's Team · NASA Space Apps
+<div align="center">
 
-Monorepo del proyecto.
+# 🔥 Yakana's Team · Fire Calendar of Peru
 
-| Carpeta     | Qué hay                         | Equipo   |
-| ----------- | ------------------------------- | -------- |
-| `frontend/` | Next.js (App Router) + Tailwind | Frontend |
-| `backend/`  | _pendiente_                     | Backend  |
+**One comparable record of Peru's satellite fire hotspots, 2003 → today — harmonized across NASA's MODIS and VIIRS sensors, explored on the web and turned into alerts.**
 
-## Frontend
+*NASA Space Apps Challenge 2026 · Lima*
+
+![Next.js](https://img.shields.io/badge/Next.js-16-000?logo=nextdotjs)
+![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=000)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=fff)
+![Tailwind](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss&logoColor=fff)
+![three.js](https://img.shields.io/badge/three.js-0.187-000?logo=threedotjs)
+![FastAPI](https://img.shields.io/badge/FastAPI-DuckDB-009688?logo=fastapi&logoColor=fff)
+![Data](https://img.shields.io/badge/data-NASA%20FIRMS-0b3d91)
+
+</div>
+
+---
+
+## Table of contents
+
+1. [The problem](#1-the-problem)
+2. [What we built](#2-what-we-built)
+3. [Screens](#3-screens)
+4. [Architecture](#4-architecture)
+5. [The science in one page](#5-the-science-in-one-page)
+6. [Repository layout](#6-repository-layout)
+7. [Quick start](#7-quick-start)
+8. [Deployment](#8-deployment)
+9. [Data sources, licenses and credits](#9-data-sources-licenses-and-credits)
+10. [Team](#10-team)
+
+---
+
+## 1. The problem
+
+NASA has watched fire from space for more than twenty years, but **two different cameras** did it:
+
+| Sensor | Satellites | Pixel | Period |
+| --- | --- | --- | --- |
+| **MODIS** | Terra, Aqua | 1 km | 2000 → today |
+| **VIIRS** | Suomi-NPP, NOAA-20, NOAA-21 | **375 m** | 2012 → today |
+
+VIIRS sees much smaller fires, so it reports **about 4.8 times more hotspots than MODIS** over the same land and the same years. If you simply add the two records, fire seems to explode in 2012 — and again in 2018 when a second VIIRS satellite joins. That jump is a change of *camera*, not a change of *fire*.
+
+> **The challenge:** harmonize MODIS and VIIRS into a single, honest, comparable record — and make it useful for people who are not scientists.
+
+```mermaid
+xychart-beta
+    title "Peru, hotspots per year — raw sum vs harmonized (thousands)"
+    x-axis [2003, 2005, 2007, 2009, 2011, 2012, 2014, 2016, 2018, 2020, 2022, 2024]
+    y-axis "hotspots (thousands)" 0 --> 210
+    line [14, 21, 17, 11, 10, 93, 63, 102, 124, 198, 180, 206]
+    line [75, 103, 83, 59, 57, 76, 53, 84, 56, 90, 82, 95]
+```
+
+*Top line: MODIS + VIIRS added as they arrive. Bottom line: the harmonized series in VIIRS-equivalent hotspots. The ×8.9 jump of 2012 disappears once both are on one scale.*
+
+---
+
+## 2. What we built
+
+A full-stack product with a **backend** (data pipeline + API, built by the backend team) and a **frontend** (this repo's `frontend/`: four pages, bilingual EN/ES).
+
+| # | Page | Route | What it does |
+| - | ---- | ----- | ------------ |
+| 1 | **Story** | `/historia` | A scroll-driven 3D globe travels to Peru, a "fire clock" shows a typical year, a real MODIS-vs-VIIRS lens shows why the cameras disagree, and an animated chart shows how we merge them. |
+| 2 | **Method** | `/metodo` | The harmonization explained and *auditable*: before/after chart, validation on years the model never saw, per-region parameters, an interactive simulator of the formula. |
+| 3 | **Explorer** | `/explorador` | Pick a region, a year and a month: summary, department map, **real 3D terrain with the real hotspot cells**, a 23-year monthly calendar, CSV export. |
+| 4 | **Alerts** | `/alertas` | Where fire is above normal *this week*, active fire events, and a statistical forecast with its honest error. For the public and for authorities. |
+| – | **YakaLlama** | every page | Floating chatbot mascot (UI ready, answers coming soon). |
+
+Everything shown is **real data** from the team's API. Nothing is simulated or illustrative.
+
+---
+
+## 3. Screens
+
+<table>
+<tr>
+<td width="50%"><b>Story — the typical year</b><br><img src="docs/images/story-clock.jpg" alt="Fire clock: a typical year of fire in Peru"></td>
+<td width="50%"><b>Story — two eyes in the sky</b><br><img src="docs/images/story-lens.jpg" alt="Lens comparing real MODIS and VIIRS pixels"></td>
+</tr>
+<tr>
+<td><b>Method — before and after correcting</b><br><img src="docs/images/method-chart.jpg" alt="Raw vs harmonized yearly series"></td>
+<td><b>Explorer — real hotspots on 3D terrain</b><br><img src="docs/images/explorer-3d.jpg" alt="Department map and 3D relief with real hotspot cells"></td>
+</tr>
+<tr>
+<td><b>Explorer — 23-year monthly calendar</b><br><img src="docs/images/explorer-calendar.jpg" alt="Year × month calendar"></td>
+<td><b>Alerts — this week by department</b><br><img src="docs/images/alerts-cards.jpg" alt="Department alert cards with silhouettes"></td>
+</tr>
+</table>
+
+---
+
+## 4. Architecture
+
+```mermaid
+flowchart LR
+    subgraph NASA["NASA FIRMS"]
+        A1[MODIS archive<br/>2003 →]
+        A2[VIIRS S-NPP / NOAA-20<br/>archive 2012 →]
+        A3[Near-real-time<br/>MODIS + VIIRS<br/>last days]
+    end
+
+    subgraph BE["backend/  ·  FastAPI + DuckDB  ·  Cloud Run"]
+        B1[ingest/<br/>download + filter]
+        B2[harmonize/<br/>fit log-log model<br/>2012–2022, frozen]
+        B3[(Parquet<br/>cell-day series)]
+        B4[app/<br/>REST API<br/>GET only, CORS open]
+    end
+
+    subgraph FE["frontend/  ·  Next.js 16  ·  Vercel"]
+        C1["/historia"]
+        C2["/metodo"]
+        C3["/explorador"]
+        C4["/alertas"]
+        C5[lib/api.ts<br/>+ snapshot]
+    end
+
+    U((People<br/>and authorities))
+
+    A1 & A2 & A3 --> B1 --> B2 --> B3 --> B4
+    B4 -- JSON / CSV --> C5
+    C5 --> C1 & C2 & C3 & C4
+    C1 & C2 & C3 & C4 --> U
+    AWS[(AWS Terrain Tiles<br/>Sentinel-2 cloudless)] -. relief + imagery .-> C3
+    NASAG[(NASA GIBS<br/>Blue Marble, City Lights)] -. globe textures .-> C1
+```
+
+### How a page gets its data
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Browser
+    participant F as Next.js page (static)
+    participant S as api-snapshot.ts (real, built-in)
+    participant A as Backend API
+
+    U->>F: open /metodo
+    F-->>U: HTML with the REAL snapshot already inside
+    Note over U,S: first paint is instant and already correct
+    U->>A: GET /calendar, /calibration, /validation
+    A-->>U: live JSON
+    U->>U: swap snapshot → live data (silently)
+    Note over U,A: if the API is down, the snapshot stays — nothing breaks
+```
+
+The **Method** and **Story** pages use this *snapshot-then-live* pattern. The **Explorer** and **Alerts** pages always load live (with loading and retry states), because their numbers change.
+
+### What each page asks the API
+
+```mermaid
+flowchart TB
+    subgraph Pages
+      P1[Story]
+      P2[Method]
+      P3[Explorer]
+      P4[Alerts]
+    end
+    subgraph Endpoints["Backend endpoints"]
+      E1["/calendar"]
+      E2["/calibration"]
+      E3["/validation"]
+      E4["/regions"]
+      E5["/heatmap"]
+      E6["/export/mensual.csv"]
+      E7["/alert"]
+      E8["/events"]
+      E9["/forecast"]
+      E10["/fires"]
+      E11["/health"]
+    end
+    P1 --> E10
+    P2 --> E1 & E2 & E3
+    P3 --> E4 & E1 & E5 & E6
+    P4 --> E7 & E8 & E9 & E4 & E11
+```
+
+---
+
+## 5. The science in one page
+
+**One VIIRS satellite per day.** Adding satellites would inflate the series, so the pipeline keeps NOAA-20 (since April 2018), Suomi-NPP before that, and NOAA-21 only as a backup.
+
+**Filters.** Vegetation fires only (`type = 0`) with nominal or high confidence; cells that were ever a volcano, a fixed source or sea are dropped. Local date (UTC−5), on a 0.02° grid (~5 km²).
+
+**The model.** For each department, MODIS monthly totals are translated into VIIRS-equivalent hotspots with a log-log regression fitted on the years both satellites overlap (2012–2022):
+
+```
+log(V + 1) = a + d · high_season + b · log(M + 1)
+V̂ = smear × e^(a + d·high + b·log(M+1)) − 1          (Duan smearing correction)
+range = p10 … p90 of the model residuals
+```
+
+A department with fewer than 24 months with fire, fewer than 1 500 VIIRS hotspots in 2012–2022, or a slope `b` outside 0.5–1.3 uses the **national fit** instead.
+
+```mermaid
+flowchart LR
+    M["MODIS monthly count<br/>per department"] --> L1["log(M+1)"]
+    L1 --> R["× b  + a  + d·high"]
+    R --> E["e^… × smear − 1"]
+    E --> V["VIIRS-equivalent<br/>hotspots"]
+    R --> Q["± residual p10 / p90"]
+    Q --> RANGE["uncertainty range"]
+```
+
+**Honest validation.** Trained on 2012–2019, tested on 2020–2022 (years the model never saw):
+
+| Metric | Value |
+| --- | --- |
+| National monthly error | **≈ 13 %** |
+| R² of the national monthly total | **0.94** |
+| Real months inside the announced range | **63 %** |
+| Average error per department and month | ≈ 24 % |
+| Error by zone | Rainforest 18 % · Highlands 25 % · Coast 51 % (very little fire there) |
+
+The forecast is validated too: tested on 2019–2025 it was off by **22 %** on the national yearly total and the range held the real value **67 %** of the time. We show those numbers on the page, next to the forecast.
+
+Full details live in [`backend/docs/metodo.md`](backend/docs/metodo.md) and [`backend/docs/API.md`](backend/docs/API.md).
+
+---
+
+## 6. Repository layout
+
+```
+Yakanas-NASA/
+├─ README.md                  ← you are here (project overview)
+├─ docs/
+│  └─ images/                 ← screenshots used in the READMEs
+├─ frontend/                  ← Next.js app (see frontend/README.md)
+│  ├─ src/app/                  routes: historia, metodo, explorador, alertas
+│  ├─ src/components/           shared UI + per-page components
+│  ├─ src/lib/                  API client, i18n, data hooks, snapshot
+│  ├─ scripts/                  snapshot-api.mjs
+│  └─ public/                   images, textures, icons
+└─ backend/                   ← API + pipeline (owned by the backend team; see backend/README.md)
+   ├─ app/                      FastAPI routes
+   ├─ ingest/                   FIRMS downloads
+   ├─ harmonize/                the model and the series build
+   ├─ data/out/                 small results kept in git
+   ├─ docs/                     API.md, metodo.md
+   └─ web/                      their own reference pages
+```
+
+| Folder | Owner | Docs |
+| --- | --- | --- |
+| `frontend/` | Frontend team | [`frontend/README.md`](frontend/README.md) |
+| `backend/` | Backend team | [`backend/README.md`](backend/README.md) |
+
+---
+
+## 7. Quick start
+
+You only need **Node.js 20+** to run the website; it talks to the already-deployed API.
 
 ```bash
-cd frontend
+git clone https://github.com/SebasHuaypar/Yakanas-NASA.git
+cd Yakanas-NASA/frontend
 npm install
-npm run dev      # http://localhost:3000
-npm run build    # build de producción
-npm run lint
+npm run dev          # http://localhost:3000  →  redirects to /historia
 ```
 
-### Estructura
+Other commands: `npm run build` (production build), `npm run lint`, `npx tsc --noEmit`.
 
-```
-frontend/src/
-├─ app/
-│  ├─ layout.tsx          # fuentes, fondo global (StarField + nebulosa) y Navbar
-│  ├─ globals.css         # paleta, tokens de Tailwind, .bg-stars y .nebula
-│  ├─ historia/page.tsx   # pantalla 1: la historia (landing con globo 3D)
-│  ├─ metodo/             # pantalla 2: el método (page.tsx = metadata, View.tsx = contenido)
-│  ├─ explorador/page.tsx # pantalla 3: explorador del fuego
-│  └─ alertas/            # pantalla 4: alertas, fuegos activos y pronóstico
-├─ components/
-│  ├─ StarField.tsx       # estrellas tenues en canvas, fijas detrás de todo
-│  ├─ Navbar.tsx          # barra fija sin fondo: logo + píldoras sueltas
-│  ├─ Logo.tsx
-│  └─ hero/               # pantalla 1: HeroScroll (historia con scroll) y GlobeScene (globo 3D)
-│                         # CurvedCarousel y FireClock están hechos pero sin uso por ahora
-└─ lib/
-   ├─ api.ts              # cliente de la API del backend + tipos de sus respuestas
-   ├─ use-api.ts          # hook useApi(path, params)
-   ├─ lang.ts             # idioma global EN/ES (inglés por defecto, selector en el navbar)
-   ├─ method-data.ts      # serie, calibración y validación del método (instantánea + lectura en vivo)
-   ├─ api-snapshot.ts     # GENERADO: datos reales de la API (valor inicial, ver más abajo)
-   └─ carousel.ts         # fotos del carrusel con autor, licencia y fuente
-
-frontend/scripts/snapshot-api.mjs   # regenera src/lib/api-snapshot.ts desde la API
-```
-
-### Datos: la API del equipo de backend
-
-Toda la web usa datos reales de la API "Calendario del Fuego" (FastAPI, documentación en
-`docs/API.md` de la repo del backend). La dirección vive en una sola variable de entorno:
+To point the site at another API (for example a local one), copy the example env file:
 
 ```bash
-cd frontend
-cp .env.example .env.local     # NEXT_PUBLIC_API_URL=https://...  (sin barra final)
+cp .env.example .env.local   # NEXT_PUBLIC_API_URL=https://… (no trailing slash)
 ```
 
-Sin variable se usa el despliegue actual. Cuando la API pase a la repo oficial, solo cambia esa línea.
+To run the **backend** locally (Python or Docker, needs a free FIRMS key) follow [`backend/README.md`](backend/README.md).
 
-- **Pantalla 3** (explorador): `/regions`, `/calendar` (serie mensual 2003–2025 por región), `/heatmap` y `/export/mensual.csv`.
-  El calendario es mensual porque la API no entrega conteos por semana histórica.
-- **Pantalla 4** (alertas): `/alert`, `/events`, `/forecast`, `/health` y `/regions`.
-- **Pantalla 2** (método): `/calendar`, `/calibration` y `/validation`. Arranca con una instantánea real
-  (`src/lib/api-snapshot.ts`) y la reemplaza por la lectura en vivo. Los conteos crudos de MODIS y VIIRS
-  (la línea "como llegan") salen de la extracción del equipo de backend, que la API no expone.
-- **Pantalla 1** (historia): el año típico del fuego sale de la misma instantánea.
+---
 
-Para actualizar la instantánea: `node scripts/snapshot-api.mjs` (usa `API=https://...` para otra dirección).
+## 8. Deployment
 
-### Idioma
+| Piece | Where | Notes |
+| --- | --- | --- |
+| **Frontend** | Vercel | Set **Root Directory = `frontend`**. Optional env var `NEXT_PUBLIC_API_URL`. The build is fully static. |
+| **Backend API** | Google Cloud Run (`southamerica-west1`) | Container built from `backend/Dockerfile`. |
 
-El selector EN | ES está en el navbar y aplica a todas las pantallas (inglés por defecto, se recuerda en el navegador).
-Cada componente guarda sus textos en un diccionario `{ en, es }` y los lee con `useLang()` (`src/lib/lang.ts`).
+When the API moves to its final address, **only `NEXT_PUBLIC_API_URL` changes** — no code.
 
-### Fondo global y navbar (para todas las pantallas)
+---
 
-- El fondo (estrellas + nebulosa navy) vive en `layout.tsx`, así que **ya está en todas las pantallas**: no hay que agregarlo.
-  Las secciones deben tener fondo transparente y texto claro (`text-snow`).
-- El navbar es fijo y transparente (56 px): en las pantallas 2 y 3 deja unos `pt-28` arriba para no tapar el título.
-  En la pantalla 1 aparece al hacer scroll.
-- La pantalla 1 usa three.js (`three` + `@react-three/fiber`) con texturas NASA en `public/images/earth/`.
+## 9. Data sources, licenses and credits
 
-Imágenes en `frontend/public/images/`: `earth/` (texturas NASA Blue Marble y VIIRS City Lights vía GIBS),
-`carousel/` (fotos de incendios) y `nasa-logo-white.svg`.
+| Data | Source | License / terms |
+| --- | --- | --- |
+| Fire hotspots | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) (MODIS C6.1, VIIRS 375 m) | NASA open data |
+| Globe textures | NASA GIBS: Blue Marble, VIIRS City Lights | Public domain |
+| Terrain elevation | AWS Open Data · Terrain Tiles (Terrarium) | Open |
+| Satellite imagery in 3D | Sentinel-2 cloudless © [EOX](https://s2maps.eu) | CC BY-NC-SA 4.0 (credit shown on screen) |
+| Department boundaries | geoBoundaries | CC BY |
+| Place names | GeoNames | CC BY 4.0 |
+| Fonts | Irish Grover (logo), Plus Jakarta Sans (titles), Inter (body) | SIL OFL |
 
-### Créditos de imágenes
+The NASA logo is used only to name the challenge; it does not imply NASA's endorsement.
 
-Las 12 fotos del carrusel son de Wikimedia Commons con licencia abierta; cada una
-muestra su crédito en pantalla y el enlace a su página original (ver `src/lib/carousel.ts`).
+---
 
-- Ministerio de Defensa del Perú — CC BY 2.0
-- Carlo Brescia, LLs, Johnattan Rupire, Txolo — CC BY-SA 4.0
-- Thayne Tuason — CC BY 4.0
+## 10. Team
 
-Las texturas del globo son imágenes de NASA (GIBS / Earthdata, dominio público).
+Built by **Yakana's Team**: Darcy Ortega · Sebastián Huaypar · Giordano Medrano · Isabel Makishi · Cesar Correa · Isaac Martel.
 
-El logo de NASA se usa solo para indicar el reto (NASA Space Apps Challenge); no implica respaldo de NASA.
+- **Frontend:** Sebastián Huaypar (Story page, shared design system, global language system, Alerts, data integration), Giordano Medrano (Method page), Darcy Ortega (Explorer).
+- **Backend and data:** Cesar Correa and team (pipeline, model, API).
 
-`/` redirige a `/historia`. Cada integrante trabaja en su carpeta `pantalla-N`
-(y sus componentes propios) para evitar conflictos de merge. Si algo es
-compartido (botones, tarjetas...), va en `src/components/`.
-
-### Identidad
-
-- **Logo:** "Yakana's Team" en Irish Grover (`<Logo />`, clase `font-logo`).
-- **Títulos:** Plus Jakarta Sans SemiBold/Bold (`font-heading`, aplicado a `h1-h4`).
-- **Cuerpo:** Inter Regular/Medium (`font-sans`, por defecto).
-- **Colores** (clases de Tailwind: `bg-snow`, `text-slate`, `bg-navy`, `text-ink`):
-  - `#F3F9FC` snow, fondo
-  - `#4C6679` slate, texto secundario
-  - `#283A54` navy, color principal
-  - `#0C090A` ink, texto
