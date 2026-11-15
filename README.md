@@ -124,8 +124,8 @@ flowchart LR
     end
 
     subgraph GCP["Google Cloud · southamerica-west1"]
-        J1[["Cloud Run Job<br/>run_week.py<br/>refresh the recent week"]]
-        J2[["Cloud Run Job<br/>run_modelo.py<br/>monthly retraining"]]
+        J1[["Cloud Run Job<br/>run_week.py<br/>every 10 minutes"]]
+        J2[["Cloud Run Job<br/>run_modelo.py<br/>1st of every month"]]
         GCS[("Cloud Storage bucket<br/>Parquet + model + registry")]
         API["Cloud Run service<br/>FastAPI + DuckDB<br/>GET only, CORS open"]
     end
@@ -216,8 +216,8 @@ flowchart TB
 
 | What | How often | Who |
 | --- | --- | --- |
-| Recent-week hotspots and the harmonized series | recurring | Cloud Run Job `run_week.py` → bucket → API |
-| Prevention model retraining | monthly | Cloud Run Job `run_modelo.py` → bucket → API |
+| Recent-week hotspots and the harmonized series | **every 10 minutes** | Cloud Run Job `run_week.py` → bucket → API |
+| Prevention model retraining | **on the 1st of every month** | Cloud Run Job `run_modelo.py` → bucket → API |
 | The frontend's built-in snapshot | every day at 00:10 (Peru time) | GitHub Action [`daily-data.yml`](.github/workflows/daily-data.yml) → commit → Vercel redeploys |
 | Live pages (Explorer, Prevention, Response, bot) | on every visit | straight from the API |
 
@@ -365,7 +365,7 @@ flowchart LR
 | --- | --- | --- |
 | **Frontend** | Vercel, domain [`yakanas.earth`](https://yakanas.earth) (and `www`) | Set **Root Directory = `frontend`**. Env vars: `NEXT_PUBLIC_API_URL` (optional), `NVIDIA_API_KEY` (server only, for YakaLlama) and `NVIDIA_MODEL` (optional). |
 | **Backend API** | Google Cloud Run service (`southamerica-west1`) | Container built from `backend/Dockerfile`. Reads the data package from the bucket and reloads it when a newer one appears. |
-| **Recurring jobs** | Google Cloud Run **Jobs**, same image | `python run_week.py` refreshes the recent week; `python run_modelo.py` retrains the prevention model every month. Both publish to the bucket (`DATOS_BUCKET`) because a job's disk is wiped when it ends. |
+| **Recurring jobs** | Google Cloud Run **Jobs**, same image | `python run_week.py` queries NASA FIRMS and refreshes the recent week **every 10 minutes**; `python run_modelo.py` retrains the prevention model **on the 1st of every month**. Both publish to the bucket (`DATOS_BUCKET`) because a job's disk is wiped when it ends. |
 | **Data snapshot** | GitHub Actions · [`daily-data.yml`](.github/workflows/daily-data.yml) | Every day at 00:10 (Peru) it regenerates `frontend/src/lib/api-snapshot.ts` and, if it changed, commits it to `main`; Vercel then redeploys. Can also be run by hand. |
 
 Notes:

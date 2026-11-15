@@ -26,8 +26,8 @@ flowchart LR
 | `app/modelo.py` | The prevention model: the features (shared by training and the API) and the evaluation with numpy |
 | `app/almacen.py` | Copies the data package to a Cloud Storage bucket and pulls it back when the copy there is newer |
 | `run_serie.py` | Builds the harmonized series, 2003 to today (once) |
-| `run_week.py` | Downloads and appends the recent week (**Cloud Run Job**) |
-| `run_modelo.py` | Retrains the logistic regression the API serves (**Cloud Run Job**, monthly) |
+| `run_week.py` | Downloads and appends the recent week (**Cloud Run Job**, every 10 minutes) |
+| `run_modelo.py` | Retrains the logistic regression the API serves (**Cloud Run Job**, on the 1st of every month) |
 | `comparar_modelos.py` | Compares five prediction methods. Evidence only; nothing serves it |
 | `data/out/` | Small results kept in git: calibration, validation, model, summaries |
 | `web/` | The three pages |
@@ -120,7 +120,7 @@ The Parquet files are not in git, so a fresh clone has to run this command once 
 
 **`run_week.py`** downloads the last 8 days (MODIS, NOAA-20, NOAA-21), appends them to the series and writes `data/parquet/fires.parquet` plus `week.json`, `heat.json`, `series.json` and `meta.json` in `data/out/`. The recent-week routes, the radar and the checker page read it. Without it they fall back to the 7–14 November 2026 week kept in `data/out/fires.csv`. The days already downloaded are kept.
 
-**`run_modelo.py`** retrains the logistic regression that `/prevention/model` serves. It reads `fire_cell_day.parquet` (the harmonized output), builds the training table using only dates whose ±15-day window is already closed, trains, and writes `data/out/modelo_logistico.json` plus a line in `data/out/reentrenamientos.jsonl` (the registry of retrainings). It does not compare other methods and does not touch the harmonization. Run it once a month so the model learns the newest fire.
+**`run_modelo.py`** retrains the logistic regression that `/prevention/model` serves. It reads `fire_cell_day.parquet` (the harmonized output), builds the training table using only dates whose ±15-day window is already closed, trains, and writes `data/out/modelo_logistico.json` plus a line in `data/out/reentrenamientos.jsonl` (the registry of retrainings). It does not compare other methods and does not touch the harmonization. It runs on the 1st of every month, so the model learns the newest fire.
 
 **`comparar_modelos.py`** compares five methods (recurrence, linear and logistic regression, random forest, gradient boosting) on 2019–2025 with years they had not seen and writes `data/out/modelos_comparacion.json`. Nothing schedules it: it is the evidence behind choosing the logistic regression, and the file that exists is kept as it is. See `docs/modelo-predictivo.md`.
 
@@ -141,8 +141,8 @@ The same image (`Dockerfile`) runs everything on Google Cloud. A job's disk is w
 
 ```mermaid
 flowchart LR
-    SCH["Schedule<br/>(e.g. Cloud Scheduler)"] --> JW[["Cloud Run Job<br/>python run_week.py"]]
-    SCH --> JM[["Cloud Run Job<br/>python run_modelo.py"]]
+    SCH10["Schedule<br/>every 10 minutes"] --> JW[["Cloud Run Job<br/>python run_week.py"]]
+    SCH1["Schedule<br/>1st of every month"] --> JM[["Cloud Run Job<br/>python run_modelo.py"]]
     FIRMS[("NASA FIRMS")] --> JW
     JW -- "bajar() then subir()" --> B[("Cloud Storage bucket<br/>DATOS_BUCKET")]
     JM -- "publish model + registry<br/>(atomic upload)" --> B
