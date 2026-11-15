@@ -2,8 +2,8 @@
 # No lleva base de datos: la serie vive en Parquet y la lee DuckDB.
 FROM python:3.12-slim
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements-modelo.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-modelo.txt
 COPY . .
 # Las páginas viven en ./web: run_serie.py también lee de ahí los polígonos de los departamentos.
 ENV PORT=8000

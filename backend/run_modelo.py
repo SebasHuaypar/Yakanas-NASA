@@ -53,14 +53,21 @@ def leer() -> dict:
 
 
 def armar(d: dict) -> dict:
-    """Paso 2: una tabla de variables y respuesta por fecha y año a predecir."""
+    """Una fila por fecha y año. El año en curso solo entra hasta el último día observado."""
     anual = anual_de(d)
-    return {(dia, a): tabla(d, dia, a, anual) for dia in FECHAS for a in range(ENTRENA_DESDE, d["ultimo"] + 1)}
+    partes = {}
+    for anio in range(ENTRENA_DESDE, d["ultimo"] + 1):
+        for dia in FECHAS:
+            if anio == d["ultimo"] and dia > d["ultimo_doy"]:
+                continue
+            partes[(dia, anio)] = tabla(d, dia, anio, anual)
+    return partes
 
 
 def juntar(partes: dict, anios) -> tuple[np.ndarray, np.ndarray]:
-    return (np.vstack([partes[(dia, a)][0] for a in anios for dia in FECHAS]),
-            np.concatenate([partes[(dia, a)][1] for a in anios for dia in FECHAS]))
+    pares = [(dia, anio) for anio in anios for dia in FECHAS if (dia, anio) in partes]
+    return (np.vstack([partes[par][0] for par in pares]),
+            np.concatenate([partes[par][1] for par in pares]))
 
 
 def entrenar_final(d: dict, partes: dict) -> dict:
@@ -109,6 +116,8 @@ def comparar(d: dict, partes: dict) -> dict:
 
 def main() -> None:
     inicio = time.time()
+    from app.almacen import bajar, subir
+    bajar()
     d = leer()
     print(f"Tabla armonizada: {d['filas']} filas; {d['repetidas']} comparten celda y día, "
           f"{d['repetidas_por_frontera']} de ellas por estar en el límite entre dos departamentos.")
@@ -144,6 +153,7 @@ def main() -> None:
         print(f"{n:22} {v['precision_media']:.3f}       {v['auc']:.3f}  {v['brier']:.3f}  "
               f"{v['aciertos_zonas_marcadas']:.3f}     {v['cobertura_zonas_marcadas']:.3f}")
     print(f"\nMejor por precisión media: {mejor}. Escritos modelos_comparacion.json y modelo_logistico.json (entrenado con {final['entrenado_con']}) en {time.time() - inicio:.0f} s")
+    subir()
 
 
 if __name__ == "__main__":

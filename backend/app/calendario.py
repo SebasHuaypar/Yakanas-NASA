@@ -15,6 +15,8 @@ ORIGEN = (-81.5, -18.5)
 
 
 def _conexion():
+    from app.almacen import bajar
+    bajar()
     meses = PROCESSED / "region_month.parquet"
     celdas = PROCESSED / "fire_cell_day.parquet"
     if not meses.exists() or not celdas.exists():

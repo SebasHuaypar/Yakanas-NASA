@@ -57,7 +57,8 @@ def cargar(con, fuente: str) -> dict:
     return {
         "zonas": zonas, "zi": np.array([pos[z] for z in zona.tolist()]),
         "anio": anio, "doy": doy, "hs": hs, "n": len(zonas),
-        "ultimo": int(anio.max()) - 1,       # último año completo
+        "ultimo": int(anio.max()),
+        "ultimo_doy": int(doy[anio == anio.max()].max()),
         "vecinos": [[pos[z + dx * BASE + dy] for dx in (-1, 0, 1) for dy in (-1, 0, 1)
                      if (dx or dy) and (z + dx * BASE + dy) in pos] for z in zonas.tolist()],
     }
@@ -116,6 +117,8 @@ def tabla(d: dict, dia: int, anio: int, anual: np.ndarray) -> tuple[np.ndarray, 
 
 @lru_cache(maxsize=1)
 def _modelo() -> dict:
+    from app.almacen import bajar
+    bajar()
     if not GUARDADO.exists():
         raise HTTPException(status_code=503, detail="Aún no hay modelo entrenado. Ejecuta python run_modelo.py")
     return json.loads(GUARDADO.read_text(encoding="utf-8"))
