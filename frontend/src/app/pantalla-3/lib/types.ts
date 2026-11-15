@@ -2,9 +2,8 @@
  * Contrato de datos de la pantalla 3.
  *
  * El frontend NO armoniza nada: recibe series mensuales YA armonizadas
- * (equivalente VIIRS) y solo las dibuja. Hoy salen de `mock-data.ts`;
- * cuando el backend esté listo, basta con que `loadFireDataset()`
- * (ver `fire-data.ts`) devuelva un objeto con esta misma forma.
+ * (equivalente VIIRS, 375 m) de la API del equipo de backend y solo las dibuja.
+ * La conversión vive en `fire-data.ts` (API → `FireDataset`).
  */
 
 export type Lang = "es" | "en";
@@ -22,11 +21,8 @@ export type FireZone = {
   area: number;
   /** Focos armonizados por mes, enero del año de inicio en adelante. */
   H: number[];
-  /**
-   * Focos armonizados por semana: `WEEKS` (53) celdas por año, año a año
-   * (índice = año * 53 + semana). La suma de las semanas de un mes debe dar el valor mensual de `H`.
-   */
-  W: number[];
+  /** true si ese mes es estimado desde MODIS (antes de VIIRS); false si es VIIRS observado. */
+  EST: boolean[];
   /** Rango bajo (p10) de la estimación; igual a H cuando no es estimado. */
   LO: number[];
   /** Rango alto (p90) de la estimación; igual a H cuando no es estimado. */
@@ -39,13 +35,12 @@ export type HeatCell = { x: number; y: number; count: number };
 export type FireDataset = {
   startYear: number;
   yearCount: number;
-  /** Hasta este año (incluido) los valores son estimados desde MODIS. */
+  /** Hasta este año (incluido) los valores son estimados desde MODIS (cada mes trae además su propia marca `EST`). */
   lastEstimatedYear: number;
   /** Años usados como “lo típico” (los primeros N desde startYear). */
   baselineYears: number;
   heatYear: number;
   departments: FireZone[];
   country: FireZone;
-  groups: Record<ZoneGroup, FireZone>;
   heat: HeatCell[];
 };

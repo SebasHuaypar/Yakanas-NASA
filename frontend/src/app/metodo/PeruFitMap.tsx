@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { hud } from "./fonts";
 import { MAP_VIEWBOX, PERU_REGIONS } from "./peru-map";
-import { REGION_FITS } from "./regions";
 import Card from "@/components/Card";
 import { useLang } from "@/lib/lang";
+import { useMethodData } from "@/lib/method-data";
 
 const ZONES = [
   { id: "todas", en: "All", es: "Todas" },
@@ -65,8 +65,6 @@ type Zone = (typeof ZONES)[number]["id"];
 /* Recuadro de la escena del comparador, en las mismas unidades del mapa (grados × 20). */
 const SCENE = { x: -75.9 * 20, y: 8.1 * 20, w: 2.4 * 20, h: 1.5 * 20 };
 
-const fitOf = (name: string) => REGION_FITS.find((r) => r.name === name);
-
 /**
  * Mapa del Perú por unidad territorial: naranja = ajuste propio, gris = usa el
  * ajuste nacional. Los chips filtran por zona; al pasar el cursor se ven los
@@ -78,9 +76,12 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
   const [zone, setZone] = useState<Zone>("todas");
   const [hover, setHover] = useState<string | null>(null);
 
-  const own = PERU_REGIONS.filter((r) => r.own).length;
+  const { fits } = useMethodData();
+  const fitById = (id: string) => fits.find((f) => f.id === id);
+  const isOwn = (id: string) => fitById(id)?.own ?? false;
+  const own = PERU_REGIONS.filter((r) => isOwn(r.id)).length;
   const shown = hover ? PERU_REGIONS.find((r) => r.id === hover) : null;
-  const fit = shown ? fitOf(shown.name) : null;
+  const fit = shown ? fitById(shown.id) : null;
 
   return (
     <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
@@ -101,14 +102,14 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
                 key={r.id}
                 d={r.d}
                 tabIndex={0}
-                aria-label={`${r.name}: ${r.own ? L.own : L.nat}`}
+                aria-label={`${r.name}: ${isOwn(r.id) ? L.own : L.nat}`}
                 onMouseEnter={() => setHover(r.id)}
                 onMouseLeave={() => setHover(null)}
                 onFocus={() => setHover(r.id)}
                 onBlur={() => setHover(null)}
                 className={`cursor-pointer stroke-(--base) transition-[opacity,fill] duration-200 outline-none ${
-                  r.own ? "fill-(--accent)" : "fill-slate"
-                } ${hover === r.id ? "opacity-100" : active ? (r.own ? "opacity-60" : "opacity-35") : "opacity-10"}`}
+                  isOwn(r.id) ? "fill-(--accent)" : "fill-slate"
+                } ${hover === r.id ? "opacity-100" : active ? (isOwn(r.id) ? "opacity-60" : "opacity-35") : "opacity-10"}`}
                 strokeWidth={1.2}
                 vectorEffect="non-scaling-stroke"
               />
@@ -170,7 +171,7 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
               </p>
               <h3 className="mt-1 text-2xl">{shown.name}</h3>
               <p className="mt-2 text-slate">
-                {shown.own ? (
+                {fit?.own ? (
                   <>
                     {L.hasOwn} <b className="text-ink">{L.ownB}</b> {L.ownEnd}
                   </>

@@ -1,7 +1,8 @@
 /**
- * DATOS DE EJEMPLO (nacionales, por mes) tomados del borrador del proyecto.
- * Reemplazar por la respuesta de la API del backend manteniendo las mismas formas.
+ * Series nacionales por mes. MODIS y VIIRS son los conteos crudos de la extracción del equipo de backend
+ * (calendario-del-fuego.html, datos embebidos); el registro armonizado y su rango vienen de la API.
  */
+import { SNAPSHOT_MONTHLY } from "./api-snapshot";
 
 /** Primer año de la serie. */
 export const SENSOR_FIRST_YEAR = 2003;
@@ -52,31 +53,13 @@ export const VIIRS_MONTHLY: readonly number[] = [
   533, 538, 608, 1114, 1545, 5459, 10301, 12638, 6356, 2711, 5146,
 ];
 
-/** Registro armonizado: MODIS convertido a escala VIIRS antes de 2012 y VIIRS después. */
-export const HARMONIZED_MONTHLY: readonly number[] = [
-  2435, 866, 284, 712, 751, 2050, 4606, 18244, 23682, 9476, 3773, 1044, 2969,
-  1598, 419, 630, 1665, 1939, 2777, 10149, 21257, 3744, 2459, 1035, 2170, 1030,
-  318, 496, 1867, 2931, 14870, 39231, 25973, 5881, 5265, 1025, 1083, 544, 265,
-  587, 2161, 1343, 8234, 13817, 20617, 6709, 1078, 683, 1867, 3032, 241, 303,
-  1116, 2512, 5515, 23956, 27984, 10289, 1487, 1526, 746, 1169, 284, 510, 1165,
-  1824, 4009, 16651, 24977, 4630, 2705, 2228, 515, 476, 289, 313, 914, 1160,
-  3162, 12243, 19543, 7262, 3162, 1742, 2089, 736, 409, 462, 962, 2146, 6338,
-  36724, 26647, 7204, 4553, 1126, 1684, 481, 481, 534, 962, 1246, 3619, 18047,
-  15924, 4480, 1834, 597, 720, 974, 561, 676, 1739, 2198, 6918, 22704, 26982,
-  7960, 2383, 1472, 976, 760, 533, 1813, 889, 1433, 4460, 10583, 25991, 5213,
-  4538, 2019, 1231, 849, 499, 947, 849, 2239, 3882, 15608, 16433, 6711, 2753,
-  1335, 892, 743, 477, 532, 673, 1810, 4317, 16548, 23404, 10123, 3379, 1712,
-  2557, 379, 662, 753, 1642, 3342, 10919, 20819, 21638, 8165, 11266, 1830, 984,
-  848, 522, 626, 652, 1887, 5838, 11749, 14101, 10389, 2715, 2008, 1469, 1183,
-  666, 838, 1345, 2444, 5333, 12061, 22970, 3708, 2177, 2369, 1057, 493, 453,
-  900, 1394, 3162, 5055, 26186, 21495, 5948, 2241, 966, 2012, 1272, 735, 1406,
-  2950, 4877, 6652, 30372, 16564, 14024, 7977, 1807, 1478, 1032, 569, 675, 1289,
-  1982, 6364, 18115, 19134, 7790, 2024, 1828, 2609, 624, 521, 716, 1229, 3470,
-  6361, 16637, 26216, 10192, 8908, 4316, 2542, 944, 467, 716, 1139, 3317, 7527,
-  22052, 21726, 7847, 2597, 1328, 1368, 639, 706, 1192, 1623, 3634, 7874, 23447,
-  36406, 12129, 4639, 1693, 1612, 533, 538, 608, 1114, 1545, 5459, 10301, 12638,
-  6356, 2711, 5146,
-];
+/** Registro armonizado (API del backend): MODIS convertido a escala VIIRS antes de 2012 y VIIRS observado después. */
+export const HARMONIZED_MONTHLY: readonly number[] =
+  SNAPSHOT_MONTHLY.harmonized;
+
+/** Rango p10–p90 del registro armonizado (igual al valor cuando el mes es VIIRS observado). */
+export const HARMONIZED_LOW: readonly number[] = SNAPSHOT_MONTHLY.low;
+export const HARMONIZED_HIGH: readonly number[] = SNAPSHOT_MONTHLY.high;
 
 /** Razón media VIIRS/MODIS en los años en que ambos estaban activos. */
 export const SENSOR_RATIO = 4.81;

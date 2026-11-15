@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { loadFireDataset } from "@/app/pantalla-3/lib/fire-data";
 import { TEXTS } from "@/app/pantalla-3/lib/i18n";
+import type { FireDataset } from "@/app/pantalla-3/lib/types";
 import { useLang } from "@/lib/lang";
 import Footer from "@/components/sections/Footer";
 import Explorer from "./Explorer";
@@ -11,9 +12,22 @@ import Explorer from "./Explorer";
 /** Pantalla 3: explorador de datos de fuego (cabecera con imagen + explorador). El idioma es global (navbar). */
 export default function FireScreen() {
   const [lang] = useLang();
-  // Datos simulados hoy; mañana vienen del backend (ver lib/fire-data.ts).
-  const [ds] = useState(loadFireDataset);
+  // Datos reales de la API del equipo de backend (ver lib/fire-data.ts).
+  const [ds, setDs] = useState<FireDataset | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const t = TEXTS[lang];
+
+  useEffect(() => {
+    const ctl = new AbortController();
+    loadFireDataset(ctl.signal)
+      .then((d) => {
+        setDs(d);
+        setFailed(false);
+      })
+      .catch(() => !ctl.signal.aborted && setFailed(true));
+    return () => ctl.abort();
+  }, [attempt]);
 
   return (
     <div className="flex-1 text-snow">
@@ -56,7 +70,32 @@ export default function FireScreen() {
       </header>
 
       <div id="explorer" className="scroll-mt-24">
-        <Explorer ds={ds} t={t} />
+        {ds ? (
+          <Explorer ds={ds} t={t} />
+        ) : (
+          <div
+            className="mx-auto flex min-h-80 w-full max-w-6xl flex-col items-center justify-center gap-4 px-4 text-center text-snow/70"
+            role="status"
+          >
+            {failed ? (
+              <>
+                <p>{t.loadError}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFailed(false);
+                    setAttempt((n) => n + 1);
+                  }}
+                  className="cursor-pointer rounded-full border border-snow/30 px-5 py-2 text-sm font-medium text-snow transition-colors hover:border-snow"
+                >
+                  {t.retry}
+                </button>
+              </>
+            ) : (
+              <p className="animate-pulse">{t.loading}</p>
+            )}
+          </div>
+        )}
       </div>
 
       <p className="mx-auto mt-4 w-full max-w-6xl px-4 pb-4 text-xs leading-relaxed text-snow/50 sm:px-6">

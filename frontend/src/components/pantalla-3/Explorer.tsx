@@ -283,7 +283,7 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
         />
       </section>
 
-      <ExportPanel zone={zone} ds={ds} t={t} />
+      <ExportPanel zone={zone} t={t} />
       <Tooltip api={tooltip} />
     </div>
   );

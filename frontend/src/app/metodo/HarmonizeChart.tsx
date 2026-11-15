@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { FIRST_VIIRS_YEAR, SATELLITE_MARKS, SERIES } from "./data";
 import Card from "@/components/Card";
 import { useLang } from "@/lib/lang";
+import { useMethodData } from "@/lib/method-data";
 
 const TXT = {
   en: {
@@ -107,7 +108,9 @@ export default function HarmonizeChart() {
   const H = narrow ? 290 : 360;
   const PAD = { l: narrow ? 44 : 60, r: 24, t: 34, b: 32 };
 
-  const { years, raw, harmonized, low, high } = SERIES;
+  const live = useMethodData().series;
+  const { years, raw } = SERIES; // «como llegan»: conteos crudos reales de MODIS + VIIRS
+  const { harmonized, low, high } = live; // armonizada: API del backend
   const n = years.length;
   const p = pct / 100;
 

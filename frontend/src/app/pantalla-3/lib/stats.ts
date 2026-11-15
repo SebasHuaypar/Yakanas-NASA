@@ -1,4 +1,3 @@
-import { WEEKS } from "./calendar-weeks";
 import type { FireDataset, FireZone } from "./types";
 
 /** Cálculos de PRESENTACIÓN (percentiles, totales, colores). No armoniza datos. */
@@ -84,20 +83,10 @@ export function heatColor(f: number) {
   return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`;
 }
 
-/** Valores de la semana `k` en los años de referencia (para el valor típico y el percentil). */
-function baselineWeek(z: FireZone, ds: FireDataset, k: number) {
-  const v: number[] = [];
-  for (let y = 0; y < ds.baselineYears; y++) v.push(z.W[y * WEEKS + k]);
-  return v;
-}
-
-export function weekMedian(z: FireZone, ds: FireDataset, k: number) {
-  return quant(baselineWeek(z, ds, k), 0.5);
-}
-
-/** Percentil (0..1) de `v` frente a la misma semana de los años de referencia. */
-export function weekPercentile(z: FireZone, ds: FireDataset, k: number, v: number) {
-  const b = baselineWeek(z, ds, k);
+/** Percentil (0..1) de `v` frente al mismo mes (0–11) de los años de referencia. */
+export function monthPercentile(z: FireZone, ds: FireDataset, m: number, v: number) {
+  const b: number[] = [];
+  for (let y = 0; y < ds.baselineYears; y++) b.push(z.H[y * 12 + m]);
   let below = 0,
     equal = 0;
   for (const x of b) {

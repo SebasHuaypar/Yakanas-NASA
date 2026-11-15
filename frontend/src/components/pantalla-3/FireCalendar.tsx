@@ -1,8 +1,15 @@
 "use client";
 
 import { memo, useMemo, useState } from "react";
-import { MONTH_START, MONTH_WEEKS, WEEK_MONTH, WEEKS } from "@/app/pantalla-3/lib/calendar-weeks";
-import { annualTotals, anomColor, CAL_ANOM_BINS, CAL_GRADIENT, calColor, quant, weekMedian, weekPercentile } from "@/app/pantalla-3/lib/stats";
+import {
+  annualTotals,
+  anomColor,
+  CAL_ANOM_BINS,
+  CAL_GRADIENT,
+  calColor,
+  monthPercentile,
+  quant,
+} from "@/app/pantalla-3/lib/stats";
 import { fmt } from "@/app/pantalla-3/lib/ui";
 import type { FireDataset, FireZone } from "@/app/pantalla-3/lib/types";
 import type { Texts } from "@/app/pantalla-3/lib/i18n";
@@ -10,9 +17,10 @@ import type { TooltipApi } from "./Tooltip";
 
 export type CalMode = "n" | "a";
 
-/* Calendario como el de hotspots-cusco: un renglón por año y una celda por SEMANA (53 por fila),
-   agrupadas por mes (4 o 5 semanas cada uno) con bandas de mes alternas, cruz de lectura al pasar el
-   cursor, año elegido resaltado y total anual a la derecha. */
+/* Calendario: un renglón por año y una celda por MES (12 por fila), con el valor dentro de la celda,
+   bandas de mes alternas, cruz de lectura al pasar el cursor, año elegido resaltado y total anual a la
+   derecha. Los meses estimados desde MODIS llevan borde claro. Los datos son los de la API (mensuales). */
+const COLS = 12;
 const LEFT = 46,
   RIGHT = 132,
   TOP = 24,
@@ -21,9 +29,18 @@ const LEFT = 46,
   W = 860;
 
 /** Misma tipografía del resto de la pantalla (Inter del proyecto). */
-const FONT = { fontFamily: "var(--font-inter), system-ui, sans-serif" } as const;
+const FONT = {
+  fontFamily: "var(--font-inter), system-ui, sans-serif",
+} as const;
 
 type Hover = { yi: number; k: number } | null;
+
+const compact = (v: number) =>
+  v >= 10000
+    ? `${Math.round(v / 1000)}k`
+    : v >= 1000
+      ? `${(v / 1000).toFixed(1)}k`
+      : String(Math.round(v));
 
 function FireCalendar({
   zone,
@@ -46,20 +63,21 @@ function FireCalendar({
 }) {
   const [hover, setHover] = useState<Hover>(null);
   const rows = ds.yearCount;
-  const cw = (W - LEFT - RIGHT) / WEEKS;
+  const cw = (W - LEFT - RIGHT) / COLS;
   const H = TOP + rows * ROW_H + 8;
   const selYi = year - ds.startYear;
   const yearly = useMemo(() => annualTotals(zone, ds), [zone, ds]);
   const yMax = Math.max(1, ...yearly);
 
-  // Color de cada semana: calculado una vez por región.
+  // Color de cada mes: calculado una vez por región.
   const fills = useMemo(() => {
-    const pos = zone.W.filter((v) => v > 0);
-    const vmax = pos.length ? quant(pos, 0.97) || 1 : 1; // como hotspots-cusco: percentil 97 como tope
-    return zone.W.map((v, i) => {
-      const k = i % WEEKS;
-      return mode === "n" ? calColor(v, vmax) : anomColor(weekPercentile(zone, ds, k, v));
-    });
+    const pos = zone.H.filter((v) => v > 0);
+    const vmax = pos.length ? quant(pos, 0.97) || 1 : 1; // percentil 97 como tope de la escala
+    return zone.H.map((v, i) =>
+      mode === "n"
+        ? calColor(v, vmax)
+        : anomColor(monthPercentile(zone, ds, i % 12, v)),
+    );
   }, [zone, ds, mode]);
 
   // Celdas, barras y totales: se calculan una vez (no dependen del cursor ni del año elegido).
@@ -68,32 +86,73 @@ function FireCalendar({
       <>
         {Array.from({ length: rows }, (_, yi) => {
           const yr = ds.startYear + yi,
-            est = yr <= ds.lastEstimatedYear,
             y0 = TOP + yi * ROW_H;
           return (
             <g key={yr} style={FONT}>
-              {Array.from({ length: WEEKS }, (_, k) => (
-                <rect
-                  key={k}
-                  x={LEFT + k * cw + GAP / 2}
-                  y={y0 + 1}
-                  width={cw - GAP}
-                  height={ROW_H - 3}
-                  rx={3}
-                  fill={fills[yi * WEEKS + k]}
-                  stroke={est ? "#fff" : "none"}
-                  strokeOpacity={0.28}
-                  strokeWidth={0.6}
-                />
-              ))}
-              <rect x={W - RIGHT + 14} y={y0 + 4} width={Math.max(yearly[yi] > 0 ? 2 : 0, (36 * yearly[yi]) / yMax)} height={ROW_H - 8} rx={3} fill="rgb(243 249 252 / 0.5)" />
-              <text x={W - 4} y={y0 + ROW_H / 2 + 3.5} textAnchor="end" fontSize={10} fill="rgb(243 249 252 / 0.6)">{fmt(yearly[yi], t.loc)}</text>
+              {Array.from({ length: COLS }, (_, k) => {
+                const v = zone.H[yi * 12 + k];
+                const light =
+                  fills[yi * 12 + k] === "#fff0a8" ||
+                  fills[yi * 12 + k] === "#ffe08a" ||
+                  fills[yi * 12 + k] === "#ffb347" ||
+                  fills[yi * 12 + k] === "#ff9d2e";
+                return (
+                  <g key={k}>
+                    <rect
+                      x={LEFT + k * cw + GAP / 2}
+                      y={y0 + 1}
+                      width={cw - GAP}
+                      height={ROW_H - 3}
+                      rx={3}
+                      fill={fills[yi * 12 + k]}
+                      stroke={zone.EST[yi * 12 + k] ? "#fff" : "none"}
+                      strokeOpacity={0.35}
+                      strokeDasharray={
+                        zone.EST[yi * 12 + k] ? "3 2" : undefined
+                      }
+                      strokeWidth={0.8}
+                    />
+                    {cw > 40 && (
+                      <text
+                        x={LEFT + k * cw + cw / 2}
+                        y={y0 + ROW_H / 2 + 3}
+                        textAnchor="middle"
+                        fontSize={9}
+                        fill={light ? "#0c090a" : "rgb(243 249 252 / 0.85)"}
+                        pointerEvents="none"
+                      >
+                        {compact(v)}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+              <rect
+                x={W - RIGHT + 14}
+                y={y0 + 4}
+                width={Math.max(
+                  yearly[yi] > 0 ? 2 : 0,
+                  (36 * yearly[yi]) / yMax,
+                )}
+                height={ROW_H - 8}
+                rx={3}
+                fill="rgb(243 249 252 / 0.5)"
+              />
+              <text
+                x={W - 4}
+                y={y0 + ROW_H / 2 + 3.5}
+                textAnchor="end"
+                fontSize={10}
+                fill="rgb(243 249 252 / 0.6)"
+              >
+                {fmt(yearly[yi], t.loc)}
+              </text>
             </g>
           );
         })}
       </>
     ),
-    [rows, ds, cw, fills, yearly, yMax, t.loc],
+    [rows, ds, cw, fills, yearly, yMax, t.loc, zone],
   );
 
   const cellAt = (e: React.MouseEvent<SVGElement>): Hover => {
@@ -102,24 +161,31 @@ function FireCalendar({
       y = ((e.clientY - b.top) * H) / b.height - TOP;
     const yi = Math.floor(y / ROW_H),
       k = Math.floor(x / cw);
-    return yi < 0 || yi >= rows || k < 0 || k >= WEEKS ? null : { yi, k };
+    return yi < 0 || yi >= rows || k < 0 || k >= COLS ? null : { yi, k };
   };
 
   const tipFor = (h: NonNullable<Hover>) => {
     const yr = ds.startYear + h.yi,
-      i = h.yi * WEEKS + h.k,
-      m = WEEK_MONTH[h.k],
-      est = yr <= ds.lastEstimatedYear,
-      v = zone.W[i],
-      p = weekPercentile(zone, ds, h.k, v);
-    const mi = h.yi * 12 + m,
-      ratioLo = zone.H[mi] > 0 ? zone.LO[mi] / zone.H[mi] : 1,
-      ratioHi = zone.H[mi] > 0 ? zone.HI[mi] / zone.H[mi] : 1;
+      i = h.yi * 12 + h.k,
+      est = zone.EST[i],
+      v = zone.H[i],
+      p = monthPercentile(zone, ds, h.k, v);
+    const clim = Array.from(
+      { length: ds.baselineYears },
+      (_, y) => zone.H[y * 12 + h.k],
+    );
     return t.tipCal({
-      w: MONTH_WEEKS[m].indexOf(h.k) + 1, m: t.months[m], y: yr, est, v: fmt(v, t.loc),
-      r: est ? ` (${t.range} ${fmt(v * ratioLo, t.loc)}–${fmt(v * ratioHi, t.loc)})` : "",
-      med: fmt(weekMedian(zone, ds, h.k), t.loc),
-      st: t.stShort[p > 0.75 ? "high" : p < 0.25 ? "low" : "normal"], hs: t.hsWord, typical: t.median,
+      m: t.months[h.k],
+      y: yr,
+      est,
+      v: fmt(v, t.loc),
+      r: est
+        ? ` (${t.range} ${fmt(zone.LO[i], t.loc)}–${fmt(zone.HI[i], t.loc)})`
+        : "",
+      med: fmt(quant(clim, 0.5), t.loc),
+      st: t.stShort[p > 0.75 ? "high" : p < 0.25 ? "low" : "normal"],
+      hs: t.hsWord,
+      typical: t.median,
     });
   };
 
@@ -145,9 +211,6 @@ function FireCalendar({
     onPick(y, m);
   };
 
-  // Ventana del mes elegido (sus semanas) en el renglón del año.
-  const selWeeks = month >= 0 ? MONTH_WEEKS[month] : [];
-
   const MUTED = "rgb(243 249 252 / 0.6)",
     ACCENT = "#f3f9fc";
 
@@ -162,30 +225,65 @@ function FireCalendar({
           onKeyDown={onKey}
           className="block h-auto w-full min-w-190 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         >
-          <g fontSize={10.5} fill={MUTED} style={{ ...FONT, textTransform: "uppercase", letterSpacing: "0.14em" }}>
-            {/* bandas de mes alternas + etiquetas (las semanas se agrupan bajo cada mes) */}
+          <g
+            fontSize={10.5}
+            fill={MUTED}
+            style={{
+              ...FONT,
+              textTransform: "uppercase",
+              letterSpacing: "0.14em",
+            }}
+          >
+            {/* bandas de mes alternas + etiquetas */}
             {t.mshort.map((label, m) => {
-              const x0 = LEFT + (MONTH_START[m] / 7) * cw,
-                x1 = LEFT + (MONTH_START[m + 1] / 7) * cw;
+              const x0 = LEFT + m * cw,
+                x1 = x0 + cw;
               return (
                 <g key={m}>
-                  {m % 2 === 1 && <rect x={x0} y={TOP - 4} width={x1 - x0} height={rows * ROW_H + 6} fill="#fff" fillOpacity={0.03} />}
-                  <text x={(x0 + x1) / 2} y={12} textAnchor="middle">{label}</text>
+                  {m % 2 === 1 && (
+                    <rect
+                      x={x0}
+                      y={TOP - 4}
+                      width={x1 - x0}
+                      height={rows * ROW_H + 6}
+                      fill="#fff"
+                      fillOpacity={0.03}
+                    />
+                  )}
+                  <text x={(x0 + x1) / 2} y={12} textAnchor="middle">
+                    {label}
+                  </text>
                 </g>
               );
             })}
-            <text x={W - 4} y={12} textAnchor="end">{t.annual}</text>
+            <text x={W - 4} y={12} textAnchor="end">
+              {t.annual}
+            </text>
           </g>
 
           {/* año elegido */}
-          <rect x={0} y={TOP + selYi * ROW_H - 1} width={W} height={ROW_H} fill="#fff" fillOpacity={0.04} />
+          <rect
+            x={0}
+            y={TOP + selYi * ROW_H - 1}
+            width={W}
+            height={ROW_H}
+            fill="#fff"
+            fillOpacity={0.04}
+          />
 
           {grid}
           {/* etiquetas de año (dependen del año elegido) */}
           <g fontSize={11} style={FONT}>
             {Array.from({ length: rows }, (_, yi) => (
-              <text key={yi} x={4} y={TOP + yi * ROW_H + ROW_H / 2 + 4} fontWeight={yi === selYi ? 700 : 400} fill={yi === selYi ? ACCENT : MUTED}>
-                {ds.startYear + yi}{ds.startYear + yi <= ds.lastEstimatedYear ? "*" : ""}
+              <text
+                key={yi}
+                x={4}
+                y={TOP + yi * ROW_H + ROW_H / 2 + 4}
+                fontWeight={yi === selYi ? 700 : 400}
+                fill={yi === selYi ? ACCENT : MUTED}
+              >
+                {ds.startYear + yi}
+                {ds.startYear + yi <= ds.lastEstimatedYear ? "*" : ""}
               </text>
             ))}
           </g>
@@ -193,17 +291,39 @@ function FireCalendar({
           {/* cruz de lectura + semana bajo el cursor */}
           {hover && (
             <g pointerEvents="none">
-              <rect x={LEFT + hover.k * cw} y={TOP - 4} width={cw} height={rows * ROW_H + 6} fill="#fff" fillOpacity={0.05} />
-              <rect x={LEFT} y={TOP + hover.yi * ROW_H} width={WEEKS * cw} height={ROW_H} fill="#fff" fillOpacity={0.05} />
-              <rect x={LEFT + hover.k * cw + GAP / 2} y={TOP + hover.yi * ROW_H + 1} width={cw - GAP} height={ROW_H - 3} rx={3} fill="#fff" fillOpacity={0.3} />
+              <rect
+                x={LEFT + hover.k * cw}
+                y={TOP - 4}
+                width={cw}
+                height={rows * ROW_H + 6}
+                fill="#fff"
+                fillOpacity={0.05}
+              />
+              <rect
+                x={LEFT}
+                y={TOP + hover.yi * ROW_H}
+                width={COLS * cw}
+                height={ROW_H}
+                fill="#fff"
+                fillOpacity={0.05}
+              />
+              <rect
+                x={LEFT + hover.k * cw + GAP / 2}
+                y={TOP + hover.yi * ROW_H + 1}
+                width={cw - GAP}
+                height={ROW_H - 3}
+                rx={3}
+                fill="#fff"
+                fillOpacity={0.3}
+              />
             </g>
           )}
-          {/* ventana elegida: las semanas del mes seleccionado */}
-          {selWeeks.length > 0 && (
+          {/* mes elegido: su celda en el renglón del año */}
+          {month >= 0 && (
             <rect
-              x={LEFT + selWeeks[0] * cw + GAP / 2}
+              x={LEFT + month * cw + GAP / 2}
               y={TOP + selYi * ROW_H + 1}
-              width={selWeeks.length * cw - GAP}
+              width={cw - GAP}
               height={ROW_H - 3}
               rx={4}
               fill="none"
@@ -217,13 +337,15 @@ function FireCalendar({
           <rect
             x={LEFT}
             y={TOP}
-            width={WEEKS * cw}
+            width={COLS * cw}
             height={rows * ROW_H}
             fill="transparent"
             className="cursor-pointer"
             onMouseMove={(e) => {
               const h = cellAt(e);
-              setHover((prev) => (prev?.yi === h?.yi && prev?.k === h?.k ? prev : h)); // solo repinta al cambiar de celda
+              setHover((prev) =>
+                prev?.yi === h?.yi && prev?.k === h?.k ? prev : h,
+              ); // solo repinta al cambiar de celda
               if (h) tooltip.show(e, tipFor(h));
               else tooltip.hide();
             }}
@@ -233,7 +355,7 @@ function FireCalendar({
             }}
             onClick={(e) => {
               const h = cellAt(e);
-              if (h) onPick(ds.startYear + h.yi, WEEK_MONTH[h.k]);
+              if (h) onPick(ds.startYear + h.yi, h.k);
             }}
           />
         </svg>
@@ -244,7 +366,10 @@ function FireCalendar({
           <>
             <span>{t.calScaleN}</span>
             <span>0</span>
-            <span className="inline-block h-2.5 w-30 rounded-md" style={{ background: CAL_GRADIENT }} />
+            <span
+              className="inline-block h-2.5 w-30 rounded-md"
+              style={{ background: CAL_GRADIENT }}
+            />
             <span>{t.calHigh}</span>
           </>
         ) : (
@@ -252,7 +377,10 @@ function FireCalendar({
             <span>{t.calPercentile}</span>
             {CAL_ANOM_BINS.map(([, col], i) => (
               <span key={col} className="inline-flex items-center gap-1">
-                <i className="inline-block h-2.5 w-2.5 rounded" style={{ background: col }} />
+                <i
+                  className="inline-block h-2.5 w-2.5 rounded"
+                  style={{ background: col }}
+                />
                 {["<50", "50–80", "80–90", "90–95", "95–99", "≥99"][i]}
               </span>
             ))}

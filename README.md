@@ -24,9 +24,10 @@ frontend/src/
 ├─ app/
 │  ├─ layout.tsx          # fuentes, fondo global (StarField + nebulosa) y Navbar
 │  ├─ globals.css         # paleta, tokens de Tailwind, .bg-stars y .nebula
-│  ├─ historia/page.tsx
-│  ├─ metodo/page.tsx
-│  └─ pantalla-3/page.tsx
+│  ├─ historia/page.tsx   # pantalla 1: la historia (landing con globo 3D)
+│  ├─ metodo/             # pantalla 2: el método (page.tsx = metadata, View.tsx = contenido)
+│  ├─ pantalla-3/page.tsx # pantalla 3: explorador del fuego
+│  └─ alertas/            # pantalla 4: alertas, fuegos activos y pronóstico
 ├─ components/
 │  ├─ StarField.tsx       # estrellas tenues en canvas, fijas detrás de todo
 │  ├─ Navbar.tsx          # barra fija sin fondo: logo + píldoras sueltas
@@ -34,9 +35,42 @@ frontend/src/
 │  └─ hero/               # pantalla 1: HeroScroll (historia con scroll) y GlobeScene (globo 3D)
 │                         # CurvedCarousel y FireClock están hechos pero sin uso por ahora
 └─ lib/
-   ├─ fire-data.ts        # DATOS FALSOS por ahora (reemplazar por la API del backend)
+   ├─ api.ts              # cliente de la API del backend + tipos de sus respuestas
+   ├─ use-api.ts          # hook useApi(path, params)
+   ├─ lang.ts             # idioma global EN/ES (inglés por defecto, selector en el navbar)
+   ├─ method-data.ts      # serie, calibración y validación del método (instantánea + lectura en vivo)
+   ├─ api-snapshot.ts     # GENERADO: datos reales de la API (valor inicial, ver más abajo)
    └─ carousel.ts         # fotos del carrusel con autor, licencia y fuente
+
+frontend/scripts/snapshot-api.mjs   # regenera src/lib/api-snapshot.ts desde la API
 ```
+
+### Datos: la API del equipo de backend
+
+Toda la web usa datos reales de la API "Calendario del Fuego" (FastAPI, documentación en
+`docs/API.md` de la repo del backend). La dirección vive en una sola variable de entorno:
+
+```bash
+cd frontend
+cp .env.example .env.local     # NEXT_PUBLIC_API_URL=https://...  (sin barra final)
+```
+
+Sin variable se usa el despliegue actual. Cuando la API pase a la repo oficial, solo cambia esa línea.
+
+- **Pantalla 3** (explorador): `/regions`, `/calendar` (serie mensual 2003–2025 por región), `/heatmap` y `/export/mensual.csv`.
+  El calendario es mensual porque la API no entrega conteos por semana histórica.
+- **Pantalla 4** (alertas): `/alert`, `/events`, `/forecast`, `/health` y `/regions`.
+- **Pantalla 2** (método): `/calendar`, `/calibration` y `/validation`. Arranca con una instantánea real
+  (`src/lib/api-snapshot.ts`) y la reemplaza por la lectura en vivo. Los conteos crudos de MODIS y VIIRS
+  (la línea "como llegan") salen de la extracción del equipo de backend, que la API no expone.
+- **Pantalla 1** (historia): el año típico del fuego sale de la misma instantánea.
+
+Para actualizar la instantánea: `node scripts/snapshot-api.mjs` (usa `API=https://...` para otra dirección).
+
+### Idioma
+
+El selector EN | ES está en el navbar y aplica a todas las pantallas (inglés por defecto, se recuerda en el navegador).
+Cada componente guarda sus textos en un diccionario `{ en, es }` y los lee con `useLang()` (`src/lib/lang.ts`).
 
 ### Fondo global y navbar (para todas las pantallas)
 

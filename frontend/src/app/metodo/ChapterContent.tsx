@@ -1,7 +1,7 @@
 "use client";
 
 import DataNote from "./DataNote";
-import { FIRST_VIIRS_YEAR, SERIES } from "./data";
+import { FIRST_VIIRS_YEAR } from "./data";
 import { hud } from "./fonts";
 import OverlapTimeline from "./OverlapTimeline";
 import PairsScatter from "./PairsScatter";
@@ -9,9 +9,9 @@ import PeruFitMap from "./PeruFitMap";
 import { PAIR_TOTAL } from "./pairs";
 import RangeBar from "./RangeBar";
 import RangeYears from "./RangeYears";
-import { REGION_FITS } from "./regions";
 import Card from "@/components/Card";
 import { useLang } from "@/lib/lang";
+import { useMethodData } from "@/lib/method-data";
 
 const TXT = {
   en: {
@@ -35,11 +35,11 @@ const TXT = {
       ["months", "of record"],
     ],
     d_note:
-      "Prototype description; the source and the final filters are confirmed by the data team.",
+      "As documented by the backend team: FIRMS archive by country, with the NRT product for the latest days.",
     s_years: ["years of overlap", "2012 – 2022"],
     s_pairs: ["month-region pairs", "to learn the rule"],
     s_note:
-      "Prototype data (a sample of the pairs); replaced by the final algorithm's.",
+      "Real MODIS and VIIRS monthly counts by department, 2012–2022 (a sample of the pairs from the team's first extraction). The official calibration is under “Under the hood”.",
     rule: "The rule",
     ruleTxt1:
       "In words: from MODIS's count we work out how many VIIRS would have counted. Each region has its own ",
@@ -48,9 +48,10 @@ const TXT = {
     ex2: ": MODIS counts ",
     ex3: " hotspots. The model estimates ",
     ex4: " on the VIIRS scale.",
-    exNote: "Indicative calculation with the prototype's parameters.",
+    exNote:
+      "Calculation with the official calibration, including the Duan correction.",
     m_note:
-      "Prototype boundaries and parameters (26 units: departments, Callao and Metropolitan Lima).",
+      "Official calibration v1, frozen, read from the backend API (26 units: departments, Callao and Metropolitan Lima).",
     r_marks: [
       ["The mark", "Is the best estimate of that year's count."],
       ["The band", "Is where the real value probably was."],
@@ -60,7 +61,7 @@ const TXT = {
       ],
     ],
     r_note:
-      "Prototype values (p10–p90 of the residuals); the final interval is set by the algorithm.",
+      "Range = 10th to 90th percentile of the model residuals, from the backend API.",
   },
   es: {
     loc: "es",
@@ -86,11 +87,11 @@ const TXT = {
       ["meses", "de registro"],
     ],
     d_note:
-      "Descripción del prototipo; la fuente y los filtros finales los confirma el equipo de datos.",
+      "Según la documentación del equipo de backend: archivo FIRMS por país, con el producto NRT para los últimos días.",
     s_years: ["años de solape", "2012 – 2022"],
     s_pairs: ["pares mes-región", "para aprender la regla"],
     s_note:
-      "Datos del prototipo (muestra de los pares); se reemplazan por los del algoritmo final.",
+      "Conteos mensuales reales de MODIS y VIIRS por departamento, 2012–2022 (muestra de los pares de la primera extracción del equipo). La calibración oficial está en «Bajo el capó».",
     rule: "La regla",
     ruleTxt1:
       "En palabras: del conteo de MODIS se calcula cuánto habría contado VIIRS. Cada región tiene sus propios ",
@@ -99,21 +100,21 @@ const TXT = {
     ex2: ": MODIS cuenta ",
     ex3: " focos. El modelo estima ",
     ex4: " en escala VIIRS.",
-    exNote: "Cálculo orientativo con los parámetros del prototipo.",
+    exNote:
+      "Cálculo con la calibración oficial, incluida la corrección de Duan.",
     m_note:
-      "Límites y parámetros del prototipo (26 unidades: departamentos, Callao y Lima Metropolitana).",
+      "Calibración oficial v1, congelada, leída de la API del backend (26 unidades: departamentos, Callao y Lima Metropolitana).",
     r_marks: [
       ["La marca", "Es la mejor estimación del conteo de ese año."],
       ["La franja", "Es donde probablemente estuvo el valor real."],
       ["Desde 2012", "No hay franja: esos años los mide VIIRS directamente."],
     ],
     r_note:
-      "Valores del prototipo (p10–p90 de los residuos); el intervalo final lo define el algoritmo.",
+      "Rango = percentil 10 al 90 de los residuos del modelo, desde la API del backend.",
   },
 };
 
 const tile = "glass rounded-3xl p-5";
-const i11 = SERIES.years.indexOf(FIRST_VIIRS_YEAR - 1);
 
 function Stat({ v, t, d }: { v: string; t: string; d?: string }) {
   return (
@@ -190,10 +191,12 @@ export function SolapeContent() {
 export function ModeloContent() {
   const [lang] = useLang();
   const L = TXT[lang];
-  const uc = REGION_FITS.find((r) => r.name === "Ucayali");
+  const uc = useMethodData().fits.find((r) => r.id === "PE-UCA");
   const modis = 300;
   const est = uc
-    ? Math.round(Math.exp(uc.a + uc.d + uc.b * Math.log(modis + 1)) - 1)
+    ? Math.round(
+        uc.smear * Math.exp(uc.a + uc.d + uc.b * Math.log(modis + 1)) - 1,
+      )
     : null;
   return (
     <div className="space-y-5">
@@ -238,6 +241,8 @@ export function ModeloContent() {
 export function RangoContent() {
   const [lang] = useLang();
   const L = TXT[lang];
+  const SERIES = useMethodData().series;
+  const i11 = SERIES.years.indexOf(FIRST_VIIRS_YEAR - 1);
   return (
     <div className="space-y-5">
       <div className="grid gap-5 md:grid-cols-2">

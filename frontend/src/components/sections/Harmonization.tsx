@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SNAPSHOT_VALIDATION } from "@/lib/api-snapshot";
 import { useLang } from "@/lib/lang";
 import Reveal from "@/components/Reveal";
 import SectionDivider from "@/components/SectionDivider";
 import {
+  HARMONIZED_HIGH,
+  HARMONIZED_LOW,
   HARMONIZED_MONTHLY,
   MODIS_MONTHLY,
   OVERLAP_END,
@@ -21,7 +24,7 @@ const W = 1000;
 const H = 380;
 const PAD = { l: 52, r: 16, t: 18, b: 36 };
 const N = MODIS_MONTHLY.length;
-const YMAX = Math.max(...HARMONIZED_MONTHLY, ...VIIRS_MONTHLY) * 1.06;
+const YMAX = Math.max(...HARMONIZED_HIGH, ...VIIRS_MONTHLY) * 1.06;
 const BASE = H - PAD.b;
 
 const x = (t: number) => PAD.l + (t / (N - 1)) * (W - PAD.l - PAD.r);
@@ -32,6 +35,13 @@ const line = (series: readonly number[], from = 0) =>
   series
     .map((v, i) => `${i === 0 ? "M" : "L"}${f(x(from + i))},${f(y(v))}`)
     .join("");
+
+const R2 = {
+  en: SNAPSHOT_VALIDATION.con_temporada.r2_nacional.toFixed(2),
+  es: SNAPSHOT_VALIDATION.con_temporada.r2_nacional
+    .toFixed(2)
+    .replace(".", ","),
+};
 
 const TXT = {
   en: {
@@ -52,9 +62,9 @@ const TXT = {
       },
     ],
     chips: [
-      { v: "0.98", l: "R² on months the model never saw" },
+      { v: R2.en, l: "R² on years the model never saw" },
       { v: "2012–19", l: "years to learn; 2020–22 to check" },
-      { v: "25", l: "departments with a 2003–2025 record" },
+      { v: "26", l: "departments with a 2003–2025 record" },
     ],
     aria: "Hotspots per month in Peru, 2003–2025: MODIS, VIIRS and the harmonized record",
     both: "Both satellites active",
@@ -78,9 +88,9 @@ const TXT = {
       },
     ],
     chips: [
-      { v: "0,98", l: "R² en meses que el modelo nunca vio" },
+      { v: R2.es, l: "R² en años que el modelo nunca vio" },
       { v: "2012–19", l: "años para aprender; 2020–22 para comprobar" },
-      { v: "25", l: "departamentos con registro 2003–2025" },
+      { v: "26", l: "departamentos con registro 2003–2025" },
     ],
     aria: "Focos de calor por mes en Perú, 2003–2025: MODIS, VIIRS y el registro armonizado",
     both: "Ambos satélites activos",
@@ -101,15 +111,15 @@ export default function Harmonization() {
   const [step, setStep] = useState(-1); // -1: aún no empieza
 
   const paths = useMemo(() => {
-    // Rango de incertidumbre (~ ±20 %) solo donde el registro se estima desde MODIS
-    const est = HARMONIZED_MONTHLY.slice(0, VIIRS_START + 1);
-    const up = est
-      .map((v, i) => `${i === 0 ? "M" : "L"}${f(x(i))},${f(y(v * 1.2))}`)
+    // Rango de incertidumbre p10–p90 (de la API) solo donde el registro se estima desde MODIS
+    const hi = HARMONIZED_HIGH.slice(0, VIIRS_START + 1);
+    const lo = HARMONIZED_LOW.slice(0, VIIRS_START + 1);
+    const up = hi
+      .map((v, i) => `${i === 0 ? "M" : "L"}${f(x(i))},${f(y(v))}`)
       .join("");
-    const down = est
+    const down = lo
       .map(
-        (_, i) =>
-          `L${f(x(est.length - 1 - i))},${f(y(est[est.length - 1 - i] * 0.8))}`,
+        (_, i) => `L${f(x(lo.length - 1 - i))},${f(y(lo[lo.length - 1 - i]))}`,
       )
       .join("");
     return {

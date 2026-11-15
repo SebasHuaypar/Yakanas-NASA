@@ -21,13 +21,13 @@ import SectionHead from "./SectionHead";
 import TechPanel from "./TechPanel";
 import WhatHappened from "./WhatHappened";
 import { FIRST_VIIRS_YEAR, SERIES } from "./data";
+import { useMethodData, validationFigures } from "@/lib/method-data";
 import { hud, mono, montserrat } from "./fonts";
 import Card from "@/components/Card";
 import { useLang, type Lang } from "@/lib/lang";
 
 const i11 = SERIES.years.indexOf(FIRST_VIIRS_YEAR - 1);
 const jumpRaw = SERIES.raw[i11 + 1] / SERIES.raw[i11];
-const jumpHarm = SERIES.harmonized[i11 + 1] / SERIES.harmonized[i11];
 
 /**
  * Tema oscuro (mismo lenguaje que la Pantalla 1), SOLO con la paleta del equipo:
@@ -189,7 +189,7 @@ const TXT = {
     stat3s: "2003 – 2025",
     years: " years",
     note0:
-      "Figures computed with the prototype's NASA FIRMS data (Peru, vegetation fires, nominal and high confidence). They update when the final algorithm delivers the harmonized series.",
+      "Figures computed with NASA FIRMS data for Peru (vegetation fires, nominal and high confidence). The harmonized series comes live from the backend API.",
     k1: "01 · How it is built",
     t1: "Four steps, one record",
     d1: "Pick a step: from raw data to the final number with its range.",
@@ -197,23 +197,25 @@ const TXT = {
     t2: "Before and after correcting",
     d2: "With the data as it arrives, fire seems to explode in 2012 and again in 2018. Switch between the two views and compare: once corrected, the series can be read year by year.",
     note2:
-      "Annual series of Peru's hotspots computed with the prototype model (placeholder). Years before 2012 are estimates with their range, not observations.",
+      "Annual series of Peru's hotspots from the backend API (calibration v1, frozen). Years before 2012 are estimates with their range, not observations. The “as they arrive” line adds the raw MODIS and VIIRS counts.",
     k3: "03 · Validation",
     t3: "We tested it blind",
     d3: "We trained on 2012–2019 and hid 2020–2022. Then we compared what the model predicted with what VIIRS actually counted.",
     m1: "Accuracy of the monthly total (R²)",
-    m1d: "Almost all the month-to-month variation in Peru is explained.",
+    m1d: "Most of the month-to-month variation in Peru is explained.",
     m2: "Typical error per month",
-    m2d: "In a normal month, the estimate is off by a little over a tenth of the real value. The ring shows that 11 %.",
+    m2d: (e: number) =>
+      `In a normal month, the national estimate is off by about ${e} % from the real value. The ring shows that ${e} %.`,
     m3: "Months within the range",
-    m3d: "Almost eight in ten real months fell inside the range we announced.",
+    m3d: (w: number) =>
+      `${w} of every 100 real months fell inside the range we announced.`,
     note3:
-      "Prototype metrics, not yet validated with the final pipeline. They are replaced by the harmonization algorithm's metrics when available.",
+      "Metrics from the backend's validation: the model was fit on the training years and measured on years it never saw.",
     k4: "04 · Under the hood",
     t4: "Try it yourself",
     d4: "For anyone who wants to audit: play with the model, see how we validated it, which assumptions we made and each region's parameters, downloadable.",
     note4:
-      "Everything corresponds to the prototype model. If the final algorithm changes (variables, training window, filters), this section is updated.",
+      "Everything here is the official calibration v1 of the backend, read live from its API. If the team publishes a new version, this section updates itself.",
     next: "Next step",
     endA: "With a consistent record,",
     endB: "we can finally compare.",
@@ -236,7 +238,7 @@ const TXT = {
     stat3s: "2003 – 2025",
     years: " años",
     note0:
-      "Cifras calculadas con los datos NASA FIRMS del prototipo (Perú, fuegos de vegetación, confianza nominal y alta). Se actualizan cuando el algoritmo final entregue la serie armonizada.",
+      "Cifras calculadas con datos NASA FIRMS del Perú (fuegos de vegetación, confianza nominal y alta). La serie armonizada llega en vivo desde la API del backend.",
     k1: "01 · Cómo está hecho",
     t1: "Cuatro pasos, un solo registro",
     d1: "Elige un paso: de los datos crudos al número final con su rango.",
@@ -244,23 +246,25 @@ const TXT = {
     t2: "Antes y después de corregir",
     d2: "Con los datos tal como llegan, el fuego parece explotar en 2012 y otra vez en 2018. Cambia entre las dos vistas y compara: corregida, la serie se puede leer año a año.",
     note2:
-      "Serie anual de focos del Perú calculada con el modelo del prototipo (placeholder). Los años anteriores a 2012 son estimaciones con su rango, no observaciones.",
+      "Serie anual de focos del Perú desde la API del backend (calibración v1, congelada). Los años anteriores a 2012 son estimaciones con su rango, no observaciones. La línea “como llegan” suma los conteos crudos de MODIS y VIIRS.",
     k3: "03 · Validación",
     t3: "Lo pusimos a prueba a ciegas",
     d3: "Entrenamos con 2012–2019 y escondimos 2020–2022. Luego comparamos lo que el modelo predijo con lo que VIIRS contó de verdad.",
     m1: "Acierto del total mensual (R²)",
-    m1d: "Casi toda la variación de un mes a otro en el Perú queda explicada.",
+    m1d: "Gran parte de la variación de un mes a otro en el Perú queda explicada.",
     m2: "Error típico por mes",
-    m2d: "En un mes normal, la estimación se aleja poco más de una décima del valor real. El anillo muestra ese 11 %.",
+    m2d: (e: number) =>
+      `En un mes normal, la estimación nacional se aleja cerca de ${e} % del valor real. El anillo muestra ese ${e} %.`,
     m3: "Meses dentro del rango",
-    m3d: "Casi ocho de cada diez meses reales cayeron dentro del rango que anunciamos.",
+    m3d: (w: number) =>
+      `${w} de cada 100 meses reales cayeron dentro del rango que anunciamos.`,
     note3:
-      "Métricas del prototipo, aún sin validar con el pipeline final. Se reemplazan por las del algoritmo de armonización cuando estén disponibles.",
+      "Métricas de la validación del backend: el modelo se ajustó con los años de entrenamiento y se midió en años que nunca vio.",
     k4: "04 · Bajo el capó",
     t4: "Pruébalo tú mismo",
     d4: "Para quien quiera auditar: juega con el modelo, mira cómo lo validamos, qué supuestos hicimos y los parámetros de cada región, descargables.",
     note4:
-      "Todo corresponde al modelo del prototipo. Si el algoritmo final cambia (variables, ventana de entrenamiento, filtros), esta sección se actualiza.",
+      "Todo es la calibración oficial v1 del backend, leída en vivo desde su API. Si el equipo publica una versión nueva, esta sección se actualiza sola.",
     next: "Siguiente paso",
     endA: "Con un registro consistente,",
     endB: "ya se puede comparar.",
@@ -271,6 +275,10 @@ const TXT = {
 
 export default function MetodoView() {
   const [lang] = useLang();
+  const m = useMethodData();
+  const V = validationFigures(m.validation);
+  const jumpHarm = m.series.harmonized[i11 + 1] / m.series.harmonized[i11];
+  const pctOf = (x: number) => Math.round(x * 100);
   const L = TXT[lang];
   const chapters = getChapters(lang);
   return (
@@ -445,22 +453,27 @@ export default function MetodoView() {
               <div className="mt-20 grid gap-16 sm:grid-cols-3">
                 {[
                   [
-                    0.98,
-                    <CountUp key="a" value={0.98} decimals={2} />,
+                    V.r2,
+                    <CountUp key="a" value={V.r2} decimals={2} />,
                     L.m1,
                     L.m1d,
                   ],
                   [
-                    0.11,
-                    <CountUp key="b" value={11} prefix="±" suffix=" %" />,
+                    V.err,
+                    <CountUp
+                      key="b"
+                      value={pctOf(V.err)}
+                      prefix="±"
+                      suffix=" %"
+                    />,
                     L.m2,
-                    L.m2d,
+                    L.m2d(pctOf(V.err)),
                   ],
                   [
-                    0.78,
-                    <CountUp key="c" value={78} suffix=" %" />,
+                    V.within,
+                    <CountUp key="c" value={pctOf(V.within)} suffix=" %" />,
                     L.m3,
-                    L.m3d,
+                    L.m3d(pctOf(V.within)),
                   ],
                 ].map(([v, big, label, d], i) => (
                   <Reveal key={String(label)} delay={i * 0.1}>

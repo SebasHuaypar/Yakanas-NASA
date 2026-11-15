@@ -29,7 +29,7 @@ const TXT = {
     withVals: "With this region's values",
     alta: "high",
     ln1: "is the natural logarithm. ",
-    ln2: " is 1 in a high-season month and 0 if not. To go back to hotspots we apply the inverse operation: VIIRS = e",
+    ln2: " is 1 in a high-season month and 0 if not. To go back to hotspots we apply the inverse operation with the Duan correction: VIIRS = smear × e",
   },
   es: {
     loc: "es",
@@ -43,7 +43,7 @@ const TXT = {
     withVals: "Con los valores de esta región",
     alta: "alta",
     ln1: "es el logaritmo natural. ",
-    ln2: " vale 1 en un mes de temporada alta y 0 si no. Para volver a focos se aplica la operación inversa: VIIRS = e",
+    ln2: " vale 1 en un mes de temporada alta y 0 si no. Para volver a focos se aplica la operación inversa con la corrección de Duan: VIIRS = smear × e",
   },
 };
 

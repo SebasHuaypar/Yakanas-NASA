@@ -1,9 +1,9 @@
 /**
- * DATOS DE PRUEBA (falsos).
- * Cuando el backend tenga lista la API, estos valores se reemplazan por la
- * respuesta real. Mantener las mismas formas (tipos) para que el cambio sea
- * solo cambiar el origen de los datos.
+ * Datos de la landing: el año típico del fuego en el Perú.
+ * Son REALES: promedio de cada mes en los años con VIIRS observado (2012–2025), calculado con la API del
+ * equipo de backend (ver scripts/snapshot-api.mjs, que regenera src/lib/api-snapshot.ts).
  */
+import { SNAPSHOT_TYPICAL } from "./api-snapshot";
 
 export const MONTHS_EN_SHORT = [
   "Jan",
@@ -65,10 +65,8 @@ export const MONTHS_ES_SHORT = [
   "Dic",
 ] as const;
 
-/** Focos de calor promedio por mes en un año típico (armonizado MODIS+VIIRS). */
-export const PERU_MONTHLY_MEAN: readonly number[] = [
-  420, 380, 450, 520, 900, 1700, 3800, 9800, 12600, 6400, 2100, 800,
-];
+/** Focos de calor promedio por mes en un año típico (armonizado, equivalente VIIRS). */
+export const PERU_MONTHLY_MEAN: readonly number[] = SNAPSHOT_TYPICAL.PE;
 
 /** Formato de miles estable entre servidor y cliente (es-PE: 12,600). */
 export function formatNumber(n: number): string {
@@ -77,10 +75,7 @@ export function formatNumber(n: number): string {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-/**
- * DATOS DE EJEMPLO por región natural (promedio mensual en un año típico).
- * Las tres series suman exactamente PERU_MONTHLY_MEAN. Reemplazar por la API del backend.
- */
+/** Promedio mensual de un año típico por región natural (costa, sierra y selva), de la API. */
 type Bi = { en: string; es: string };
 export type Region = {
   id: "costa" | "andes" | "amazonia";
@@ -102,7 +97,7 @@ export const REGIONS: readonly Region[] = [
       en: "Few hotspots spread across the year: stubble burning in the valleys.",
       es: "Pocos focos y repartidos todo el año: quema de rastrojos en los valles.",
     },
-    data: [180, 160, 190, 210, 230, 220, 210, 200, 220, 260, 250, 190],
+    data: SNAPSHOT_TYPICAL.costa,
   },
   {
     id: "andes",
@@ -115,7 +110,7 @@ export const REGIONS: readonly Region[] = [
       en: "It rises in the dry season, from July to October, when pastures and fields are burned before the rains.",
       es: "Sube en la época seca, de julio a octubre, cuando se queman pastos y chacras antes de las lluvias.",
     },
-    data: [120, 110, 160, 200, 350, 820, 1650, 2900, 3500, 2200, 700, 280],
+    data: SNAPSHOT_TYPICAL.sierra,
   },
   {
     id: "amazonia",
@@ -128,6 +123,6 @@ export const REGIONS: readonly Region[] = [
       en: "It peaks in August and September, when fields and felled forest are burned.",
       es: "Se concentra en agosto y setiembre, cuando se queman chacras y bosque talado.",
     },
-    data: [120, 110, 100, 110, 320, 660, 1940, 6700, 8880, 3940, 1150, 330],
+    data: SNAPSHOT_TYPICAL.selva,
   },
 ];

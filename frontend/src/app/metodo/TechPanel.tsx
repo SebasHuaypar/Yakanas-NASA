@@ -4,9 +4,14 @@ import { AnimatePresence, motion } from "motion/react";
 import { useId, useState, type ReactNode } from "react";
 import Formula, { type TermKey } from "./Formula";
 import { hud } from "./fonts";
-import { REGION_FITS } from "./regions";
 import Select from "@/components/Select";
 import { useLang } from "@/lib/lang";
+import {
+  displayName,
+  MONTH_NAMES,
+  useMethodData,
+  validationFigures,
+} from "@/lib/method-data";
 
 const SECTIONS = [
   { id: "modelo", n: "01" },
@@ -47,7 +52,7 @@ const TX = {
     c_s2: "We multiply it by the slope b",
     c_s3: (high: boolean) =>
       `We add the base level a${high ? " and the high-season adjustment d" : ""}`,
-    c_s4: "We undo the logarithm",
+    c_s4: "We undo the logarithm (with the Duan correction)",
     c_you: "You choose",
     c_region: "Region",
     c_own: "This region has its own fit.",
@@ -63,7 +68,7 @@ const TX = {
     c_estC: "what MODIS counted.",
     c_viirsEst: "VIIRS (estimated)",
     c_foot:
-      "Indicative calculation with the prototype's parameters; without the final correction for the logarithmic transform, which the full algorithm does apply.",
+      "Same formula the pipeline applies to each department-month before 2012, with the official calibration v1 and the Duan smearing correction.",
     c_how: "How it got to that number",
     c_means: "What each value means for",
     c_aT: "Base level",
@@ -76,42 +81,45 @@ const TX = {
     v_intro:
       "To know whether the translation is reliable, we hid some years. We trained on some, tested on others the model had never seen, and compared what it predicted with what VIIRS actually counted.",
     v_split: "How we split the years",
-    v_train: "Train · 2012–2019",
-    v_test: "Test · 2020–2022",
+    v_train: "Train",
+    v_test: "Test",
     v_splitNote:
       "The model only saw the years on the left. The final grade comes from the ones on the right.",
-    v_r2: "0.98",
     v_r2T: "How much it explains",
     v_perfect: "1 = perfect",
     v_r2D:
-      "R² of Peru's monthly total: almost all the month-to-month variation is explained.",
+      "R² of Peru's monthly total on the test years: most of the month-to-month variation is explained.",
     v_errT: "How wrong it is",
     v_real: "100 real",
-    v_errD:
-      "If a real month was 100, the estimate usually lands between 89 and 111.",
-    v_covT: "Months within the range (78 of 100)",
-    v_covAria: "78 of 100 months fell inside the announced range",
-    v_covD:
-      "Almost eight in ten real months fell inside the range we announced.",
+    v_errD: (lo: number, hi: number) =>
+      `If a real month was 100, the national estimate usually lands between ${lo} and ${hi}.`,
+    v_zones: "Error by zone (monthly, per department)",
+    v_zonesNote: (e: number) =>
+      `The average error per department and month is ${e} %. The Coast has very little fire, so small absolute differences look big in percent.`,
+    v_covT: (w: number) => `Months within the range (${w} of 100)`,
+    v_covAria: (w: number) =>
+      `${w} of 100 months fell inside the announced range`,
+    v_covD: (w: number) =>
+      `${w} of every 100 real months fell inside the range we announced.`,
     a_yes: {
       title: "What we assume",
       sub: "What we take as true for the method to work",
       items: [
         [
           "Source",
-          "NASA FIRMS: MODIS collection 6.1 and 375 m VIIRS, standard product.",
+          "NASA FIRMS: MODIS collection 6.1 and 375 m VIIRS from the country archive, plus the near-real-time product for the latest days.",
         ],
         [
           "Type of fire",
-          "Vegetation fires only, with nominal and high confidence.",
+          "Vegetation only (type 0) with nominal or high confidence. The NRT product has no type, so cells that were ever a volcano, a fixed source or sea are dropped.",
         ],
         [
           "One VIIRS per day",
-          "Suomi-NPP until 2018 and NOAA-20 from April 2018.",
+          "NOAA-20 from April 2018, Suomi-NPP before, and NOAA-21 only as a backup. Adding satellites would inflate the series.",
         ],
         [
           "Stable relationship",
-          "What was learned in 2012–2022 also holds before 2012.",
+          "What was learned in 2012–2022 also holds before 2012. Peru's local date (UTC−5) is used, on a 0.02° grid (about 5 km²).",
         ],
       ] as [string, string][],
     },
@@ -120,24 +128,24 @@ const TX = {
       sub: "The limits worth keeping in mind",
       items: [
         [
-          "Before 2012 is estimated",
-          "They are not observations: that is why every year carries a range.",
-        ],
-        [
-          "Very small fires",
-          "The ones MODIS never saw can only be estimated on average.",
+          "Before 20 Jan 2012 is estimated",
+          "They are not observations: that is why every month carries a 10th–90th percentile range.",
         ],
         [
           "Regions with little fire",
-          "They use the national fit and have more uncertainty.",
+          "With fewer than 24 months with fire, fewer than 1,500 VIIRS hotspots in 2012–2022, or a slope outside 0.5–1.3, a department uses the national fit and has more uncertainty.",
+        ],
+        [
+          "The Coast",
+          "It has the largest relative error because it has very little fire. Do not read its percentages without that context.",
         ],
         [
           "Hotspots are not area",
-          "Counting hotspots does not measure burned hectares or intensity.",
+          "Counting hotspots does not measure burned hectares or intensity, and it cannot tell an agricultural burn from a wildfire.",
         ],
       ] as [string, string][],
     },
-    p_csvHead: "region,zone,fit,a,d,b,months,high_season\n",
+    p_csvHead: "region,zone,fit,a,d,b,smear,months,high_season\n",
     p_ownCsv: "own",
     p_natCsv: "national",
     p_csvName: "parameters_by_region.csv",
@@ -174,7 +182,7 @@ const TX = {
     c_s2: "Lo multiplicamos por la pendiente b",
     c_s3: (high: boolean) =>
       `Sumamos el nivel base a${high ? " y el ajuste de temporada alta d" : ""}`,
-    c_s4: "Deshacemos el logaritmo",
+    c_s4: "Deshacemos el logaritmo (con la corrección de Duan)",
     c_you: "Tú eliges",
     c_region: "Región",
     c_own: "Esta región tiene su propio ajuste.",
@@ -190,7 +198,7 @@ const TX = {
     c_estC: "lo que contó MODIS.",
     c_viirsEst: "VIIRS (estimado)",
     c_foot:
-      "Cálculo orientativo con los parámetros del prototipo; sin la corrección final por la transformación logarítmica, que sí aplica el algoritmo completo.",
+      "La misma fórmula que aplica el pipeline a cada departamento-mes antes de 2012, con la calibración oficial v1 y la corrección de Duan.",
     c_how: "Así llegó a ese número",
     c_means: "Qué significa cada valor de",
     c_aT: "Nivel base",
@@ -203,41 +211,45 @@ const TX = {
     v_intro:
       "Para saber si la traducción es confiable, escondimos algunos años. Entrenamos con unos, probamos con otros que el modelo nunca vio y comparamos lo que predijo con lo que VIIRS contó de verdad.",
     v_split: "Cómo repartimos los años",
-    v_train: "Entrenar · 2012–2019",
-    v_test: "Probar · 2020–2022",
+    v_train: "Entrenar",
+    v_test: "Probar",
     v_splitNote:
       "El modelo solo vio los años de la izquierda. La nota final sale de los de la derecha.",
-    v_r2: "0,98",
     v_r2T: "Qué tanto lo explica",
     v_perfect: "1 = perfecto",
     v_r2D:
-      "R² del total mensual del Perú: casi toda la variación de un mes a otro queda explicada.",
+      "R² del total mensual del Perú en los años de prueba: gran parte de la variación de un mes a otro queda explicada.",
     v_errT: "Cuánto se equivoca",
     v_real: "100 real",
-    v_errD: "Si un mes real fue 100, la estimación suele caer entre 89 y 111.",
-    v_covT: "Meses dentro del rango (78 de 100)",
-    v_covAria: "78 de 100 meses cayeron dentro del rango anunciado",
-    v_covD:
-      "Casi ocho de cada diez meses reales cayeron dentro del rango que anunciamos.",
+    v_errD: (lo: number, hi: number) =>
+      `Si un mes real fue 100, la estimación nacional suele caer entre ${lo} y ${hi}.`,
+    v_zones: "Error por zona (mensual, por departamento)",
+    v_zonesNote: (e: number) =>
+      `El error promedio por departamento y mes es ${e} %. La Costa tiene muy poco fuego, así que diferencias pequeñas se ven grandes en porcentaje.`,
+    v_covT: (w: number) => `Meses dentro del rango (${w} de 100)`,
+    v_covAria: (w: number) =>
+      `${w} de 100 meses cayeron dentro del rango anunciado`,
+    v_covD: (w: number) =>
+      `${w} de cada 100 meses reales cayeron dentro del rango que anunciamos.`,
     a_yes: {
       title: "Qué asumimos",
       sub: "Lo que damos por cierto para que el método funcione",
       items: [
         [
           "Fuente",
-          "NASA FIRMS: MODIS colección 6.1 y VIIRS de 375 m, producto estándar.",
+          "NASA FIRMS: MODIS colección 6.1 y VIIRS de 375 m del archivo por país, más el producto casi en tiempo real para los últimos días.",
         ],
         [
           "Tipo de fuego",
-          "Solo fuegos de vegetación, con confianza nominal y alta.",
+          "Solo vegetación (tipo 0) con confianza nominal o alta. El NRT no trae tipo, así que se descartan las celdas que alguna vez fueron volcán, fuente fija o mar.",
         ],
         [
           "Un VIIRS por día",
-          "Suomi-NPP hasta 2018 y NOAA-20 desde abril de 2018.",
+          "NOAA-20 desde abril de 2018, Suomi-NPP antes y NOAA-21 solo de respaldo. Sumar satélites inflaría la serie.",
         ],
         [
           "Relación estable",
-          "Lo aprendido en 2012–2022 también vale antes de 2012.",
+          "Lo aprendido en 2012–2022 también vale antes de 2012. Se usa la fecha local del Perú (UTC−5), en una grilla de 0,02° (unos 5 km²).",
         ],
       ] as [string, string][],
     },
@@ -246,24 +258,24 @@ const TX = {
       sub: "Los límites que conviene tener presentes",
       items: [
         [
-          "Antes de 2012 es estimado",
-          "No son observaciones: por eso cada año lleva un rango.",
-        ],
-        [
-          "Fuegos muy chicos",
-          "Los que MODIS nunca vio solo se pueden estimar en promedio.",
+          "Antes del 20 de enero de 2012 es estimado",
+          "No son observaciones: por eso cada mes lleva un rango del percentil 10 al 90.",
         ],
         [
           "Regiones con poco fuego",
-          "Usan el ajuste nacional y tienen más incertidumbre.",
+          "Con menos de 24 meses con fuego, menos de 1.500 hotspots VIIRS en 2012–2022 o una pendiente fuera de 0,5–1,3, un departamento usa el ajuste nacional y tiene más incertidumbre.",
+        ],
+        [
+          "La Costa",
+          "Tiene el mayor error relativo porque tiene muy poco fuego. No leas sus porcentajes sin ese contexto.",
         ],
         [
           "Focos no son superficie",
-          "Contar focos no mide hectáreas quemadas ni intensidad.",
+          "Contar focos no mide hectáreas quemadas ni intensidad, y no distingue una quema agrícola de un incendio forestal.",
         ],
       ] as [string, string][],
     },
-    p_csvHead: "region,zona,ajuste,a,d,b,meses,temporada_alta\n",
+    p_csvHead: "region,zona,ajuste,a,d,b,smear,meses,temporada_alta\n",
     p_ownCsv: "propio",
     p_natCsv: "nacional",
     p_csvName: "parametros_por_region.csv",
@@ -301,17 +313,19 @@ function Calculator() {
   const nf = new Intl.NumberFormat(L.loc);
   const idSel = useId();
   const idNum = useId();
-  const [name, setName] = useState("Ucayali");
+  const { fits } = useMethodData();
+  const [regionId, setRegionId] = useState("PE-UCA");
   const [modis, setModis] = useState(300);
   const [high, setHigh] = useState(true);
   const [focus, setFocus] = useState<TermKey | null>(null);
 
-  const fit = REGION_FITS.find((r) => r.name === name) ?? REGION_FITS[0];
+  const fit = fits.find((r) => r.id === regionId) ?? fits[0];
+  const fitName = displayName(fit.name, lang);
   const u = Math.log(modis + 1);
   const bu = fit.b * u;
   const d = high ? fit.d : 0;
   const w = fit.a + d + bu;
-  const est = Math.max(0, Math.exp(w) - 1);
+  const est = Math.max(0, fit.smear * Math.exp(w) - 1);
   const ratio = modis > 0 ? est / modis : 0;
 
   const steps: [string, string, string, TermKey][] = [
@@ -331,7 +345,7 @@ function Calculator() {
     [
       "4",
       L.c_s4,
-      `e^${w.toFixed(2)} − 1 ≈ ${nf.format(Math.round(est))}`,
+      `${fit.smear.toFixed(2)} × e^${w.toFixed(2)} − 1 ≈ ${nf.format(Math.round(est))}`,
       "viirs",
     ],
   ];
@@ -362,11 +376,11 @@ function Calculator() {
             <div className="mt-2">
               <Select
                 id={idSel}
-                value={name}
-                onChange={setName}
-                options={REGION_FITS.map((r) => ({
-                  value: r.name,
-                  label: r.name,
+                value={regionId}
+                onChange={setRegionId}
+                options={fits.map((r) => ({
+                  value: r.id,
+                  label: displayName(r.name, lang),
                 }))}
               />
             </div>
@@ -436,7 +450,7 @@ function Calculator() {
             ≈ {nf.format(Math.round(est))}
           </p>
           <p className="mt-3 text-slate">
-            {L.c_estA} <b className="text-ink">{fit.name}</b>
+            {L.c_estA} <b className="text-ink">{fitName}</b>
             {modis > 0 && (
               <>
                 {L.c_estB}
@@ -459,7 +473,7 @@ function Calculator() {
                 <div
                   className="h-full rounded-full bg-slate"
                   style={{
-                    width: `${Math.min(100, (modis / Math.max(est, modis, 1)) * 100)}%`,
+                    width: `${Math.round(Math.min(100, (modis / Math.max(est, modis, 1)) * 100) * 10) / 10}%`,
                   }}
                 />
               </div>
@@ -476,7 +490,7 @@ function Calculator() {
                 <div
                   className="h-full rounded-full bg-navy"
                   style={{
-                    width: `${Math.min(100, (est / Math.max(est, modis, 1)) * 100)}%`,
+                    width: `${Math.round(Math.min(100, (est / Math.max(est, modis, 1)) * 100) * 10) / 10}%`,
                   }}
                 />
               </div>
@@ -513,7 +527,7 @@ function Calculator() {
       {/* Qué significa cada valor */}
       <div>
         <p className={`text-[11px] text-slate ${hud}`}>
-          {L.c_means} {fit.name}
+          {L.c_means} {fitName}
         </p>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
           <div
@@ -555,7 +569,10 @@ function Calculator() {
             <p className="mt-2 text-sm font-medium text-ink">{L.c_dT}</p>
             <p className="mt-1 text-xs text-slate">
               {L.c_dD}
-              {fit.high.length ? `: ${fit.high.join(", ")}` : ""}.
+              {fit.high.length
+                ? `: ${fit.high.map((m) => MONTH_NAMES[lang][m - 1]).join(", ")}`
+                : ""}
+              .
             </p>
           </div>
         </div>
@@ -570,6 +587,18 @@ function Calculator() {
 function Validation() {
   const [lang] = useLang();
   const L = TX[lang];
+  const V = validationFigures(useMethodData().validation);
+  const pc = (x: number) => Math.round(x * 100);
+  const dec = (x: number, d = 2) =>
+    x.toFixed(d).replace(".", lang === "en" ? "." : ",");
+  const errLo = 100 - pc(V.err);
+  const errHi = 100 + pc(V.err);
+  const within = pc(V.within);
+  const zoneNames = {
+    en: { Selva: "Rainforest", Sierra: "Highlands", Costa: "Coast" },
+    es: { Selva: "Selva", Sierra: "Sierra", Costa: "Costa" },
+  }[lang] as Record<string, string>;
+  const zoneMax = Math.max(...Object.values(V.zones));
   return (
     <div className="flex flex-col gap-6">
       <p className="max-w-3xl text-slate">{L.v_intro}</p>
@@ -581,13 +610,13 @@ function Validation() {
             className="flex items-center justify-center bg-navy/25 text-navy"
             style={{ flex: 8 }}
           >
-            {L.v_train}
+            {L.v_train} · {V.train}
           </div>
           <div
             className="flex items-center justify-center bg-navy text-[#0C090A]"
             style={{ flex: 3 }}
           >
-            {L.v_test}
+            {L.v_test} · {V.test}
           </div>
         </div>
         <p className="mt-3 text-xs text-slate">{L.v_splitNote}</p>
@@ -596,12 +625,14 @@ function Validation() {
       <div className="grid gap-5 md:grid-cols-3">
         {/* R2 */}
         <div className={box}>
-          <p className="font-heading text-5xl font-bold text-navy">{L.v_r2}</p>
+          <p className="font-heading whitespace-nowrap text-4xl font-bold text-navy sm:text-5xl">
+            {dec(V.r2)}
+          </p>
           <p className="mt-2 font-medium text-ink">{L.v_r2T}</p>
           <div className="mt-4 h-3 overflow-hidden rounded-full bg-(--mist)">
             <div
               className="h-full rounded-full bg-navy"
-              style={{ width: "98%" }}
+              style={{ width: `${V.r2 * 100}%` }}
             />
           </div>
           <p className="mt-1 flex justify-between text-[11px] text-slate">
@@ -613,12 +644,14 @@ function Validation() {
 
         {/* error */}
         <div className={box}>
-          <p className="font-heading text-5xl font-bold text-navy">±11 %</p>
+          <p className="font-heading whitespace-nowrap text-4xl font-bold text-navy sm:text-5xl">
+            ±{pc(V.err)} %
+          </p>
           <p className="mt-2 font-medium text-ink">{L.v_errT}</p>
           <div className="relative mt-5 h-3 rounded-full bg-(--mist)">
             <div
               className="absolute inset-y-0 rounded-full bg-navy/40"
-              style={{ left: "39%", width: "22%" }}
+              style={{ left: `${50 - pc(V.err) / 2}%`, width: `${pc(V.err)}%` }}
             />
             <div
               className="absolute -top-1.5 h-6 w-0.5 bg-navy"
@@ -626,31 +659,59 @@ function Validation() {
             />
           </div>
           <p className="mt-2 flex justify-between text-[11px] text-slate">
-            <span>89</span>
+            <span>{errLo}</span>
             <span className="text-navy">{L.v_real}</span>
-            <span>111</span>
+            <span>{errHi}</span>
           </p>
-          <p className="mt-3 text-sm text-slate">{L.v_errD}</p>
+          <p className="mt-3 text-sm text-slate">{L.v_errD(errLo, errHi)}</p>
         </div>
 
         {/* cobertura */}
         <div className={box}>
-          <p className="font-heading text-5xl font-bold text-navy">78 %</p>
-          <p className="mt-2 font-medium text-ink">{L.v_covT}</p>
+          <p className="font-heading whitespace-nowrap text-4xl font-bold text-navy sm:text-5xl">
+            {within} %
+          </p>
+          <p className="mt-2 font-medium text-ink">{L.v_covT(within)}</p>
           <div
             role="img"
-            aria-label={L.v_covAria}
+            aria-label={L.v_covAria(within)}
             className="mt-4 grid grid-cols-20 gap-1"
           >
             {Array.from({ length: 100 }, (_, i) => (
               <span
                 key={i}
-                className={`aspect-square rounded-full ${i < 78 ? "bg-navy" : "bg-slate/30"}`}
+                className={`aspect-square rounded-full ${i < within ? "bg-navy" : "bg-slate/30"}`}
               />
             ))}
           </div>
-          <p className="mt-3 text-sm text-slate">{L.v_covD}</p>
+          <p className="mt-3 text-sm text-slate">{L.v_covD(within)}</p>
         </div>
+      </div>
+
+      <div className={box}>
+        <p className={`text-[11px] text-slate ${hud}`}>{L.v_zones}</p>
+        <ul className="mt-4 space-y-3">
+          {Object.entries(V.zones)
+            .sort((a, b) => a[1] - b[1])
+            .map(([z, e]) => (
+              <li
+                key={z}
+                className="grid grid-cols-[6rem_minmax(0,1fr)_3rem] items-center gap-3 text-sm"
+              >
+                <span className="text-ink">{zoneNames[z] ?? z}</span>
+                <span className="h-2.5 overflow-hidden rounded-full bg-(--mist)">
+                  <span
+                    className="block h-full rounded-full bg-navy"
+                    style={{ width: `${(e / zoneMax) * 100}%` }}
+                  />
+                </span>
+                <span className="text-right font-mono text-ink">{pc(e)} %</span>
+              </li>
+            ))}
+        </ul>
+        <p className="mt-4 text-xs text-slate">
+          {L.v_zonesNote(pc(V.deptErr))}
+        </p>
       </div>
     </div>
   );
@@ -694,10 +755,12 @@ const Warn = () => (
 
 function Assumptions() {
   const [lang] = useLang();
+  const V = validationFigures(useMethodData().validation);
   const cols = [
     { ...TX[lang].a_yes, icon: <Check /> },
     { ...TX[lang].a_no, icon: <Warn /> },
   ];
+  void V;
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       {cols.map((c) => (
@@ -735,17 +798,20 @@ function Assumptions() {
 function Params() {
   const [lang] = useLang();
   const L = TX[lang];
+  const { fits } = useMethodData();
   const [zone, setZone] = useState<(typeof ZONE_IDS)[number]>("todas");
-  const rows = REGION_FITS.filter((r) => zone === "todas" || r.zone === zone);
+  const rows = fits.filter((r) => zone === "todas" || r.zone === zone);
   const bmin = 0.4;
   const bmax = 1.3;
 
   function downloadCsv() {
     const head = L.p_csvHead;
-    const body = REGION_FITS.map(
-      (r) =>
-        `${r.name},${r.zone},${r.own ? L.p_ownCsv : L.p_natCsv},${r.a},${r.d},${r.b},${r.months},${r.high.join(" ")}`,
-    ).join("\n");
+    const body = fits
+      .map(
+        (r) =>
+          `${r.name},${r.zone},${r.own ? L.p_ownCsv : L.p_natCsv},${r.a},${r.d},${r.b},${r.smear},${r.months},${r.high.join(" ")}`,
+      )
+      .join("\n");
     const url = URL.createObjectURL(
       new Blob([head + body], { type: "text/csv" }),
     );
@@ -810,12 +876,12 @@ function Params() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.name} className="border-t border-slate/15">
+              <tr key={r.id} className="border-t border-slate/15">
                 <th
                   scope="row"
                   className="whitespace-nowrap px-4 py-3 font-medium text-ink"
                 >
-                  {r.name}
+                  {displayName(r.name, lang)}
                   <span className="ml-2 text-xs font-normal capitalize text-slate">
                     {L.zones[r.zone]}
                   </span>
@@ -839,7 +905,7 @@ function Params() {
                       <span
                         className="block h-full rounded-full bg-navy"
                         style={{
-                          width: `${Math.max(4, Math.min(100, ((r.b - bmin) / (bmax - bmin)) * 100))}%`,
+                          width: `${Math.round(Math.max(4, Math.min(100, ((r.b - bmin) / (bmax - bmin)) * 100)) * 10) / 10}%`,
                         }}
                       />
                     </span>
@@ -848,7 +914,7 @@ function Params() {
                 </td>
                 <td className="px-4 py-3 font-mono text-slate">{r.months}</td>
                 <td className="px-4 py-3 text-slate">
-                  {r.high.join(" ") || "–"}
+                  {r.high.map((m) => MONTH_NAMES[lang][m - 1]).join(" ") || "–"}
                 </td>
               </tr>
             ))}

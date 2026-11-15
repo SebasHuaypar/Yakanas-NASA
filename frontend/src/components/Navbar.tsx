@@ -10,6 +10,7 @@ const links = [
   { href: "/historia", label: { en: "Story", es: "Historia" } },
   { href: "/metodo", label: { en: "Method", es: "Método" } },
   { href: "/pantalla-3", label: { en: "Explorer", es: "Explorador" } },
+  { href: "/alertas", label: { en: "Alerts", es: "Alertas" } },
 ];
 
 /**
@@ -42,10 +43,10 @@ export default function Navbar() {
           : "pointer-events-none -translate-y-full opacity-0"
       }`}
     >
-      <nav className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:h-[4.5rem] sm:px-6">
+      <nav className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-2 px-3 sm:h-[4.5rem] sm:gap-4 sm:px-6">
         <Logo />
-        <div className="flex items-center gap-3 sm:gap-8">
-          <ul className="flex items-center gap-3 sm:gap-8">
+        <div className="flex items-center gap-2.5 sm:gap-8">
+          <ul className="flex items-center gap-2.5 sm:gap-8">
             {links.map(({ href, label }) => {
               const active = pathname === href;
               return (
