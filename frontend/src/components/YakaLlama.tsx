@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useLang } from "@/lib/lang";
 
 /**
- * YakaLlama: chatbot flotante (por ahora solo avisa que pronto responderá consultas).
+ * YakaLlama: chatbot flotante. Las preguntas van a /api/chat (servidor), que llama al modelo de NVIDIA
+ * con la clave guardada en el servidor; la respuesta llega en streaming y se va escribiendo.
  * La llama va sin fondo ni marco; el mensaje y el cuadro de conversación son de cristal,
  * igual que las tarjetas del resto de la web.
  */
@@ -13,11 +14,21 @@ const TXT = {
   en: {
     chat: "Chat with YakaLlama",
     closeChat: "Close the chat",
-    hello: "Hi! I'm YakaLlama and I can help.",
-    soon: "I'll soon be able to answer your questions.",
-    placeholder: "You'll soon be able to write to me…",
-    ask: "Type your question (coming soon)",
-    send: "Send (coming soon)",
+    role: "Yakana's Team assistant",
+    hello:
+      "Hi! I'm YakaLlama. Ask me about fire hotspots, the method, or how to use the explorer.",
+    placeholder: "Type your question…",
+    ask: "Your question",
+    send: "Send",
+    writing: "YakaLlama is writing…",
+    errGeneric: "I couldn't answer right now. Please try again in a moment.",
+    errBusy: "Too many questions in a row. Wait a moment and try again.",
+    errSetup: "The chat isn't set up yet.",
+    suggestions: [
+      "What is a fire hotspot?",
+      "Why harmonize MODIS and VIIRS?",
+      "How do I use the explorer?",
+    ],
     greetName: "Hi, I'm YakaLlama",
     greetRest: "and I can help",
     closeGreet: "Close the greeting",
@@ -27,11 +38,22 @@ const TXT = {
   es: {
     chat: "Chat con YakaLlama",
     closeChat: "Cerrar el chat",
-    hello: "¡Hola! Soy YakaLlama y te puedo ayudar.",
-    soon: "Pronto podré responder a tus consultas.",
-    placeholder: "Pronto podrás escribirme…",
-    ask: "Escribe tu pregunta (disponible pronto)",
-    send: "Enviar (disponible pronto)",
+    role: "Asistente de Yakana's Team",
+    hello:
+      "¡Hola! Soy YakaLlama. Pregúntame sobre los focos de calor, el método o cómo usar el explorador.",
+    placeholder: "Escribe tu pregunta…",
+    ask: "Tu pregunta",
+    send: "Enviar",
+    writing: "YakaLlama está escribiendo…",
+    errGeneric: "No pude responder ahora. Intenta de nuevo en un momento.",
+    errBusy:
+      "Muchas preguntas seguidas. Espera un momento y vuelve a intentar.",
+    errSetup: "El chat todavía no está configurado.",
+    suggestions: [
+      "¿Qué es un foco de calor?",
+      "¿Por qué armonizar MODIS y VIIRS?",
+      "¿Cómo uso el explorador?",
+    ],
     greetName: "Hola, soy YakaLlama",
     greetRest: "y te puedo ayudar",
     closeGreet: "Cerrar el saludo",
@@ -40,11 +62,98 @@ const TXT = {
   },
 };
 
+type Msg = { role: "user" | "assistant"; content: string; error?: boolean };
+
+/** El modelo a veces marca **negritas**: se muestran como negrita (sin inyectar HTML). */
+function rich(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
+      <strong key={i} className="font-semibold">
+        {part.slice(2, -2)}
+      </strong>
+    ) : (
+      part
+    ),
+  );
+}
+
 export default function YakaLlama() {
   const [lang] = useLang();
   const L = TXT[lang];
   const [open, setOpen] = useState(false);
   const [greet, setGreet] = useState(false);
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  const ctl = useRef<AbortController | null>(null);
+
+  // La conversación baja sola mientras llega la respuesta.
+  useEffect(() => {
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [msgs]);
+  // Si el componente se desmonta a mitad de una respuesta, se corta la petición.
+  useEffect(() => () => ctl.current?.abort(), []);
+
+  const ask = async (text: string) => {
+    const q = text.trim();
+    if (!q || busy) return;
+    const history: Msg[] = [
+      ...msgs.filter((m) => !m.error),
+      { role: "user", content: q },
+    ];
+    setMsgs([...history, { role: "assistant", content: "" }]);
+    setInput("");
+    setBusy(true);
+    const setLast = (patch: (m: Msg) => Msg) =>
+      setMsgs((all) => [...all.slice(0, -1), patch(all[all.length - 1])]);
+    try {
+      ctl.current = new AbortController();
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lang,
+          messages: history.map(({ role, content }) => ({ role, content })),
+        }),
+        signal: ctl.current.signal,
+      });
+      if (!res.ok || !res.body) {
+        const code =
+          res.status === 429
+            ? L.errBusy
+            : res.status === 503
+              ? L.errSetup
+              : L.errGeneric;
+        setLast(() => ({ role: "assistant", content: code, error: true }));
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        setLast((m) => ({ ...m, content: m.content + chunk }));
+      }
+      setLast((m) =>
+        m.content.trim() ? m : { ...m, content: L.errGeneric, error: true },
+      );
+    } catch {
+      setLast((m) =>
+        m.content.trim()
+          ? m
+          : { role: "assistant", content: L.errGeneric, error: true },
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    void ask(input);
+  };
 
   // El saludo aparece un momento después de cargar la página
   useEffect(() => {
@@ -86,9 +195,7 @@ export default function YakaLlama() {
               <p className="font-heading text-base font-bold text-snow">
                 YakaLlama
               </p>
-              <p className="text-[11px] text-snow/50">
-                Asistente de Yakana&apos;s Team
-              </p>
+              <p className="text-[11px] text-snow/50">{L.role}</p>
             </div>
             <button
               type="button"
@@ -114,31 +221,74 @@ export default function YakaLlama() {
             </button>
           </div>
 
-          <div className="space-y-2.5 px-5 py-5" aria-live="polite">
+          <div
+            ref={listRef}
+            className="max-h-[min(24rem,55vh)] space-y-2.5 overflow-y-auto px-5 py-5"
+            aria-live="polite"
+          >
             <p className="max-w-[85%] rounded-2xl rounded-bl-md border border-snow/10 bg-snow/[0.07] px-4 py-2.5 text-sm leading-relaxed text-snow">
               {L.hello}
             </p>
-            <p className="max-w-[85%] rounded-2xl rounded-bl-md border border-snow/10 bg-snow/[0.07] px-4 py-2.5 text-sm leading-relaxed text-snow">
-              {L.soon}
-            </p>
+            {msgs.length === 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {L.suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    tabIndex={open ? 0 : -1}
+                    onClick={() => void ask(s)}
+                    className="cursor-pointer rounded-full border border-snow/15 px-3 py-1 text-xs text-snow/80 transition hover:border-snow/40 hover:text-snow"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+            {msgs.map((m, i) =>
+              m.role === "user" ? (
+                <p
+                  key={i}
+                  className="ml-auto max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-snow px-4 py-2.5 text-sm leading-relaxed text-ink"
+                >
+                  {m.content}
+                </p>
+              ) : (
+                <p
+                  key={i}
+                  className={`max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-bl-md border px-4 py-2.5 text-sm leading-relaxed ${
+                    m.error
+                      ? "border-snow/15 bg-transparent text-snow/70"
+                      : "border-snow/10 bg-snow/[0.07] text-snow"
+                  }`}
+                >
+                  {(m.content && rich(m.content)) || (
+                    <span className="animate-pulse text-snow/50">
+                      {L.writing}
+                    </span>
+                  )}
+                </p>
+              ),
+            )}
           </div>
 
-          <div className="border-t border-snow/10 p-3">
+          <form onSubmit={onSubmit} className="border-t border-snow/10 p-3">
             <div className="flex items-center gap-2 rounded-full border border-snow/10 bg-snow/[0.04] py-1.5 pl-4 pr-1.5">
               <input
                 type="text"
-                disabled
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                maxLength={1200}
                 tabIndex={open ? 0 : -1}
                 placeholder={L.placeholder}
                 aria-label={L.ask}
-                className="min-w-0 flex-1 bg-transparent text-sm text-snow placeholder:text-snow/40 focus:outline-none disabled:cursor-not-allowed"
+                className="min-w-0 flex-1 bg-transparent text-sm text-snow placeholder:text-snow/40 focus:outline-none"
               />
               <button
-                type="button"
-                disabled
-                tabIndex={-1}
+                type="submit"
+                disabled={busy || !input.trim()}
+                tabIndex={open ? 0 : -1}
                 aria-label={L.send}
-                className="grid size-8 shrink-0 place-items-center rounded-full bg-snow/20 text-snow/50"
+                className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full bg-snow text-ink transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-snow/20 disabled:text-snow/50"
               >
                 <svg
                   width="14"
@@ -157,7 +307,7 @@ export default function YakaLlama() {
                 </svg>
               </button>
             </div>
-          </div>
+          </form>
         </div>
 
         {/* Saludo */}
