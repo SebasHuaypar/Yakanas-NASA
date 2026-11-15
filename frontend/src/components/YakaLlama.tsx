@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useLang } from "@/lib/lang";
 
@@ -16,7 +17,7 @@ const TXT = {
     closeChat: "Close the chat",
     role: "Yakana's Team assistant",
     hello:
-      "Hi! I'm YakaLlama. Ask me about fire hotspots, the method, or how to use the explorer.",
+      "Hi! I'm YakaLlama. Ask me about fire in Peru, how the method works, how to use the site, or who built it.",
     placeholder: "Type your question…",
     ask: "Your question",
     send: "Send",
@@ -24,11 +25,44 @@ const TXT = {
     errGeneric: "I couldn't answer right now. Please try again in a moment.",
     errBusy: "Too many questions in a row. Wait a moment and try again.",
     errSetup: "The chat isn't set up yet.",
-    suggestions: [
-      "What is a fire hotspot?",
-      "Why harmonize MODIS and VIIRS?",
-      "How do I use the explorer?",
-    ],
+    suggestions: {
+      default: [
+        "Which region had the most fires this week?",
+        "Explain the method to me, step by step",
+        "Who built this project?",
+        "What do I do if there is fire near me?",
+      ],
+      historia: [
+        "Why are there two satellites?",
+        "Which region had the most fires this week?",
+        "Who built this project?",
+      ],
+      equipo: [
+        "Who is on the team and what did each person do?",
+        "Who built the predictive model?",
+        "Explain the method to me, step by step",
+      ],
+      metodo: [
+        "Explain the method to me, step by step",
+        "Why is a year before 2012 an estimate?",
+        "What does the range mean?",
+      ],
+      explorador: [
+        "How do I use the explorer?",
+        "Which month burned the most in Peru last year?",
+        "What does \"unusual\" mean in the calendar?",
+      ],
+      prevencion: [
+        "How does the fire prediction work?",
+        "What do I do if there is fire near me?",
+        "When is the fire season in Peru?",
+      ],
+      respuesta: [
+        "Which fires are active right now?",
+        "Which region had the most fires this week?",
+        "How reliable is the satellite data?",
+      ],
+    } as Record<string, string[]>,
     greetName: "Hi, I'm YakaLlama",
     greetRest: "and I can help",
     closeGreet: "Close the greeting",
@@ -40,7 +74,7 @@ const TXT = {
     closeChat: "Cerrar el chat",
     role: "Asistente de Yakana's Team",
     hello:
-      "¡Hola! Soy YakaLlama. Pregúntame sobre los focos de calor, el método o cómo usar el explorador.",
+      "¡Hola! Soy YakaLlama. Pregúntame sobre el fuego en el Perú, cómo funciona el método, cómo usar la web o quién la hizo.",
     placeholder: "Escribe tu pregunta…",
     ask: "Tu pregunta",
     send: "Enviar",
@@ -49,11 +83,44 @@ const TXT = {
     errBusy:
       "Muchas preguntas seguidas. Espera un momento y vuelve a intentar.",
     errSetup: "El chat todavía no está configurado.",
-    suggestions: [
-      "¿Qué es un foco de calor?",
-      "¿Por qué armonizar MODIS y VIIRS?",
-      "¿Cómo uso el explorador?",
-    ],
+    suggestions: {
+      default: [
+        "¿Qué región tuvo más focos esta semana?",
+        "Explícame el método paso a paso",
+        "¿Quién hizo este proyecto?",
+        "¿Qué hago si hay fuego cerca de mí?",
+      ],
+      historia: [
+        "¿Por qué hay dos satélites?",
+        "¿Qué región tuvo más focos esta semana?",
+        "¿Quién hizo este proyecto?",
+      ],
+      equipo: [
+        "¿Quiénes son el equipo y qué hizo cada uno?",
+        "¿Quién hizo el modelo predictivo?",
+        "Explícame el método paso a paso",
+      ],
+      metodo: [
+        "Explícame el método paso a paso",
+        "¿Por qué un año antes de 2012 es una estimación?",
+        "¿Qué significa el rango?",
+      ],
+      explorador: [
+        "¿Cómo uso el explorador?",
+        "¿Qué mes ardió más en el Perú el año pasado?",
+        "¿Qué significa \"inusual\" en el calendario?",
+      ],
+      prevencion: [
+        "¿Cómo funciona la predicción de fuego?",
+        "¿Qué hago si hay fuego cerca de mí?",
+        "¿Cuándo es la temporada de fuego en el Perú?",
+      ],
+      respuesta: [
+        "¿Qué fuegos están activos ahora?",
+        "¿Qué región tuvo más focos esta semana?",
+        "¿Qué tan confiables son los datos satelitales?",
+      ],
+    } as Record<string, string[]>,
     greetName: "Hola, soy YakaLlama",
     greetRest: "y te puedo ayudar",
     closeGreet: "Cerrar el saludo",
@@ -79,6 +146,7 @@ function rich(text: string) {
 
 export default function YakaLlama() {
   const [lang] = useLang();
+  const page = (usePathname() ?? "").split("/")[1] ?? "";
   const L = TXT[lang];
   const [open, setOpen] = useState(false);
   const [greet, setGreet] = useState(false);
@@ -231,7 +299,7 @@ export default function YakaLlama() {
             </p>
             {msgs.length === 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
-                {L.suggestions.map((s) => (
+                {(L.suggestions[page] ?? L.suggestions.default).map((s) => (
                   <button
                     key={s}
                     type="button"
