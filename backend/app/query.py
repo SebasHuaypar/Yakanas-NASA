@@ -1,4 +1,4 @@
-"""Consultas de focos entre dos fechas, inclusive."""
+"""Hotspot queries between two dates, inclusive."""
 import json
 from datetime import date
 
@@ -26,7 +26,7 @@ def cobertura() -> tuple[str, str]:
 
 
 def acotar(desde: date | None, hasta: date | None) -> tuple[str, str, str, str]:
-    """Devuelve (desde, hasta, cobertura_desde, cobertura_hasta)."""
+    """Returns (desde, hasta, cobertura_desde, cobertura_hasta)."""
     cob_desde, cob_hasta = cobertura()
     inicio = desde.isoformat() if desde else cob_desde
     fin = hasta.isoformat() if hasta else cob_hasta

@@ -138,7 +138,7 @@ function dibujar() {
   capa.clearLayers();
   const minimo = +$("minimo").value, h = datos.zona_grados / 2;
   const visibles = datos.features.filter(f => f.properties.frecuencia >= minimo);
-  // Las más frecuentes se dibujan al final, para que queden encima.
+  // The most frequent ones are drawn last so they stay on top.
   visibles.slice().reverse().forEach(f => {
     const [lon, lat] = f.geometry.coordinates, p = f.properties;
     L.rectangle([[lat - h, lon - h], [lat + h, lon + h]], { stroke: false, fillColor: color(p.frecuencia), fillOpacity: .75 })
@@ -168,7 +168,7 @@ async function elegir(lat, lon) {
     $("detalle").textContent = `En esta zona no hay detecciones registradas entre ${l.anios_base[0]} y ${l.anios_base[total - 1]}.`;
     return;
   }
-  // Semanas que caen dentro de la ventana elegida, para resaltarlas.
+  // Weeks that fall inside the chosen window, so they can be highlighted.
   const f = new Date(datos.fecha + "T12:00:00"), doy = Math.floor((f - new Date(f.getFullYear(), 0, 0)) / 864e5);
   const dentro = s => { const c = (s - 1) * 7 + 4, d = Math.abs(c - doy); return Math.min(d, 365 - d) <= datos.ventana_dias; };
   const max = Math.max(...l.semanas.map(s => s.anios_con_fuego), 1);

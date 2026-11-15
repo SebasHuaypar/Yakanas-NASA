@@ -1,16 +1,17 @@
-"""Modelo de riesgo: regresión logística entrenada con la tabla armonizada.
+"""Risk model: logistic regression trained on the harmonized table.
 
-Pregunta: ¿habrá fuego en una zona de 0,06° (unos 6,6 km) a 15 días o menos de una
-fecha del calendario, en la próxima temporada? Las variables salen de los años
-anteriores (la recurrencia en varias ventanas, los vecinos, la intensidad y la
-época del año) y el modelo pesa cada una con lo que aprendió de 2016 a 2025.
+Question: will a 0.06° zone (about 6.6 km) burn within 15 days of a calendar
+date in the coming season? The features come from earlier years (recurrence
+over several windows, neighbors, intensity, and time of year) and the model
+weights each one from what it learned between 2016 and 2025.
 
-Aquí vive el cálculo de las variables, que usan por igual el entrenamiento
-(run_modelo.py) y la API, para que lo validado sea lo que se sirve. La API no
-necesita scikit-learn: el modelo se guarda como coeficientes en
-data/out/modelo_logistico.json y aquí se evalúa con numpy.
+The feature calculation lives here and is shared by training (run_modelo.py)
+and the API, so what was validated is what gets served. The API does not need
+scikit-learn: the model is stored as coefficients in
+data/out/modelo_logistico.json and evaluated here with numpy.
 """
 import json
+import time
 from datetime import date, timedelta
 from functools import lru_cache
 
@@ -21,36 +22,40 @@ from app.calendario import ORIGEN, PASO, _conexion, _nombres, resolver
 from app.config import OUT
 from app.recurrencia import _datos as _recurrencia
 
-LADO = 3                       # celdas de 0,02° por lado de la zona
-GRADOS = PASO * LADO           # 0,06°
-DESDE = 2012                   # años con VIIRS observado
-VENTANA = 15                   # días a cada lado de la fecha
-FECHAS = [15 + 30 * i for i in range(12)]      # un día por mes, como día del año
-ENTRENA_DESDE = 2016           # primer año usado como respuesta (necesita historia antes)
-BASE = 100_000                 # para juntar (zx, zy) en un solo número
+LADO = 3                       # 0.02° cells along each side of a zone
+GRADOS = PASO * LADO           # 0.06°
+DESDE = 2012                   # years with observed VIIRS
+VENTANA = 15                   # days on each side of the date
+FECHAS = [15 + 30 * i for i in range(12)]      # one day per month, as day of year
+ENTRENA_DESDE = 2016           # first year used as the label (needs history before it)
+BASE = 100_000                 # packs (zx, zy) into one number
 CORTES = (0.3, 0.5, 0.7)
 GUARDADO = OUT / "modelo_logistico.json"
 COMPARACION = OUT / "modelos_comparacion.json"
+REGISTRO = OUT / "reentrenamientos.jsonl"
+RECARGA_SEGUNDOS = 300
+_MODELO = {"datos": None, "mtime": None, "visto": 0.0}
 VARIABLES = [
-    "f_ventana",    # años con fuego en la ventana / años mirados: es la recurrencia
-    "f_ult3",       # lo mismo, solo los 3 últimos años
-    "ardio_ult",    # si ardió en la ventana el último año
-    "anios_desde",  # años desde la última vez
-    "f_vecinos",    # recurrencia media de las 8 zonas vecinas
-    "f_ancha",      # recurrencia con ventana de ±30 días
-    "f_angosta",    # recurrencia con ventana de ±7 días
-    "f_anual",      # años con fuego en cualquier fecha
-    "log_hs",       # intensidad media cuando ardió
-    "sin", "cos",   # época del año
+    "f_ventana",    # years with fire in the window / years looked at: the recurrence
+    "f_ult3",       # the same, using only the last 3 years
+    "ardio_ult",    # whether it burned in the window last year
+    "anios_desde",  # years since the last time
+    "f_vecinos",    # mean recurrence of the 8 neighboring zones
+    "f_ancha",      # recurrence with a ±30 day window
+    "f_angosta",    # recurrence with a ±7 day window
+    "f_anual",      # years with fire on any date
+    "log_hs",       # mean intensity on the years it burned
+    "sin", "cos",   # time of year
 ]
 
 
 def cargar(con, fuente: str) -> dict:
-    """Lee la tabla armonizada (`fuente` es un nombre de tabla o read_parquet(...))."""
+    """Reads the harmonized table (`fuente` is a table name or read_parquet(...))."""
     filas = con.execute(f"""
         SELECT xi // {LADO}, yi // {LADO}, year, dayofyear(CAST(acq_date_local AS DATE)), hs_h
         FROM {fuente} WHERE year >= {DESDE}""").fetchall()
     zx, zy, anio, doy, hs = (np.array(c) for c in zip(*filas))
+    indice = int(np.argmax(anio.astype(np.int64) * 1000 + doy.astype(np.int64)))
     zona = zx * BASE + zy
     zonas = np.unique(zona)
     pos = {z: i for i, z in enumerate(zonas.tolist())}
@@ -59,13 +64,14 @@ def cargar(con, fuente: str) -> dict:
         "anio": anio, "doy": doy, "hs": hs, "n": len(zonas),
         "ultimo": int(anio.max()),
         "ultimo_doy": int(doy[anio == anio.max()].max()),
+        "ultimo_fecha": _fecha(int(anio[indice]), int(doy[indice])),
         "vecinos": [[pos[z + dx * BASE + dy] for dx in (-1, 0, 1) for dy in (-1, 0, 1)
                      if (dx or dy) and (z + dx * BASE + dy) in pos] for z in zonas.tolist()],
     }
 
 
 def anual_de(d: dict) -> np.ndarray:
-    """Zona × año: si hubo fuego en cualquier fecha del año (solo años completos)."""
+    """Zone by year: whether there was fire on any date that year (complete years only)."""
     anual = np.zeros((d["n"], d["ultimo"] - DESDE + 1), dtype=np.float32)
     m = d["anio"] <= d["ultimo"]
     anual[d["zi"][m], d["anio"][m] - DESDE] = 1
@@ -73,7 +79,7 @@ def anual_de(d: dict) -> np.ndarray:
 
 
 def _matriz(d: dict, dia: int, ventana: int, sumar_hs: bool = False) -> np.ndarray:
-    """Zona × año: si hubo fuego (o cuántos hotspots) a `ventana` días o menos de ese día del año."""
+    """Zone by year: whether there was fire (or how many hotspots) within `ventana` days of that day of year."""
     dist = np.abs(d["doy"] - dia)
     m = (np.minimum(dist, 365 - dist) <= ventana) & (d["anio"] <= d["ultimo"])
     out = np.zeros((d["n"], d["ultimo"] - DESDE + 1), dtype=np.float32)
@@ -85,10 +91,10 @@ def _matriz(d: dict, dia: int, ventana: int, sumar_hs: bool = False) -> np.ndarr
 
 
 def variables(d: dict, dia: int, anio: int, anual: np.ndarray):
-    """Variables de cada zona con los años anteriores a `anio`.
+    """Features for each zone using the years before `anio`.
 
-    Devuelve (x, con_historia, m, k): x tiene una fila por zona con historia,
-    m es la matriz zona × año de la ventana y k la columna de `anio` en ella.
+    Returns (x, con_historia, m, k): x has one row per zone with history,
+    m is the zone-by-year window matrix, and k is the column of `anio` in it.
     """
     k = anio - DESDE
     m, ancha, angosta, hs = (_matriz(d, dia, VENTANA), _matriz(d, dia, 30),
@@ -107,21 +113,57 @@ def variables(d: dict, dia: int, anio: int, anual: np.ndarray):
     return x[con_historia], con_historia, m, k
 
 
+def _fecha(anio: int, dia: int) -> date:
+    return date(anio, 1, 1) + timedelta(days=dia - 1)
+
+
+def ventana_completa(anio: int, dia: int, ultimo: date, margen: int = VENTANA) -> bool:
+    """The ±margen-day window has already ended in the data: date + margen <= last day."""
+    return _fecha(anio, dia) + timedelta(days=margen) <= ultimo
+
+
+def fechas_entrenables(ultimo: date) -> list[tuple[int, int]]:
+    """Years and days of year whose window is already closed. The rest are not labeled 'no fire'."""
+    return [
+        (anio, dia)
+        for anio in range(ENTRENA_DESDE, ultimo.year + 1)
+        for dia in FECHAS
+        if ventana_completa(anio, dia, ultimo)
+    ]
+
+
 def tabla(d: dict, dia: int, anio: int, anual: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Variables y respuesta (si ardió ese año) de las zonas con historia."""
+    """Features and label (whether it burned that year) for zones with history."""
     x, con_historia, m, k = variables(d, dia, anio, anual)
     return x, m[con_historia, k]
 
 
 # ---- API -----------------------------------------------------------------
 
-@lru_cache(maxsize=1)
 def _modelo() -> dict:
+    """Reads the JSON again if it changed. The check runs every RECARGA_SEGUNDOS."""
+    ahora = time.time()
+    if _MODELO["datos"] is not None and ahora - _MODELO["visto"] < RECARGA_SEGUNDOS:
+        return _MODELO["datos"]
     from app.almacen import bajar
     bajar()
+    _MODELO["visto"] = ahora
     if not GUARDADO.exists():
         raise HTTPException(status_code=503, detail="Aún no hay modelo entrenado. Ejecuta python run_modelo.py")
-    return json.loads(GUARDADO.read_text(encoding="utf-8"))
+    mtime = GUARDADO.stat().st_mtime
+    if _MODELO["datos"] is None or mtime != _MODELO["mtime"]:
+        _MODELO["datos"] = json.loads(GUARDADO.read_text(encoding="utf-8"))
+        _MODELO["mtime"] = mtime
+    return _MODELO["datos"]
+
+
+def ultimo_reentrenamiento() -> str | None:
+    if not REGISTRO.exists():
+        return None
+    lineas = [ln for ln in REGISTRO.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    if not lineas:
+        return None
+    return json.loads(lineas[-1]).get("ejecutado")
 
 
 @lru_cache(maxsize=1)
@@ -133,7 +175,7 @@ def _datos() -> dict:
 
 @lru_cache(maxsize=16)
 def _riesgo(dia: int):
-    """Probabilidad de cada zona con historia para ese día del año."""
+    """Probability for each zone with history on that day of year."""
     mod, d = _modelo(), _datos()
     x, con_historia, _, _ = variables(d, dia, d["ultimo"] + 1, d["anual"])
     z = ((x - np.array(mod["media"])) / np.array(mod["escala"])) @ np.array(mod["coeficientes"]) + mod["intercepto"]
@@ -146,9 +188,9 @@ def _centro(z: int) -> tuple[float, float]:
 
 
 def validacion() -> dict:
-    """Prueba 2019-2025 con años que cada modelo no vio, guardada por run_modelo.py."""
+    """2019-2025 test stored in modelos_comparacion.json."""
     if not COMPARACION.exists():
-        raise HTTPException(status_code=503, detail="Aún no hay comparación. Ejecuta python run_modelo.py")
+        raise HTTPException(status_code=503, detail="Aún no hay comparación. El archivo modelos_comparacion.json se conserva como evidencia.")
     c = json.loads(COMPARACION.read_text(encoding="utf-8"))
     return {
         "prueba": c["prueba"], "pregunta": c["pregunta"], "como_leer": c["como_leer"],
@@ -168,6 +210,7 @@ def info() -> dict:
         "como_leer_los_pesos": "Con las variables estandarizadas, un peso positivo sube la probabilidad "
                                "de fuego y uno negativo la baja; cuanto mayor el valor absoluto, más pesa. f_ventana, f_ancha y "
                                "f_angosta son la misma recurrencia con ventanas distintas y se reparten el peso entre sí.",
+        "ultimo_reentrenamiento": ultimo_reentrenamiento(),
         "validacion": validacion(),
     }
 

@@ -1,7 +1,7 @@
-"""Copia el paquete de datos a un bucket y lo vuelve a bajar si allá está más nuevo.
+"""Copies the data package to a bucket and downloads it again when the copy there is newer.
 
-Sin la variable DATOS_BUCKET todo se queda en disco. En Cloud Run el disco del
-trabajo se borra al terminar, así que la API y el trabajo comparten el bucket.
+Without DATOS_BUCKET everything stays on disk. On Cloud Run the job disk is
+wiped when the job ends, so the API and the job share the bucket.
 """
 import json
 import os
@@ -14,16 +14,17 @@ from pathlib import Path
 
 from app.config import DATA, OUT, PARQUET, PROCESSED
 
-PAQUETE = (
+SEMANA = (
     PARQUET / "fires.parquet",
     PROCESSED / "fire_cell_day.parquet",
     PROCESSED / "region_month.parquet",
-    OUT / "modelo_logistico.json",
-    OUT / "modelos_comparacion.json",
     OUT / "meta.json",
     OUT / "week.json",
     OUT / "fires.csv",
 )
+MODELO = OUT / "modelo_logistico.json"
+REGISTRO = OUT / "reentrenamientos.jsonl"
+PAQUETE = (*SEMANA, MODELO, REGISTRO)
 _REVISADO = 0.0
 
 
@@ -68,7 +69,7 @@ def _mas_nuevo(remoto: str, local: Path) -> bool:
 
 
 def bajar() -> None:
-    """Trae del bucket los archivos que allá sean más nuevos. Como mucho una vez por minuto."""
+    """Downloads files that are newer in the bucket. At most once a minute."""
     global _REVISADO
     if not bucket():
         return
@@ -94,24 +95,67 @@ def bajar() -> None:
         print(f"bajado del bucket {nombre}", flush=True)
 
 
-def subir() -> None:
-    """Sube el paquete que esta corrida acaba de escribir."""
+def publicar(destino: Path, producir) -> str:
+    """Writes only if producir() finishes. A failure leaves the previous file in place."""
+    texto = producir()
+    guardar_atomico(destino, texto)
+    return texto
+
+
+def guardar_atomico(path: Path, texto: str) -> None:
+    """Writes a temporary file and renames it. If it fails before the replace, the destination is unchanged."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporal = path.with_name(path.name + ".tmp")
+    temporal.write_text(texto, encoding="utf-8")
+    os.replace(temporal, path)
+
+
+def _enviar(token: str, url: str, data: bytes | None, method: str, tipo: str) -> bytes:
+    headers = {"Authorization": f"Bearer {token}"}
+    if data is not None:
+        headers["Content-Type"] = tipo
+    req = urllib.request.Request(url, data=data, method=method, headers=headers)
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        return resp.read()
+
+
+def subir_atomico(path: Path) -> None:
+    """Uploads to a temporary name and then renames it. The live file is left alone if this fails."""
     if not bucket():
         return
     token = _token()
     if not token:
         raise SystemExit("DATOS_BUCKET está definido pero no hay credencial de Cloud para subir")
-    for path in PAQUETE:
+    nombre = _relativo(path)
+    temporal = nombre + ".tmp"
+    destino = urllib.parse.quote(nombre, safe="")
+    origen = urllib.parse.quote(temporal, safe="")
+    carga = "https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}".format(
+        bucket(), origen
+    )
+    _enviar(token, carga, path.read_bytes(), "POST", "application/octet-stream")
+    cambio = "https://storage.googleapis.com/storage/v1/b/{}/o/{}/rewriteTo/b/{}/o/{}".format(
+        bucket(), origen, bucket(), destino
+    )
+    _enviar(token, cambio, b"{}", "POST", "application/json")
+    borrar = f"https://storage.googleapis.com/storage/v1/b/{bucket()}/o/{origen}"
+    _enviar(token, borrar, None, "DELETE", "application/json")
+    print(f"publicado en el bucket {nombre}", flush=True)
+
+
+def subir() -> None:
+    """Uploads the week data. Only retraining publishes the model."""
+    if not bucket():
+        return
+    token = _token()
+    if not token:
+        raise SystemExit("DATOS_BUCKET está definido pero no hay credencial de Cloud para subir")
+    for path in SEMANA:
         if not path.exists():
             continue
         nombre = _relativo(path)
         url = "https://storage.googleapis.com/upload/storage/v1/b/{}/o?uploadType=media&name={}".format(
             bucket(), urllib.parse.quote(nombre, safe="")
         )
-        req = urllib.request.Request(
-            url, data=path.read_bytes(), method="POST",
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/octet-stream"},
-        )
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            resp.read()
+        _enviar(token, url, path.read_bytes(), "POST", "application/octet-stream")
         print(f"subido al bucket {nombre}", flush=True)

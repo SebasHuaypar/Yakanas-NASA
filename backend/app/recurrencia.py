@@ -1,15 +1,15 @@
-"""Recurrencia: en qué zonas suele haber fuego alrededor de una fecha del calendario.
+"""Recurrence: which zones usually have fire around a calendar date.
 
-Para cada zona de 0,06° (unos 6,6 km de lado) se cuenta en cuántos años hubo al
-menos una detección dentro de una ventana de días alrededor de esa fecha. La
-frecuencia es años con fuego / años mirados. Entra toda la serie, desde 2003.
-Cada año cuenta una sola vez: de 2003 a 2011 vale lo que vio MODIS (convertido
-a la grilla); desde 2012 solo VIIRS. MODIS no ve los fuegos chicos, así que
-esos años bajan la frecuencia y no se suman encima de VIIRS.
+For each 0.06° zone (about 6.6 km on a side) it counts how many years had at
+least one detection inside a window of days around that date. Frequency is
+years with fire / years looked at. The whole series comes in, from 2003.
+Each year counts once: from 2003 to 2011 it uses what MODIS saw (converted
+onto the grid); from 2012 only VIIRS. MODIS misses small fires, so those
+years lower the frequency and are not added on top of VIIRS.
 
-No es un modelo del tiempo ni de la vegetación: dice dónde el fuego se repite,
-que en el Perú es sobre todo quema agrícola de temporada. La validación mide,
-con años que el cálculo no vio, cuántas de las zonas marcadas ardieron de verdad.
+This is not a weather or vegetation model: it says where fire repeats, which
+in Peru is mostly seasonal agricultural burning. Validation measures, on years
+the calculation did not see, how many of the marked zones actually burned.
 """
 import json
 from datetime import date, timedelta
@@ -21,13 +21,13 @@ from fastapi import HTTPException
 from app.calendario import ORIGEN, PASO, _conexion, _nombres, resolver
 from app.config import OUT, SERIE_DESDE, VIIRS_DESDE
 
-LADO = 3                 # celdas de 0,02° por lado de la zona
-GRADOS = PASO * LADO     # 0,06°
+LADO = 3                 # 0.02° cells along each side of a zone
+GRADOS = PASO * LADO     # 0.06°
 DESDE = SERIE_DESDE
 PRUEBA = range(2019, 2026)
 CORTES = (0.3, 0.5, 0.7)
 TRAMOS = ((0.0, 0.2), (0.2, 0.4), (0.4, 0.6), (0.6, 0.8), (0.8, 1.01))
-BASE = 100_000           # para juntar (zx, zy) en un solo número
+BASE = 100_000           # packs (zx, zy) into one number
 VENTANAS = (7, 15, 30)
 GUARDADA = OUT / "recurrencia_validacion.json"
 
@@ -35,8 +35,8 @@ GUARDADA = OUT / "recurrencia_validacion.json"
 @lru_cache(maxsize=1)
 def _datos() -> dict:
     con = _conexion()
-    # Una fila por zona y día. VIIRS gana si el mismo día también tiene MODIS,
-    # y un año no se cuenta dos veces aunque la zona toque dos departamentos.
+    # One row per zone and day. VIIRS wins if the same day also has MODIS,
+    # and a year is not counted twice even if the zone touches two departments.
     filas = con.execute(
         f"""SELECT zx, zy, year, doy, mode(dep_id) AS dep_id
             FROM (
@@ -51,7 +51,7 @@ def _datos() -> dict:
     zx, zy, anio, doy, dep = zip(*filas)
     zona = np.array(zx, dtype=np.int64) * BASE + np.array(zy, dtype=np.int64)
     ultimo = con.execute("SELECT MAX(acq_date_local) FROM fire_cell_day").fetchone()[0]
-    # Departamento de cada zona: el que más celdas-día tiene en ella.
+    # Department of each zone: the one with the most cell-days in it.
     cuenta: dict[int, dict[str, int]] = {}
     for z, d in zip(zona.tolist(), dep):
         cuenta.setdefault(z, {})
@@ -66,19 +66,19 @@ def _datos() -> dict:
 
 
 def _cerca(doy: np.ndarray, dia: int, ventana: int) -> np.ndarray:
-    """Días del año a `ventana` días o menos de `dia`, dando la vuelta en diciembre–enero."""
+    """Days of year within `ventana` days of `dia`, wrapping from December into January."""
     dist = np.abs(doy - dia)
     return np.minimum(dist, 365 - dist) <= ventana
 
 
 def _anios(fecha: date, ventana: int, ultimo: date, hasta: int | None = None) -> list[int]:
-    """Años cuya ventana alrededor de esa fecha ya terminó en los datos."""
+    """Years whose window around that date has already ended in the data."""
     tope = hasta if hasta is not None else ultimo.year
     anios = []
     for y in range(DESDE, tope + 1):
         try:
             fin = fecha.replace(year=y) + timedelta(days=ventana)
-        except ValueError:          # 29 de febrero
+        except ValueError:          # 29 February
             fin = date(y, 3, 1) + timedelta(days=ventana)
         if fin <= ultimo:
             anios.append(y)
@@ -86,7 +86,7 @@ def _anios(fecha: date, ventana: int, ultimo: date, hasta: int | None = None) ->
 
 
 def _frecuencias(dia: int, ventana: int, anios: list[int]) -> tuple[np.ndarray, np.ndarray, dict]:
-    """Por zona: en cuántos de esos años hubo fuego en la ventana, y cuáles."""
+    """Per zone: in how many of those years there was fire in the window, and which years."""
     d = _datos()
     m = _cerca(d["doy"], dia, ventana) & np.isin(d["anio"], anios)
     pares = np.unique(np.stack([d["zona"][m], d["anio"][m]], axis=1), axis=0)
@@ -160,12 +160,12 @@ def mapa(fecha: date | None, ventana: int, region_id: str, minimo: float, limite
 
 
 def lugar(lat: float, lon: float) -> dict:
-    """Semana por semana, en cuántos años hubo fuego en la zona que contiene ese punto."""
+    """Week by week, how many years had fire in the zone that contains that point."""
     d = _datos()
     zx = int((lon - ORIGEN[0]) // GRADOS)
     zy = int((lat - ORIGEN[1]) // GRADOS)
     z = zx * BASE + zy
-    anios = list(range(DESDE, d["ultimo"].year))     # años completos
+    anios = list(range(DESDE, d["ultimo"].year))     # complete years
     m = (d["zona"] == z) & np.isin(d["anio"], anios)
     semana = np.minimum((d["doy"][m] - 1) // 7, 51)
     pares = np.unique(np.stack([semana, d["anio"][m]], axis=1), axis=0)
@@ -198,7 +198,7 @@ def lugar(lat: float, lon: float) -> dict:
 
 
 def validacion(ventana: int = 15) -> dict:
-    """La validación guardada por run_serie.py; si falta, se calcula (tarda unos segundos)."""
+    """The validation saved by run_serie.py; if it is missing, it is computed (a few seconds)."""
     if GUARDADA.exists():
         guardada = json.loads(GUARDADA.read_text(encoding="utf-8"))
         if str(ventana) in guardada:
@@ -215,9 +215,9 @@ def guardar_validacion() -> None:
 
 @lru_cache(maxsize=8)
 def _validar(ventana: int) -> dict:
-    """Para 2019–2025: con los años anteriores se marca, y se mira qué ardió ese año."""
+    """For 2019–2025: mark from the earlier years, then see what burned that year."""
     d = _datos()
-    dias = [1 + 15 * i for i in range(24)] + [361]      # cada quince días, todo el año
+    dias = [1 + 15 * i for i in range(24)] + [361]      # every fifteen days, the whole year
     tramos = np.zeros((len(TRAMOS), 2))
     cortes = {c: [0, 0, 0] for c in CORTES}
     for anio in PRUEBA:
@@ -248,8 +248,8 @@ def _validar(ventana: int) -> dict:
         ],
         "por_corte": [
             {"frecuencia_minima": c,
-             "aciertos": round(h / n, 3) if n else None,            # de las marcadas, cuántas ardieron
-             "cobertura": round(h / total, 3) if total else None}   # de las que ardieron, cuántas estaban marcadas
+             "aciertos": round(h / n, 3) if n else None,            # of the marked zones, how many burned
+             "cobertura": round(h / total, 3) if total else None}   # of the zones that burned, how many were marked
             for c, (n, h, total) in cortes.items()
         ],
     }

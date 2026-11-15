@@ -1,7 +1,7 @@
-"""Descarga solo 2026 por la API de área, en bloques de 5 días.
+"""Downloads only 2026 through the area API, in 5-day blocks.
 
-NOAA-20 es la referencia. NOAA-21 queda de respaldo. No toca los CSV
-anteriores a 2026.
+NOAA-20 is the reference. NOAA-21 is the fallback. It does not touch CSVs
+from before 2026.
 """
 import time
 import urllib.error

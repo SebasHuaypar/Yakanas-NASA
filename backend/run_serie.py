@@ -1,7 +1,8 @@
-"""Arma la serie de 2003 al año en curso.
+"""Builds the series from 2003 through the current year.
 
-Los CSV anuales 2003–2025 ya publicados se bajan una vez y se reutilizan. 2026 se completa
-por la API. El ajuste usa 2012–2022. Al final se guarda la validación de la recurrencia.
+The published annual CSVs for 2003–2025 are downloaded once and reused. 2026 is
+filled in through the API. The fit uses 2012–2022. The recurrence validation is
+saved at the end.
 """
 from ingest.firms_archive import descargar
 from ingest.firms_year import descargar_2026

@@ -122,7 +122,7 @@ async function get(path) {
 
 const clase = e => e.activo ? e.tendencia : "fin";
 
-// Un punto crudo: MODIS como cuadro de ~1 km, VIIRS como punto de ~375 m.
+// One raw point: MODIS as a ~1 km square, VIIRS as a ~375 m point.
 function crudo(f) {
   const [lon, lat] = f.geometry.coordinates, p = f.properties;
   const texto = `${p.sensor} · ${p.acq_date} · ${p.frp_mw} MW`;
@@ -204,7 +204,7 @@ async function cargar() {
   const q = ($("desde").value ? `&desde=${$("desde").value}` : "") + ($("hasta").value ? `&hasta=${$("hasta").value}` : "");
   rango = q;
   [datos, crudos] = await Promise.all([get(`/events?region_id=${region}${q}`), get(`/fires?limit=20000${q}`)]);
-  // La primera vez, las fechas se llenan con lo que la API tiene descargado.
+  // The first time, the dates are filled with what the API has downloaded.
   for (const [id, v] of [["desde", datos.desde], ["hasta", datos.hasta]]) {
     $(id).min = datos.cobertura.desde; $(id).max = datos.cobertura.hasta;
     if (!$(id).value) $(id).value = v;
@@ -223,7 +223,7 @@ async function cargar() {
   if (region === "PE") map.setView([-9.2, -75], 5);
   else if (crudos.features.length) map.fitBounds(L.latLngBounds(crudos.features.map(f => [f.geometry.coordinates[1], f.geometry.coordinates[0]])), { padding:[30, 30] });
 
-  // Estas dos tarjetas usan la serie armonizada; si falta, el radar sigue funcionando.
+  // These two cards use the harmonized series; if it is missing, the radar still works.
   get("/alert?dias=7").then(a => {
     const x = region === "PE" ? a.peru : a.departamentos.find(d => d.region_id === region);
     $("kAlerta").textContent = x ? x.estado : "–";

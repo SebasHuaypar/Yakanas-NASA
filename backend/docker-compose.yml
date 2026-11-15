@@ -1,7 +1,7 @@
-# Uso:
-#   docker compose up -d --build          API en :8000 y páginas en :5500
-#   docker compose run --rm serie         arma la serie 2003–hoy (necesita .env con FIRMS_MAP_KEY)
-#   docker compose run --rm semana        baja la semana reciente para /week, /heat y /fires
+# Usage:
+#   docker compose up -d --build          API on :8000 and pages on :5500
+#   docker compose run --rm serie         builds the 2003–today series (needs .env with FIRMS_MAP_KEY)
+#   docker compose run --rm semana        downloads the recent week for /week, /heat, and /fires
 x-backend: &backend
   build: .
   volumes:
@@ -21,7 +21,7 @@ services:
     build: .
     working_dir: /app/web
     volumes:
-      - ./web:/app/web   # los cambios en las páginas se ven sin reconstruir
+      - ./web:/app/web   # page edits show up without a rebuild
     command: ["python", "-m", "http.server", "5500", "--bind", "0.0.0.0"]
     ports: ["5500:5500"]
     depends_on:

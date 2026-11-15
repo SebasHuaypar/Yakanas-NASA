@@ -1,6 +1,6 @@
-"""Descarga una ventana corta de FIRMS (NRT) por área, en bloques de 5 días.
+"""Downloads a short FIRMS (NRT) window by area, in 5-day blocks.
 
-La URL lleva la clave. Ningún mensaje de error la imprime.
+The URL carries the key. No error message prints it.
 """
 import hashlib
 import json
@@ -72,7 +72,7 @@ def descargar(desde: date, hasta: date) -> list[dict]:
                 print(f"bajado {fuente} {inicio.isoformat()} ({n} días, {max(0, texto.count(chr(10)) - 1)} filas)")
                 time.sleep(0.4)
             filas = max(0, texto.count("\n") - (0 if texto.endswith("\n") else 0))
-            # la cabecera cuenta como una línea; si el archivo termina en salto, count('\n') incluye la cabecera
+            # the header counts as one line; if the file ends in a newline, count('\n') includes the header
             filas = max(0, sum(1 for linea in texto.splitlines() if linea.strip()) - 1)
             manifiesto.append({
                 "fuente": fuente,

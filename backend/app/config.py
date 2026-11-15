@@ -1,4 +1,4 @@
-"""Rutas y clave de FIRMS. La clave se lee del entorno o de backend/.env."""
+"""Paths and the FIRMS key. The key is read from the environment or from backend/.env."""
 import os
 from pathlib import Path
 
@@ -15,9 +15,9 @@ HTML = ROOT / "web" / "calendario-del-fuego.html"
 BBOX = "-81.4,-18.4,-68.6,0.0"
 FUENTES = ("MODIS_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT")
 
-# El archivo de Perú empieza en 2003 (MODIS). VIIRS observado empieza en 2012.
-# La recurrencia usa toda la serie, un año por zona: antes de 2012 cuenta si MODIS
-# vio fuego, y desde 2012 solo VIIRS, para no marcar dos veces el mismo día.
+# Peru's file starts in 2003 (MODIS). Observed VIIRS starts in 2012.
+# Recurrence uses the whole series, one year per zone: before 2012 it counts MODIS
+# fire, and from 2012 only VIIRS, so the same day is not marked twice.
 SERIE_DESDE = 2003
 VIIRS_DESDE = 2012
 

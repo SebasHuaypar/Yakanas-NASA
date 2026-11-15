@@ -1,7 +1,7 @@
-"""Pasa los focos nuevos de la semana a la serie armonizada, sin borrar lo anterior.
+"""Adds the week's new hotspots to the harmonized series without deleting what is already there.
 
-Cada corrida reemplaza solo sus propias fechas y conserva el resto. Desde 2012
-entra un solo VIIRS por día, igual que el resto de la serie.
+Each run replaces only its own dates and keeps the rest. From 2012 on, one
+VIIRS satellite is kept per day, the same rule as the rest of the series.
 """
 import json
 
@@ -28,7 +28,7 @@ def _fecha_local(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def un_viirs(df: pd.DataFrame) -> pd.DataFrame:
-    """De los VIIRS de cada día se queda el de mayor prioridad."""
+    """Keeps the highest-priority VIIRS detection for each day."""
     if "acq_date_local" not in df.columns:
         df = _fecha_local(df)
     vii = df[df["sensor"] == "VIIRS"].copy()
@@ -64,7 +64,7 @@ def _celdas(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def incorporar(ventana: pd.DataFrame) -> int:
-    """Añade las fechas de esta ventana a fire_cell_day y rehace los meses."""
+    """Adds this window's dates to fire_cell_day and rebuilds the months."""
     nuevas = _celdas(ventana)
     if nuevas.empty:
         print("acumular: la ventana no trae VIIRS dentro de un departamento", flush=True)

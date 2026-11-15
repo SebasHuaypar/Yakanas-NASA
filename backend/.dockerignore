@@ -3,6 +3,7 @@
 **/__pycache__
 **/*.pyc
 .env
-# La API lee data/processed, data/parquet y data/out: van dentro de la imagen para Cloud Run.
-# Con docker-compose el volumen los tapa con los del disco. Los CSV crudos solo sirven para armar la serie.
+**/*.md
+# The API reads data/processed, data/parquet, and data/out: they go in the image for Cloud Run.
+# With docker-compose the volume covers them with the files on disk. Raw CSVs are only used to build the series.
 data/raw

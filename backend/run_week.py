@@ -1,4 +1,4 @@
-"""Descarga y agrega la semana que termina hoy (inclusive)."""
+"""Downloads and appends the week that ends today (inclusive)."""
 from datetime import date, timedelta
 
 from app.almacen import bajar, subir

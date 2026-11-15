@@ -1,5 +1,5 @@
-# Lo que gcloud run deploy --source NO sube. Sin este archivo gcloud usa .gitignore
-# y dejaría fuera los Parquet de la serie, que la API necesita.
+# What gcloud run deploy --source does NOT upload. Without this file gcloud uses .gitignore
+# and would leave out the series Parquet files, which the API needs.
 .gcloudignore
 .git
 .gitignore
@@ -9,3 +9,4 @@
 *:Zone.Identifier
 .env
 data/raw
+**/*.md

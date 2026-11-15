@@ -1,4 +1,4 @@
-"""Ventanas del calendario y años que entran en la recurrencia."""
+"""Calendar windows and the years that enter the recurrence."""
 from datetime import date
 
 import numpy as np
@@ -13,8 +13,8 @@ def test_la_ventana_da_la_vuelta_al_anio():
 
 def test_solo_entran_los_anios_con_la_ventana_terminada():
     ultimo = date(2026, 11, 13)
-    assert _anios(date(2027, 9, 15), 15, ultimo)[-1] == 2026      # septiembre de 2026 ya pasó
-    assert _anios(date(2027, 11, 20), 15, ultimo)[-1] == 2025     # noviembre de 2026 no terminó
+    assert _anios(date(2027, 9, 15), 15, ultimo)[-1] == 2026      # September 2026 has already passed
+    assert _anios(date(2027, 11, 20), 15, ultimo)[-1] == 2025     # November 2026 has not finished
     assert _anios(date(2027, 9, 15), 15, ultimo)[0] == DESDE == 2003
 
 

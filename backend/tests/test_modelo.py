@@ -1,4 +1,4 @@
-"""El ajuste recupera una ley conocida y el rango cubre el estimado."""
+"""The fit recovers a known law and the range covers the estimate."""
 import numpy as np
 
 from harmonize.modelo import fit_powerlaw, predecir, sirve, temporada_alta
@@ -24,7 +24,7 @@ def test_k_reproduciria_el_total():
     est, lo, hi = predecir(params, m, alta)
     assert np.all(lo <= est + 1e-6)
     assert np.all(est <= hi + 1e-6)
-    # Donde hay MODIS, k = estimado / M y la suma de las partes es el estimado.
+    # Where there is MODIS, k = estimate / M and the sum of the parts is the estimate.
     mask = m > 0
     k = est[mask] / m[mask]
     assert np.allclose(k * m[mask], est[mask])
