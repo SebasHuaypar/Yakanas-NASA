@@ -1,0 +1,11 @@
+# Lo que gcloud run deploy --source NO sube. Sin este archivo gcloud usa .gitignore
+# y dejaría fuera los Parquet de la serie, que la API necesita.
+.gcloudignore
+.git
+.gitignore
+**/.venv
+**/__pycache__
+**/*.pyc
+*:Zone.Identifier
+backend/.env
+backend/data/raw

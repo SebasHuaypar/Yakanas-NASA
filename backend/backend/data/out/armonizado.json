@@ -1,0 +1,26 @@
+{
+  "generado": "2026-11-14T23:30Z",
+  "version": "v1-2026-11-14",
+  "anio_desde": 2003,
+  "anio_hasta": 2026,
+  "corte": "2012-01-20",
+  "grilla": {
+    "paso_grados": 0.02,
+    "origen": [
+      -81.5,
+      -18.5
+    ],
+    "nota": "0,02°, unos 5 km². Equivale a H3 resolución 7 en este prototipo DuckDB."
+  },
+  "filtros": {
+    "brutos": 2135893,
+    "tras_filtros": 1957783,
+    "celdas_fijas": 1885
+  },
+  "filas_dentro": 1335130,
+  "fuera": 6839,
+  "celdas": 823513,
+  "desde": "2003-01-02",
+  "hasta": "2026-11-13",
+  "nota": "Serie 2003–2026. Antes del 20 de enero de 2012 la serie es MODIS convertido; desde esa fecha es VIIRS observado. Error nacional en 2020–2022: 13.4%."
+}

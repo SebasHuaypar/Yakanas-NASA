@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar de la semana · Calendario del Fuego</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root { --bg:#f6f1e8; --ink:#211a1f; --muted:#6d625c; --card:#fffdf8; --line:#e4d9cc; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  header, main { width:min(1180px, calc(100% - 32px)); margin:0 auto; }
+  header { padding:28px 0 8px; }
+  main { padding-bottom:28px; }
+  h1 { font-size:28px; margin:0 0 6px; }
+  h2 { font-size:13px; margin:0 0 6px; color:var(--muted); }
+  p { margin:0; color:var(--muted); }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin:18px 0; }
+  label { display:flex; flex-direction:column; gap:4px; font-size:13px; font-weight:700; color:var(--muted); }
+  input, select { font:inherit; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px 10px; }
+  button, a.btn { background:#9f1239; color:#fff; border:1px solid #9f1239; border-radius:999px; padding:10px 16px; font:inherit; font-weight:700; text-decoration:none; cursor:pointer; }
+  button.sec, a.btn.sec { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  .derecha { margin-left:auto; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:16px; }
+  .big { font-size:26px; font-weight:700; }
+  .sub { font-size:13px; color:var(--muted); margin-top:4px; }
+  .pron { border-style:dashed; }
+  .grid { display:grid; grid-template-columns:1.3fr 0.7fr; gap:16px; }
+  @media (max-width:900px) { .grid { grid-template-columns:1fr; } }
+  #map { height:520px; border-radius:12px; }
+  .leyenda { display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--muted); margin-bottom:8px; }
+  .sw { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; }
+  .creciendo, .inusual { background:#f87171; } .nuevo, .alto { background:#fdba74; }
+  .estable, .normal { background:#f5e6c8; } .bajando, .bajo { background:#bfdbfe; } .fin { background:#e7e2da; }
+  .tag { display:inline-block; font-size:12px; font-weight:700; padding:2px 9px; border-radius:10px; white-space:nowrap; align-self:center; color:var(--ink); }
+  #lista { max-height:240px; overflow:auto; display:grid; gap:6px; }
+  .ev { padding:8px 10px; border:1px solid var(--line); border-radius:10px; cursor:pointer; display:flex; justify-content:space-between; gap:8px; background:#fff; font-size:13px; }
+  .ev:hover, .ev.sel { border-color:#9f1239; }
+  .nums { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; text-align:center; margin:10px 0; }
+  .nums div { background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px 4px; }
+  .nums b { display:block; font-size:17px; }
+  .nums span { font-size:11px; color:var(--muted); }
+  .bars { display:flex; align-items:flex-end; gap:4px; height:70px; margin:6px 0 22px; }
+  .bars div { flex:1; background:#c2410c; border-radius:3px 3px 0 0; min-height:2px; position:relative; }
+  .bars div span { position:absolute; bottom:-17px; left:0; right:0; text-align:center; font-size:10px; color:var(--muted); }
+  .nota { font-size:13px; color:var(--muted); }
+  #error { color:#9f1239; font-weight:700; }
+  #error:empty { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Radar de la semana</h1>
+  <p id="lead">Qué está ardiendo ahora. MODIS y VIIRS marcan el mismo fuego varias veces y con píxeles de distinto tamaño; aquí esas detecciones sueltas se juntan en eventos para ver cuántos fuegos hay, dónde están y si crecen.</p>
+</header>
+<main>
+  <div class="row">
+    <label>Región
+      <select id="region"></select>
+    </label>
+    <label>Desde
+      <input id="desde" type="date">
+    </label>
+    <label>Hasta
+      <input id="hasta" type="date">
+    </label>
+    <button id="go" type="button">Ver</button>
+    <button id="mAgr" type="button">Vista agrupada</button>
+    <button id="mCru" type="button" class="sec">Datos crudos</button>
+    <span class="derecha" style="display:flex; gap:8px">
+      <a class="btn sec" href="armonizado.html" data-pagina="armonizado.html">Serie 2003 a hoy</a>
+      <a class="btn sec" href="prevencion.html" data-pagina="prevencion.html">Prevención</a>
+    </span>
+  </div>
+  <p id="resumen"></p>
+  <p id="error"></p>
+  <section class="kpis" style="margin-top:16px">
+    <div class="card"><h2>Eventos activos</h2><div class="big" id="kActivos">–</div><div class="sub" id="kActivosSub"></div></div>
+    <div class="card"><h2>De detecciones a eventos</h2><div class="big" id="kPuntos">–</div><div class="sub" id="kPuntosSub"></div></div>
+    <div class="card"><h2>Últimos 7 días frente a lo normal</h2><div class="big"><span id="kAlerta" class="tag">–</span></div><div class="sub" id="kAlertaSub"></div></div>
+    <div class="card pron"><h2>Pronóstico del próximo mes</h2><div class="big" id="kPron">–</div><div class="sub" id="kPronSub"></div></div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <div class="leyenda" id="leyenda"></div>
+      <div id="map"></div>
+    </div>
+    <div class="card">
+      <h2>Evento seleccionado</h2>
+      <div id="detalle" class="nota">Elige un evento en el mapa o en la lista.</div>
+      <h2 style="margin-top:16px">Eventos del intervalo</h2>
+      <div id="lista"></div>
+    </div>
+  </section>
+
+  <p class="nota" id="nota" style="margin-top:16px"></p>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="comun.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const COLOR = { creciendo:"#b91c1c", nuevo:"#c2410c", estable:"#a16207", bajando:"#1d4e89", fin:"#6d625c" };
+const TEXTO = { creciendo:"creciendo", nuevo:"nuevo", estable:"estable", bajando:"bajando", fin:"sin detección reciente" };
+const n = v => Math.round(v).toLocaleString("es-PE");
+
+const map = L.map("map").setView([-9.2, -75], 5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap" }).addTo(map);
+const capa = L.layerGroup().addTo(map);
+const capaSel = L.layerGroup().addTo(map);
+let modo = "agrupada", datos = null, crudos = null, elegido = null, rango = "";
+
+async function get(path) {
+  const res = await fetch(API + path);
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail || res.statusText);
+  return body;
+}
+
+const clase = e => e.activo ? e.tendencia : "fin";
+
+// Un punto crudo: MODIS como cuadro de ~1 km, VIIRS como punto de ~375 m.
+function crudo(f) {
+  const [lon, lat] = f.geometry.coordinates, p = f.properties;
+  const texto = `${p.sensor} · ${p.acq_date} · ${p.frp_mw} MW`;
+  if (p.sensor === "MODIS") {
+    const d = 0.0045, dx = d / Math.cos(lat * Math.PI / 180);
+    return L.rectangle([[lat - d, lon - dx], [lat + d, lon + dx]], { color:"#a16207", weight:1.5, fillOpacity:.15 }).bindTooltip(texto);
+  }
+  return L.circle([lat, lon], { radius:190, color:"#7f1d1d", weight:1, fillColor:"#dc2626", fillOpacity:.8 }).bindTooltip(texto);
+}
+
+function leyenda() {
+  $("leyenda").innerHTML = modo === "agrupada"
+    ? Object.keys(COLOR).map(k => `<span><i class="sw" style="background:${COLOR[k]}"></i>${TEXTO[k]}</span>`).join("")
+      + "<span>El tamaño del círculo crece con el número de detecciones.</span>"
+    : `<span><i class="sw" style="border:1.5px solid #a16207"></i>MODIS, píxel de 1 km</span><span><i class="sw" style="background:#dc2626; border-radius:50%"></i>VIIRS, píxel de 375 m</span>
+       <span>Así llegan los datos: el mismo fuego aparece varias veces, con tamaños de píxel distintos.</span>`;
+}
+
+function dibujar() {
+  capa.clearLayers();
+  leyenda();
+  if (modo === "agrupada") {
+    datos.events.forEach(e => {
+      const c = COLOR[clase(e)];
+      L.circleMarker([e.centro[1], e.centro[0]], {
+        radius: 5 + Math.sqrt(e.detecciones.total) * 2.2, color: c, weight: 2, fillColor: c, fillOpacity: .45,
+      }).bindTooltip(`${e.name} · ${e.detecciones.total} detecciones`).on("click", () => elegir(e.id)).addTo(capa);
+    });
+  } else {
+    crudos.features.forEach(f => crudo(f).addTo(capa));
+  }
+}
+
+function lista() {
+  $("lista").innerHTML = datos.events.length ? "" : '<p class="nota">No hay eventos con esas condiciones.</p>';
+  datos.events.slice(0, 60).forEach(e => {
+    const div = document.createElement("div");
+    div.className = "ev" + (e.id === elegido ? " sel" : "");
+    div.innerHTML = `<span><b>${e.name}</b><br><span style="color:var(--muted)">${e.detecciones.total} detecciones · ${e.primera_fecha} a ${e.ultima_fecha}</span></span>
+      <span class="tag ${clase(e)}">${TEXTO[clase(e)]}</span>`;
+    div.onclick = () => elegir(e.id);
+    $("lista").appendChild(div);
+  });
+}
+
+async function elegir(id) {
+  elegido = id;
+  lista();
+  const e = await get(`/events/${id}?${rango.slice(1)}`);
+  capaSel.clearLayers();
+  e.features.forEach(f => crudo(f).addTo(capaSel));
+  map.fitBounds([[e.bbox[1], e.bbox[0]], [e.bbox[3], e.bbox[2]]], { padding:[60, 60], maxZoom:13 });
+  const max = Math.max(...e.por_dia.map(d => d.detecciones));
+  $("detalle").className = "";
+  $("detalle").innerHTML = `
+    <span class="tag ${clase(e)}">${TEXTO[clase(e)]}</span>
+    <div style="font-size:17px; font-weight:700; margin-top:8px">${e.name}</div>
+    <div class="nota">${e.centro[1].toFixed(3)}, ${e.centro[0].toFixed(3)} · ${e.primera_fecha} a ${e.ultima_fecha}</div>
+    <div class="nums">
+      <div><b>${e.detecciones.total}</b><span>detecciones</span></div>
+      <div><b>${n(e.frp_total_mw)} MW</b><span>potencia sumada</span></div>
+      <div><b>≤ ${n(e.area_pixeles_ha)} ha</b><span>píxeles con detección (techo)</span></div>
+    </div>
+    <div class="nota">MODIS ${e.detecciones.modis} · VIIRS NOAA-20 ${e.detecciones.viirs_noaa20} · VIIRS NOAA-21 ${e.detecciones.viirs_noaa21}
+      · ${e.confianza_alta} de confianza alta</div>
+    <h2 style="margin-top:14px">Detecciones por día</h2>
+    <div class="bars">${e.por_dia.map(d => `<div style="height:${100 * d.detecciones / max}%" title="${d.fecha}: ${d.detecciones}"><span>${d.fecha.slice(8)}</span></div>`).join("")}</div>
+`;
+}
+
+async function cargar() {
+  const region = $("region").value;
+  $("error").textContent = "";
+  elegido = null;
+  capaSel.clearLayers();
+  $("detalle").className = "nota";
+  $("detalle").textContent = "Elige un evento en el mapa o en la lista.";
+
+  const q = ($("desde").value ? `&desde=${$("desde").value}` : "") + ($("hasta").value ? `&hasta=${$("hasta").value}` : "");
+  rango = q;
+  [datos, crudos] = await Promise.all([get(`/events?region_id=${region}${q}`), get(`/fires?limit=20000${q}`)]);
+  // La primera vez, las fechas se llenan con lo que la API tiene descargado.
+  for (const [id, v] of [["desde", datos.desde], ["hasta", datos.hasta]]) {
+    $(id).min = datos.cobertura.desde; $(id).max = datos.cobertura.hasta;
+    if (!$(id).value) $(id).value = v;
+  }
+  $("resumen").textContent = `Hay detecciones descargadas del ${datos.cobertura.desde} al ${datos.cobertura.hasta}. El día más reciente puede estar incompleto.`;
+  if (region !== "PE") crudos.features = crudos.features.filter(f => f.properties.dep_id === region);
+  else crudos.features = crudos.features.filter(f => f.properties.dep_id);
+  const r = datos.resumen;
+  $("kActivos").textContent = r.activos;
+  $("kActivosSub").textContent = `${r.creciendo} creciendo · ${r.eventos} eventos entre ${datos.desde} y ${datos.hasta}`;
+  $("kPuntos").textContent = `${n(r.detecciones)} → ${r.eventos}`;
+  $("kPuntosSub").textContent = `${n(r.detecciones_en_eventos)} detecciones forman eventos; ${n(r.detecciones_sueltas)} quedan sueltas o en grupos de menos de 3`;
+  $("nota").textContent = `${datos.regla} ${datos.nota}`;
+  dibujar();
+  lista();
+  if (region === "PE") map.setView([-9.2, -75], 5);
+  else if (crudos.features.length) map.fitBounds(L.latLngBounds(crudos.features.map(f => [f.geometry.coordinates[1], f.geometry.coordinates[0]])), { padding:[30, 30] });
+
+  // Estas dos tarjetas usan la serie armonizada; si falta, el radar sigue funcionando.
+  get("/alert?dias=7").then(a => {
+    const x = region === "PE" ? a.peru : a.departamentos.find(d => d.region_id === region);
+    $("kAlerta").textContent = x ? x.estado : "–";
+    $("kAlerta").className = "tag " + (x ? x.estado : "");
+    $("kAlertaSub").textContent = x ? `${n(x.hs)} hotspots del ${a.desde} al ${a.hasta}; la mediana de esos días es ${n(x.median)}. No depende de las fechas elegidas. ${a.nota}` : "";
+  }).catch(() => { $("kAlerta").textContent = "–"; $("kAlertaSub").textContent = "Falta la serie armonizada."; });
+
+  get(`/forecast?region_id=${region}`).then(async f => {
+    let m = f.months[0];
+    try { const resto = await get(`/forecast?region_id=${region}&year=${f.year - 1}`); if (resto.months.length > 1) m = resto.months[1]; } catch (_) {}
+    $("kPron").textContent = `≈ ${n(m.hs)} hotspots`;
+    $("kPronSub").textContent = `${MESES[m.month - 1]} de ${m.year}: entre ${n(m.hs_lo)} y ${n(m.hs_hi)}. ${f.nota}`;
+  }).catch(() => { $("kPron").textContent = "–"; $("kPronSub").textContent = "Falta la serie armonizada."; });
+}
+
+function cambiarModo(m) {
+  modo = m;
+  $("mAgr").className = m === "agrupada" ? "" : "sec";
+  $("mCru").className = m === "crudos" ? "" : "sec";
+  if (datos) dibujar();
+}
+
+$("mAgr").onclick = () => cambiarModo("agrupada");
+$("mCru").onclick = () => cambiarModo("crudos");
+$("region").onchange = () => cargar().catch(mostrar);
+$("go").onclick = () => cargar().catch(mostrar);
+const mostrar = err => { $("error").textContent = mensajeApi(err); };
+
+get("/regions").then(rs => {
+  $("region").innerHTML = rs.map(r => `<option value="${r.id}">${r.name}</option>`).join("");
+  return cargar();
+}).catch(mostrar);
+</script>
+</body>
+</html>

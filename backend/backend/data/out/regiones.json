@@ -1,0 +1,106 @@
+[
+  {
+    "id": "PE-PUN",
+    "name": "Puno"
+  },
+  {
+    "id": "PE-TUM",
+    "name": "Tumbes"
+  },
+  {
+    "id": "PE-PIU",
+    "name": "Piura"
+  },
+  {
+    "id": "PE-LAM",
+    "name": "Lambayeque"
+  },
+  {
+    "id": "PE-CAJ",
+    "name": "Cajamarca"
+  },
+  {
+    "id": "PE-AMA",
+    "name": "Amazonas"
+  },
+  {
+    "id": "PE-LAL",
+    "name": "La Libertad"
+  },
+  {
+    "id": "PE-ANC",
+    "name": "Ancash"
+  },
+  {
+    "id": "PE-SAM",
+    "name": "San Martín"
+  },
+  {
+    "id": "PE-HUC",
+    "name": "Huánuco"
+  },
+  {
+    "id": "PE-PAS",
+    "name": "Pasco"
+  },
+  {
+    "id": "PE-LIM",
+    "name": "Lima"
+  },
+  {
+    "id": "PE-CAL",
+    "name": "El Callao"
+  },
+  {
+    "id": "PE-LMA",
+    "name": "Municipalidad Metropolitana de Lima"
+  },
+  {
+    "id": "PE-UCA",
+    "name": "Ucayali"
+  },
+  {
+    "id": "PE-JUN",
+    "name": "Junín"
+  },
+  {
+    "id": "PE-ICA",
+    "name": "Ica"
+  },
+  {
+    "id": "PE-HUV",
+    "name": "Huancavelica"
+  },
+  {
+    "id": "PE-MDD",
+    "name": "Madre de Dios"
+  },
+  {
+    "id": "PE-CUS",
+    "name": "Cusco"
+  },
+  {
+    "id": "PE-APU",
+    "name": "Apurímac"
+  },
+  {
+    "id": "PE-AYA",
+    "name": "Ayacucho"
+  },
+  {
+    "id": "PE-ARE",
+    "name": "Arequipa"
+  },
+  {
+    "id": "PE-MOQ",
+    "name": "Moquegua"
+  },
+  {
+    "id": "PE-TAC",
+    "name": "Tacna"
+  },
+  {
+    "id": "PE-LOR",
+    "name": "Loreto"
+  }
+]

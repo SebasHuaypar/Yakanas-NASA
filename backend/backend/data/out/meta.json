@@ -1,0 +1,39 @@
+{
+  "generado": "2026-11-14T20:28Z",
+  "completo": false,
+  "parcial": true,
+  "ventana": {
+    "desde": "2026-11-07",
+    "hasta": "2026-11-14"
+  },
+  "calidad": "NRT (casi en tiempo real). No es el producto estándar.",
+  "nota_type": "Producto NRT: no trae la columna type, así que no se pudo separar vegetación de otras fuentes.",
+  "snpp": "No se consultó Suomi-NPP: ya no entrega datos nuevos.",
+  "filtros": {
+    "confianza": "nominal y alta (MODIS >= 30, VIIRS n/h)",
+    "vegetacion": "no aplicado: el NRT no trae type",
+    "sensores": [
+      "MODIS_NRT",
+      "VIIRS_NOAA20_NRT",
+      "VIIRS_NOAA21_NRT"
+    ]
+  },
+  "bbox": [
+    -81.4,
+    -18.4,
+    -68.6,
+    0.0
+  ],
+  "filas": 2596,
+  "fuera_de_poligono": 624,
+  "totales": {
+    "modis": 132,
+    "viirs_noaa20": 1303,
+    "viirs_noaa21": 1161,
+    "asignados": 1972,
+    "fuera": 624
+  },
+  "parquet": true,
+  "brutos": 2833,
+  "departamentos": 26
+}
