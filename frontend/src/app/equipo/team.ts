@@ -32,12 +32,17 @@ export const TEAM: Member[] = [
   {
     id: "giordano",
     name: "Giordano Medrano",
+    photo: "/equipo/giordano.jpg",
     role: { en: "Frontend", es: "Frontend" },
     contribution: {
       en: "Built the Method page: the before-and-after chart, the validation and the interactive simulator of the harmonization formula.",
       es: "Construyó la página Método: el gráfico antes y después, la validación y el simulador interactivo de la fórmula de armonización.",
     },
-    links: {},
+    links: {
+      linkedin: "https://www.linkedin.com/in/giordanomedrano",
+      instagram: "https://www.instagram.com/giordanomedranoc/",
+      email: "giordanomc041020@gmail.com",
+    },
   },
   {
     id: "darcy",
@@ -80,7 +85,6 @@ export const TEAM: Member[] = [
     links: {
       linkedin: "https://www.linkedin.com/in/imakishim/",
       github: "https://github.com/mikita925",
-      instagram: "https://www.instagram.com/mikita921/",
     },
   },
   {
