@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PERU_VIEWBOX } from "@/app/explorador/lib/geo";
+import { DEPT_SHAPES, PERU_VIEWBOX, SHAPE_BY_ID, pointInRings } from "@/app/explorador/lib/geo";
 import Card from "@/components/Card";
 import { apiGet, type ApiEvents, type ApiFires, type ApiForecast, type ApiModelInfo, type ApiModelMap, type ApiPlaceRecurrence } from "@/lib/api";
-import { bearing, compass, distanceKm, fmtCoord, inPeru, weekOfYear } from "@/lib/geo-utils";
+import { bearing, compass, distanceKm, fmtCoord, weekOfYear } from "@/lib/geo-utils";
 import { useLang, type Lang } from "@/lib/lang";
 import { addPlace, MAX_PLACES, removePlace, useSavedPlaces, type SavedPlace } from "@/lib/saved-places";
 import { useApi } from "@/lib/use-api";
 import { COPY, type Copy } from "./copy";
 import FireMap from "./FireMap";
 import { FlameIcon, PinIcon } from "./Icons";
+import RiskForecast, { type RiskMode, type RiskPoint } from "./RiskForecast";
 import { MONTHS } from "./text";
 
 type Loc = { id?: string; name: string; lat: number; lon: number };
@@ -60,7 +61,7 @@ function Picker({ c, lang, onPick }: { c: Copy; lang: Lang; onPick: (l: Loc) => 
   const [results, setResults] = useState<Loc[] | null>(null);
 
   const choose = (lat: number, lon: number, name: string) => {
-    if (!inPeru(lat, lon)) return setMsg(c.outside);
+    if (!deptAt(lat, lon)) return setMsg(c.outside);
     setMsg("");
     onPick({ name, lat: Number(fmtCoord(lat)), lon: Number(fmtCoord(lon)) });
   };
@@ -273,7 +274,6 @@ function Verdict({ loc, near, c, lang, cov, events, saved, onSave, onRemove, onC
 
 /* ---------------------------------------------------------------- temporada */
 const level = (f: number) => (f >= 0.5 ? "high" : f >= 0.2 ? "mid" : "low");
-const TILE: Record<string, string> = { high: "bg-ember text-ink border-ember", mid: "bg-amber/85 text-ink border-amber", low: "bg-snow/[0.07] text-snow/75 border-snow/15" };
 
 function ForecastBars({ months, lang }: { months: { year: number; month: number; hs: number; hs_lo: number; hs_hi: number }[]; lang: Lang }) {
   const W = 360;
@@ -299,19 +299,29 @@ function ForecastBars({ months, lang }: { months: { year: number; month: number;
   );
 }
 
-/** Probabilidad de fuego (regresión logística del backend) en la zona de un punto para las próximas 8 semanas. */
-type ModelState = { key: string; weeks: { date: string; p: number }[] | null };
-function useModelWeeks(loc: { lat: number; lon: number }, dept: string | undefined) {
+/** Departamento que contiene un punto (se prueban primero los más pequeños: Callao y Lima Metropolitana van antes que Lima). */
+const SHAPES_SMALL_FIRST = [...DEPT_SHAPES].sort((a, b) => a.area - b.area);
+function deptAt(lat: number, lon: number) {
+  const x = lon * 20;
+  const y = -lat * 20;
+  return SHAPES_SMALL_FIRST.find((d) => x >= d.bbox.x0 && x <= d.bbox.x1 && y >= d.bbox.y0 && y <= d.bbox.y1 && pointInRings(x, y, d.rings))?.id;
+}
+
+/** Probabilidad de fuego (regresión logística del backend) en la zona de un punto: 8 semanas o 14 días desde hoy. */
+type ModelState = { key: string; pts: { date: string; p: number }[] | null };
+function useModelSeries(loc: { lat: number; lon: number }, dept: string | undefined, mode: RiskMode, enabled: boolean) {
   const [state, setState] = useState<ModelState | null>(null);
-  const key = dept ? `${dept}|${loc.lat}|${loc.lon}` : "";
+  const key = dept && enabled ? `${dept}|${loc.lat}|${loc.lon}|${mode}` : "";
   useEffect(() => {
-    if (!dept) return;
+    if (!dept || !enabled) return;
     const ctl = new AbortController();
     const base = Date.now();
-    const dates = Array.from({ length: 8 }, (_, i) => new Date(base + i * 7 * 864e5).toISOString().slice(0, 10));
+    const count = mode === "weeks" ? 8 : 14;
+    const step = mode === "weeks" ? 7 : 1;
+    const dates = Array.from({ length: count }, (_, i) => new Date(base + i * step * 864e5).toISOString().slice(0, 10));
     Promise.all(dates.map((fecha) => apiGet<ApiModelMap>("/prevention/model", { fecha, region_id: dept, minimo: 0.05, limit: 20000 }, ctl.signal)))
       .then((maps) => {
-        const weeks = maps.map((m, i) => {
+        const pts = maps.map((m, i) => {
           let p = 0;
           let best = 0.09; // grados: la zona del modelo mide 0,06°
           for (const f of m.features) {
@@ -324,38 +334,44 @@ function useModelWeeks(loc: { lat: number; lon: number }, dept: string | undefin
           }
           return { date: dates[i], p };
         });
-        setState({ key, weeks });
+        setState({ key, pts });
       })
       .catch(() => {
-        if (!ctl.signal.aborted) setState({ key, weeks: null });
+        if (!ctl.signal.aborted) setState({ key, pts: null });
       });
     return () => ctl.abort();
-  }, [key, dept, loc.lat, loc.lon]);
-  if (!state || state.key !== key) return { loading: !!dept, weeks: null as ModelState["weeks"] };
-  return { loading: false, weeks: state.weeks };
+  }, [key, dept, enabled, mode, loc.lat, loc.lon]);
+  if (!enabled || !dept) return { loading: false, pts: null as ModelState["pts"] };
+  if (!state || state.key !== key) return { loading: true, pts: null as ModelState["pts"] };
+  return { loading: false, pts: state.pts };
 }
 
 function Season({ loc, c, lang }: { loc: Loc; c: Copy; lang: Lang }) {
   const rec = useApi<ApiPlaceRecurrence>("/recurrence/place", { lat: Number(fmtCoord(loc.lat)), lon: Number(fmtCoord(loc.lon)) });
   const now = new Date();
-  const dept = rec.data?.region_id ?? "PE";
+  // Si el punto no tiene detecciones históricas, la API no dice su departamento: se calcula con los contornos.
+  const deptId = rec.data ? rec.data.region_id || deptAt(loc.lat, loc.lon) : undefined;
+  const dept = deptId ?? "PE";
+  const deptName = (deptId && SHAPE_BY_ID[deptId]?.name) || rec.data?.name || "";
   const cur = useApi<ApiForecast>("/forecast", { region_id: dept, year: now.getFullYear() });
   const next = useApi<ApiForecast>("/forecast", { region_id: dept });
 
   const week = weekOfYear(now);
   const semanas = rec.data?.semanas;
-  const model = useModelWeeks(loc, rec.data?.region_id);
+  const [mode, setMode] = useState<RiskMode>("weeks");
+  const wk = useModelSeries(loc, deptId, "weeks", true);
+  const dy = useModelSeries(loc, deptId, "days", mode === "days");
+  const model = mode === "days" && dy.pts ? dy : wk;
   const info = useApi<ApiModelInfo>("/prevention/model/info");
   // Con el modelo se muestra la probabilidad; si no responde, la recurrencia histórica de esa semana.
-  const weeks = model.weeks
-    ? model.weeks.map((w) => ({ key: w.date, date: w.date, p: w.p as number | null, lv: level(w.p) }))
-    : semanas
+  const points: RiskPoint[] = model.pts
+    ? model.pts.map((w) => ({ date: w.date, p: w.p, lv: level(w.p) }))
+    : semanas && !wk.loading
       ? Array.from({ length: 8 }, (_, i) => semanas[(week - 1 + i) % semanas.length]).map((w) => {
           const [m, d] = w.inicia.split("-").map(Number);
-          return { key: String(w.semana), date: `${now.getFullYear()}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`, p: null as number | null, lv: level(w.frecuencia) };
+          return { date: `${now.getFullYear()}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`, p: null, lv: level(w.frecuencia) };
         })
       : [];
-  const highCount = weeks.filter((w) => w.lv === "high").length;
   const acc = info.data?.validacion?.regresion_logistica?.aciertos_zonas_marcadas;
 
   // Meses más críticos: los que tienen semanas de frecuencia alta (o, si no hay, los dos más frecuentes)
@@ -392,30 +408,16 @@ function Season({ loc, c, lang }: { loc: Loc; c: Copy; lang: Lang }) {
         <>
           <p className="mt-3 text-base text-snow/90">{c.criticalMonths(critical)}</p>
 
-          <p className="mt-6 text-sm font-semibold text-snow">{c.next8}</p>
-          <p className="text-xs text-snow/55">{c.next8Help}</p>
-          <ul className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-8">
-            {weeks.map((w) => {
-              const [y, m, d] = w.date.split("-").map(Number);
-              const label = w.p === null ? (w.lv === "high" ? c.high : w.lv === "mid" ? c.mid : c.low) : w.p < 0.05 ? "< 5 %" : `${Math.round(w.p * 100)} %`;
-              return (
-                <li key={w.key} className={`rounded-2xl border px-2 py-3 text-center ${TILE[w.lv]}`}>
-                  <p className="text-[10px] uppercase tracking-wide opacity-80">{c.weekOf}</p>
-                  <p className="text-sm font-semibold">{new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(c.loc, { day: "numeric", month: "short", timeZone: "UTC" })}</p>
-                  <p className="mt-1 text-[11px] font-bold">{label}</p>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-4 text-base font-medium text-snow">{c.highCount(highCount)}</p>
-          {model.weeks && <p className="mt-1 text-xs text-snow/55">{c.modelNote(acc !== undefined ? `${Math.round(acc * 100)} %` : "")}</p>}
-          {model.loading && <p className="mt-1 animate-pulse text-xs text-snow/55">{c.seasonLoading}</p>}
-          <p className="mt-3 rounded-2xl border border-amber/40 bg-amber/[0.07] px-4 py-3 text-sm text-snow/85">{c.seasonTip}</p>
+          <div className="mt-6">
+            <RiskForecast points={points} mode={mode} setMode={setMode} canDays={!!wk.pts} loading={wk.loading || (mode === "days" && dy.loading)} lang={lang} />
+          </div>
+          {wk.pts && <p className="mt-3 text-xs text-snow/55">{c.modelNote(acc !== undefined ? `${Math.round(acc * 100)} %` : "")}</p>}
+          {points.some((x) => x.lv !== "low") && <p className="mt-3 rounded-2xl border border-amber/40 bg-amber/[0.07] px-4 py-3 text-sm text-snow/85">{c.seasonTip}</p>}
 
           {peak && (
             <div className="mt-6 border-t border-snow/10 pt-5">
               <p className="text-sm font-semibold text-snow">{c.forecastTitle}</p>
-              <p className="mt-1 text-sm text-snow/80">{c.forecastSentence(MONTHS[lang][peak.month - 1].toLowerCase(), rec.data.name)}</p>
+              <p className="mt-1 text-sm text-snow/80">{c.forecastSentence(MONTHS[lang][peak.month - 1].toLowerCase(), deptName)}</p>
               <details className="mt-3">
                 <summary className="cursor-pointer select-none text-xs font-medium text-snow/65">{c.forecastSee}</summary>
                 <div className="mt-3 grid items-center gap-5 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
@@ -519,7 +521,7 @@ function PickMap({ view, setView, onChoose, children }: { view: MapView | null; 
 
   const onPick = (lat: number, lon: number) => {
     if (moved) return;
-    if (!inPeru(lat, lon)) return;
+    if (!deptAt(lat, lon)) return;
     const span = view?.span ?? WHOLE_SPAN;
     if (touch && span > 0.8) setView({ lat, lon, span: Math.max(0.6, span / 2.5) });
     else onChoose(lat, lon);
