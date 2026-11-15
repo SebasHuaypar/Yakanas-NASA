@@ -33,8 +33,6 @@ const TXT = {
     unitsOwn: "units with their own fit",
     hover1: "Hover over the map to see each unit's parameters. The remaining ",
     hover2: " do not have enough months with fire and use the national fit.",
-    legOwn: "Own fit",
-    legNat: "National fit",
   },
   es: {
     mapAria:
@@ -56,8 +54,6 @@ const TXT = {
       "Pasa el cursor por el mapa para ver los parámetros de cada una. Las ",
     hover2:
       " restantes no tienen suficientes meses con fuego y usan el ajuste nacional.",
-    legOwn: "Ajuste propio",
-    legNat: "Ajuste nacional",
   },
 };
 type Zone = (typeof ZONES)[number]["id"];
@@ -84,7 +80,7 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
   const fit = shown ? fitById(shown.id) : null;
 
   return (
-    <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start">
       {/* mapa */}
       <div
         className={`relative mx-auto w-full ${compact ? "max-w-[13rem]" : "max-w-md"}`}
@@ -107,9 +103,13 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
                 onMouseLeave={() => setHover(null)}
                 onFocus={() => setHover(r.id)}
                 onBlur={() => setHover(null)}
-                className={`cursor-pointer stroke-(--base) transition-[opacity,fill] duration-200 outline-none ${
-                  isOwn(r.id) ? "fill-(--accent)" : "fill-slate"
-                } ${hover === r.id ? "opacity-100" : active ? (isOwn(r.id) ? "opacity-60" : "opacity-35") : "opacity-10"}`}
+                className={`cursor-pointer stroke-(--base) outline-none ${
+                  hover === r.id
+                    ? "fill-[#FF6B2C]"
+                    : active
+                      ? "fill-slate/55"
+                      : "fill-slate/15"
+                }`}
                 strokeWidth={1.2}
                 vectorEffect="non-scaling-stroke"
               />
@@ -163,7 +163,7 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
           ))}
         </div>
 
-        <Card aria-live="polite" className="mt-6 min-h-64 rounded-3xl p-6">
+        <Card aria-live="polite" className="mt-6 h-72 overflow-hidden rounded-3xl p-6">
           {shown ? (
             <>
               <p className={`text-xs text-(--accent) ${hud}`}>
@@ -221,16 +221,6 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
           )}
         </Card>
 
-        <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate">
-          <li className="flex items-center gap-2">
-            <span aria-hidden className="h-3 w-3 rounded-sm bg-(--accent)/80" />
-            {L.legOwn}
-          </li>
-          <li className="flex items-center gap-2">
-            <span aria-hidden className="h-3 w-3 rounded-sm bg-slate/50" />
-            {L.legNat}
-          </li>
-        </ul>
       </div>
     </div>
   );
