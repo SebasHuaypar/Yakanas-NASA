@@ -1,12 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DEPT_SHAPES, PERU_VIEWBOX_STR, SHAPE_BY_ID } from "@/app/pantalla-3/lib/geo";
+import {
+  DEPT_SHAPES,
+  PERU_VIEWBOX_STR,
+  SHAPE_BY_ID,
+} from "@/app/pantalla-3/lib/geo";
 import { periodValue } from "@/app/pantalla-3/lib/stats";
 import { hasSatellite } from "@/app/pantalla-3/lib/places";
-import { BACKDROP, CARD, FIELD_SELECT, fmt, H2_SMALL } from "@/app/pantalla-3/lib/ui";
+import { BACKDROP, CARD, fmt, H2_SMALL } from "@/app/pantalla-3/lib/ui";
 import type { FireDataset, FireZone } from "@/app/pantalla-3/lib/types";
 import type { Texts } from "@/app/pantalla-3/lib/i18n";
+import Select from "@/components/Select";
 import ExportPanel from "./ExportPanel";
 import FireCalendar, { type CalMode } from "./FireCalendar";
 import PeruMap, { type MapMode } from "./PeruMap";
@@ -54,16 +59,23 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
       const shape = SHAPE_BY_ID[id];
       if (!shape) return;
       void import("@/app/pantalla-3/lib/terrain-scene");
-      void import("@/app/pantalla-3/lib/terrain").then((m) => m.getTerrain(shape, hasSatellite(id))).catch(() => {});
+      void import("@/app/pantalla-3/lib/terrain")
+        .then((m) => m.getTerrain(shape, hasSatellite(id)))
+        .catch(() => {});
     }, 300);
   }, []);
-  useEffect(() => () => void (hoverTimer.current && clearTimeout(hoverTimer.current)), []);
+  useEffect(
+    () => () => void (hoverTimer.current && clearTimeout(hoverTimer.current)),
+    [],
+  );
 
   // En reposo (poco después de abrir la pantalla) se baja el código del 3D y se precalienta el renderizador
   // (contexto WebGL + shaders), para que el primer clic no lo espere.
   useEffect(() => {
     const id = setTimeout(() => {
-      void import("@/app/pantalla-3/lib/terrain-scene").then((m) => m.warmUpRenderer());
+      void import("@/app/pantalla-3/lib/terrain-scene").then((m) =>
+        m.warmUpRenderer(),
+      );
       void import("@/app/pantalla-3/lib/terrain");
     }, 1200);
     return () => clearTimeout(id);
@@ -72,7 +84,10 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
   const zone = byId[zoneId];
   const when = month >= 0 ? `${t.months[month]} ${year}` : `${year}`;
   const sortedDepts = useMemo(
-    () => [...ds.departments].sort((a, b) => deptName(a.id).localeCompare(deptName(b.id), "es")),
+    () =>
+      [...ds.departments].sort((a, b) =>
+        deptName(a.id).localeCompare(deptName(b.id), "es"),
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [ds, t],
   );
@@ -80,63 +95,123 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
   const shape = zoneId !== "PE" ? SHAPE_BY_ID[zoneId] : null;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-10 text-snow sm:px-6">
+    <div className="mx-auto w-full max-w-7xl px-4 pb-16 text-snow sm:pb-24 sm:px-6">
       <div className="flex animate-rise flex-wrap items-end justify-between gap-4 pb-5 pt-12 [animation-delay:700ms] sm:pt-16">
         <div>
-          <div className="text-xs uppercase tracking-[0.14em] text-snow/60">{t.exKicker}</div>
-          <h2 key={zoneId} className="mt-1 animate-rise text-3xl leading-[1.1] tracking-tight sm:text-5xl">{deptName(zoneId)}</h2>
+          <div className="text-xs uppercase tracking-[0.14em] text-snow/60">
+            {t.exKicker}
+          </div>
+          <h2
+            key={zoneId}
+            className="mt-1 animate-rise text-3xl leading-[1.1] tracking-tight sm:text-5xl"
+          >
+            {deptName(zoneId)}
+          </h2>
           {/* contexto del periodo y de la región, sin recargar */}
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            <span className="rounded-full border border-snow/20 bg-ink/40 px-3 py-1 text-snow/80 backdrop-blur-sm">{when}</span>
-            <span className="rounded-full border border-snow/20 bg-ink/40 px-3 py-1 text-snow/60 backdrop-blur-sm">{fmt(zone.area, t.loc)} km²</span>
+            <span className="rounded-full border border-snow/20 bg-ink/40 px-3 py-1 text-snow/80 backdrop-blur-sm">
+              {when}
+            </span>
+            <span className="rounded-full border border-snow/20 bg-ink/40 px-3 py-1 text-snow/60 backdrop-blur-sm">
+              {fmt(zone.area, t.loc)} km²
+            </span>
           </div>
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <Field label={t.lblArea} id="f3-zone">
-            <select id="f3-zone" className={FIELD_SELECT} value={zoneId} onChange={(e) => setZoneId(e.target.value)}>
-              <option value="PE">{t.allPeru}</option>
-              {sortedDepts.map((d) => (
-                <option key={d.id} value={d.id}>{deptName(d.id)}</option>
-              ))}
-            </select>
+            <Select
+              id="f3-zone"
+              size="sm"
+              value={zoneId}
+              onChange={setZoneId}
+              options={[
+                { value: "PE", label: t.allPeru },
+                ...sortedDepts.map((d) => ({
+                  value: d.id,
+                  label: deptName(d.id),
+                })),
+              ]}
+            />
           </Field>
           <Field label={t.lblYear} id="f3-year">
-            <select id="f3-year" className={FIELD_SELECT} value={year} onChange={(e) => setYear(+e.target.value)}>
-              {Array.from({ length: ds.yearCount }, (_, i) => ds.startYear + ds.yearCount - 1 - i).map((y) => (
-                <option key={y} value={y}>{y}{y <= ds.lastEstimatedYear ? ` (${t.est})` : ""}</option>
-              ))}
-            </select>
+            <Select
+              id="f3-year"
+              size="sm"
+              value={year}
+              onChange={setYear}
+              options={Array.from(
+                { length: ds.yearCount },
+                (_, i) => ds.startYear + ds.yearCount - 1 - i,
+              ).map((y) => ({
+                value: y,
+                label: `${y}${y <= ds.lastEstimatedYear ? ` (${t.est})` : ""}`,
+              }))}
+            />
           </Field>
           <Field label={t.lblMonth} id="f3-month">
-            <select id="f3-month" className={FIELD_SELECT} value={month} onChange={(e) => setMonth(+e.target.value)}>
-              <option value={-1}>{t.wholeYear}</option>
-              {t.months.map((m, k) => (
-                <option key={k} value={k}>{m[0].toUpperCase() + m.slice(1)}</option>
-              ))}
-            </select>
+            <Select
+              id="f3-month"
+              size="sm"
+              value={month}
+              onChange={setMonth}
+              options={[
+                { value: -1, label: t.wholeYear },
+                ...t.months.map((m, k) => ({
+                  value: k,
+                  label: m[0].toUpperCase() + m.slice(1),
+                })),
+              ]}
+            />
           </Field>
         </div>
       </div>
 
-      <Summary zone={zone} zoneName={deptName(zoneId)} ds={ds} t={t} year={year} month={month} />
+      <Summary
+        zone={zone}
+        zoneName={deptName(zoneId)}
+        ds={ds}
+        t={t}
+        year={year}
+        month={month}
+      />
 
       <div className="mb-4 grid animate-rise gap-4 [animation-delay:900ms] lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
         <section className={CARD} aria-labelledby="f3-map-h">
           <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
-            <h2 id="f3-map-h" className={H2_SMALL}>{t.mapTitle}</h2>
+            <h2 id="f3-map-h" className={H2_SMALL}>
+              {t.mapTitle}
+            </h2>
             <Seg
               label={t.mapTitle}
               value={mapMode}
               onChange={setMapMode}
-              options={[{ value: "dep", label: t.mmDep }, { value: "heat", label: t.mmHeat }]}
+              options={[
+                { value: "dep", label: t.mmDep },
+                { value: "heat", label: t.mmHeat },
+              ]}
             />
           </div>
-          <p className="mb-2 text-sm text-snow/65">{mapMode === "dep" ? t.mapHowDep(when) : t.mapHowHeat}</p>
-          <PeruMap ds={ds} t={t} deptName={deptName} selected={zoneId} onSelect={setZoneId} year={year} month={month} mode={mapMode} tooltip={tooltip} onHover={prefetch} />
+          <p className="mb-2 text-sm text-snow/65">
+            {mapMode === "dep" ? t.mapHowDep(when) : t.mapHowHeat}
+          </p>
+          <PeruMap
+            ds={ds}
+            t={t}
+            deptName={deptName}
+            selected={zoneId}
+            onSelect={setZoneId}
+            year={year}
+            month={month}
+            mode={mapMode}
+            tooltip={tooltip}
+            onHover={prefetch}
+          />
         </section>
 
         <section className={CARD} aria-labelledby="f3-3d-h">
-          <h2 id="f3-3d-h" className={`${H2_SMALL} mb-2`}>{t.stageTitle}</h2>
+          <h2 id="f3-3d-h" className={`${H2_SMALL} mb-2`}>
+            {t.stageTitle}
+          </h2>
           {shape ? (
             <Region3D
               key={shape.id}
@@ -148,10 +223,24 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
               onBack={() => setZoneId("PE")}
             />
           ) : (
-            <div className={`${BACKDROP} flex h-130 flex-col items-center justify-center gap-4 px-6 text-center`}>
-              <svg viewBox={PERU_VIEWBOX_STR} className="h-56 w-auto opacity-30" aria-hidden>
+            <div
+              className={`${BACKDROP} flex h-130 flex-col items-center justify-center gap-4 px-6 text-center`}
+            >
+              <svg
+                viewBox={PERU_VIEWBOX_STR}
+                className="h-56 w-auto opacity-30"
+                aria-hidden
+              >
                 {DEPT_SHAPES.map((s) => (
-                  <path key={s.id} d={s.d} fill="#f3f9fc" stroke="#f3f9fc" strokeOpacity={0.6} strokeWidth={1} vectorEffect="non-scaling-stroke" />
+                  <path
+                    key={s.id}
+                    d={s.d}
+                    fill="#f3f9fc"
+                    stroke="#f3f9fc"
+                    strokeOpacity={0.6}
+                    strokeWidth={1}
+                    vectorEffect="non-scaling-stroke"
+                  />
                 ))}
               </svg>
               <p className="max-w-xs text-sm text-snow/60">{t.stageEmpty}</p>
@@ -160,14 +249,22 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
         </section>
       </div>
 
-      <section className={`${CARD} mb-4 animate-rise [animation-delay:1000ms]`} aria-labelledby="f3-cal-h">
+      <section
+        className={`${CARD} mb-4 animate-rise [animation-delay:1000ms]`}
+        aria-labelledby="f3-cal-h"
+      >
         <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
-          <h2 id="f3-cal-h" className={H2_SMALL}>{t.calTitle}</h2>
+          <h2 id="f3-cal-h" className={H2_SMALL}>
+            {t.calTitle}
+          </h2>
           <Seg
             label={t.calTitle}
             value={calMode}
             onChange={setCalMode}
-            options={[{ value: "n", label: t.cmN }, { value: "a", label: t.cmA }]}
+            options={[
+              { value: "n", label: t.cmN },
+              { value: "a", label: t.cmA },
+            ]}
           />
         </div>
         <p className="mb-2 text-sm text-snow/65">{t.calHow}</p>
@@ -189,9 +286,20 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
   );
 }
 
-function Field({ label, id, children }: { label: string; id: string; children: React.ReactNode }) {
+function Field({
+  label,
+  id,
+  children,
+}: {
+  label: string;
+  id: string;
+  children: React.ReactNode;
+}) {
   return (
-    <label htmlFor={id} className="flex flex-col gap-1.5 text-[11px] uppercase tracking-[0.14em] text-snow/60">
+    <label
+      htmlFor={id}
+      className="flex flex-col gap-1.5 text-[11px] uppercase tracking-[0.14em] text-snow/60"
+    >
       <span>{label}</span>
       {children}
     </label>

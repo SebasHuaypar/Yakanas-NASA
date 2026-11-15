@@ -76,7 +76,7 @@ export default function Formula({
 }: Props) {
   const f = (n: number) => n.toFixed(2);
   return (
-    <Card as="figure" className="m-0 rounded-3xl p-5 sm:p-6">
+    <Card as="figure" className="rounded-3xl p-5 sm:p-6">
       <figcaption className={`text-[11px] text-slate ${hud}`}>
         La ecuación del modelo
       </figcaption>

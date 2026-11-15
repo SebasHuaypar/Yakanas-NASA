@@ -5,6 +5,7 @@ import { useId, useState, type ReactNode } from "react";
 import Formula, { type TermKey } from "./Formula";
 import { hud } from "./fonts";
 import { REGION_FITS } from "./regions";
+import Select from "@/components/Select";
 
 const SECTIONS = [
   {
@@ -93,7 +94,7 @@ function Calculator() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <p className="max-w-3xl text-slate">
         Elige una región y cuántos focos contó MODIS en un mes. El modelo
         calcula cuántos habría contado VIIRS: la misma cuenta que hacemos para
@@ -119,18 +120,17 @@ function Calculator() {
             <label htmlFor={idSel} className="text-sm font-medium text-ink">
               Región
             </label>
-            <select
-              id={idSel}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-slate/40 bg-black/40 px-4 py-3 text-ink outline-none focus-visible:ring-2 focus-visible:ring-navy"
-            >
-              {REGION_FITS.map((r) => (
-                <option key={r.name} value={r.name} className="bg-[#0C090A]">
-                  {r.name}
-                </option>
-              ))}
-            </select>
+            <div className="mt-2">
+              <Select
+                id={idSel}
+                value={name}
+                onChange={setName}
+                options={REGION_FITS.map((r) => ({
+                  value: r.name,
+                  label: r.name,
+                }))}
+              />
+            </div>
             <p className="mt-2 text-xs text-slate">
               {fit.own
                 ? "Esta región tiene su propio ajuste."
@@ -346,7 +346,7 @@ function Calculator() {
 /* ------------------------------------------------------------------ */
 function Validation() {
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <p className="max-w-3xl text-slate">
         Para saber si la traducción es confiable, escondimos algunos años.
         Entrenamos con unos, probamos con otros que el modelo nunca vio y
