@@ -117,7 +117,7 @@ export default function YakaLlama() {
           lang,
           messages: history.map(({ role, content }) => ({ role, content })),
         }),
-        signal: ctl.current.signal,
+        signal: AbortSignal.any([ctl.current.signal, AbortSignal.timeout(55_000)]),
       });
       if (!res.ok || !res.body) {
         const code =
@@ -184,13 +184,13 @@ export default function YakaLlama() {
           role="dialog"
           aria-label={L.chat}
           aria-hidden={!open}
-          className={`glass-dark absolute bottom-full right-0 mb-1 w-[min(21rem,calc(100vw-1.5rem))] origin-bottom-right overflow-hidden rounded-3xl transition duration-300 ${
+          className={`glass-dark absolute bottom-full right-0 mb-1 flex max-h-[calc(100dvh-10.5rem)] w-[min(22rem,calc(100vw-1.5rem))] origin-bottom-right flex-col overflow-hidden rounded-3xl transition duration-300 ${
             open
               ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
               : "translate-y-3 scale-95 opacity-0"
           }`}
         >
-          <div className="flex items-center justify-between border-b border-snow/10 px-5 py-3.5">
+          <div className="flex shrink-0 items-center justify-between border-b border-snow/10 px-5 py-3.5">
             <div>
               <p className="font-heading text-base font-bold text-snow">
                 YakaLlama
@@ -223,7 +223,7 @@ export default function YakaLlama() {
 
           <div
             ref={listRef}
-            className="max-h-[min(24rem,55vh)] space-y-2.5 overflow-y-auto px-5 py-5"
+            className="min-h-0 max-h-[28rem] flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-5 py-5"
             aria-live="polite"
           >
             <p className="max-w-[85%] rounded-2xl rounded-bl-md border border-snow/10 bg-snow/[0.07] px-4 py-2.5 text-sm leading-relaxed text-snow">
@@ -271,7 +271,7 @@ export default function YakaLlama() {
             )}
           </div>
 
-          <form onSubmit={onSubmit} className="border-t border-snow/10 p-3">
+          <form onSubmit={onSubmit} className="shrink-0 border-t border-snow/10 p-3">
             <div className="flex items-center gap-2 rounded-full border border-snow/10 bg-snow/[0.04] py-1.5 pl-4 pr-1.5">
               <input
                 type="text"

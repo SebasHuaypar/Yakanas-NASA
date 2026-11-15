@@ -11,6 +11,9 @@
 import { PERU_GEO } from "@/app/explorador/lib/peru-geo";
 import { API_URL as BACKEND } from "@/lib/api";
 
+// Vercel corta la funcion a los 10 s por defecto; el modelo puede tardar mas, asi que se pide el maximo.
+export const maxDuration = 60;
+
 const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 const MODEL =
   process.env.NVIDIA_MODEL || "nvidia/nemotron-3.5-super-vl-120b-a12b";
