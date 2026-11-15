@@ -361,7 +361,7 @@ export default function Harmonization() {
             className="mt-6 flex justify-center lg:justify-start"
           >
             <Link
-              href="/pantalla-2"
+              href="/metodo"
               className="group inline-flex items-center gap-2 rounded-full bg-snow px-7 py-3.5 text-sm font-medium text-ink transition duration-300 hover:shadow-[0_0_32px_rgb(243_249_252/0.4)]"
             >
               Ver el método

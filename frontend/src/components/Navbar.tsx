@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 import Logo from "./Logo";
 
 const links = [
-  { href: "/pantalla-1", label: "Historia" },
-  { href: "/pantalla-2", label: "Método" },
+  { href: "/historia", label: "Historia" },
+  { href: "/metodo", label: "Método" },
   { href: "/pantalla-3", label: "Explorador" },
 ];
 
@@ -19,7 +19,7 @@ const links = [
  */
 export default function Navbar() {
   const pathname = usePathname();
-  const onHome = pathname === "/pantalla-1";
+  const onHome = pathname === "/historia";
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {

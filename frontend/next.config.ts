@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
     },
   },
   async redirects() {
-    return [{ source: "/", destination: "/pantalla-1", permanent: false }];
+    return [{ source: "/", destination: "/historia", permanent: false }];
   },
 };
 

@@ -90,21 +90,36 @@ export default function Select<T extends string | number>({
       setOpen(false);
     };
     const close = () => setOpen(false);
+    // El scroll interno de la lista (al mover la opci�n activa) no debe cerrarla
+    const onScroll = (e: Event) => {
+      if (
+        list.current &&
+        e.target instanceof Node &&
+        list.current.contains(e.target)
+      )
+        return;
+      if (e.target === list.current) return;
+      setOpen(false);
+    };
     document.addEventListener("pointerdown", outside);
     window.addEventListener("resize", close);
-    window.addEventListener("scroll", close, true);
+    window.addEventListener("scroll", onScroll, true);
     return () => {
       document.removeEventListener("pointerdown", outside);
       window.removeEventListener("resize", close);
-      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("scroll", onScroll, true);
     };
   }, [open]);
 
   // Mantener visible la opción activa
   useEffect(() => {
     if (!open) return;
-    const li = list.current?.children[active] as HTMLElement | undefined;
-    li?.scrollIntoView({ block: "nearest" });
+    const ul = list.current;
+    const li = ul?.children[active] as HTMLElement | undefined;
+    if (!ul || !li) return;
+    if (li.offsetTop < ul.scrollTop) ul.scrollTop = li.offsetTop - 6;
+    else if (li.offsetTop + li.offsetHeight > ul.scrollTop + ul.clientHeight)
+      ul.scrollTop = li.offsetTop + li.offsetHeight - ul.clientHeight + 6;
   }, [open, active]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {

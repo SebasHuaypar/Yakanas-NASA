@@ -350,7 +350,7 @@ export default function TwoEyes() {
             <Reveal className="relative">
               <div
                 aria-hidden="true"
-                className="absolute -inset-x-8 -inset-y-6 -z-10 bg-[radial-gradient(ellipse_at_left,rgb(12_9_10/0.65),transparent_75%)]"
+                className="absolute -inset-x-4 -inset-y-6 -z-10 bg-[radial-gradient(ellipse_at_left,rgb(12_9_10/0.65),transparent_75%)]"
               />
               <h2 className="text-[1.9rem] leading-tight tracking-tight sm:text-5xl">
                 Dos ojos en el cielo, con distinta vista

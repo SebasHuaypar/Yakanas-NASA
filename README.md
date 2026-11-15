@@ -24,8 +24,8 @@ frontend/src/
 ├─ app/
 │  ├─ layout.tsx          # fuentes, fondo global (StarField + nebulosa) y Navbar
 │  ├─ globals.css         # paleta, tokens de Tailwind, .bg-stars y .nebula
-│  ├─ pantalla-1/page.tsx
-│  ├─ pantalla-2/page.tsx
+│  ├─ historia/page.tsx
+│  ├─ metodo/page.tsx
 │  └─ pantalla-3/page.tsx
 ├─ components/
 │  ├─ StarField.tsx       # estrellas tenues en canvas, fijas detrás de todo
@@ -62,7 +62,7 @@ Las texturas del globo son imágenes de NASA (GIBS / Earthdata, dominio público
 
 El logo de NASA se usa solo para indicar el reto (NASA Space Apps Challenge); no implica respaldo de NASA.
 
-`/` redirige a `/pantalla-1`. Cada integrante trabaja en su carpeta `pantalla-N`
+`/` redirige a `/historia`. Cada integrante trabaja en su carpeta `pantalla-N`
 (y sus componentes propios) para evitar conflictos de merge. Si algo es
 compartido (botones, tarjetas...), va en `src/components/`.
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function Logo({ className = "" }: { className?: string }) {
   return (
     <Link
-      href="/pantalla-1"
+      href="/historia"
       aria-label="Yakana's Team - inicio"
       className={`shrink-0 whitespace-nowrap font-logo text-base leading-none text-snow sm:text-xl ${className}`}
     >

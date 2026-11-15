@@ -76,7 +76,7 @@ const chapters: Chapter[] = [
     title: "Qué entra al método",
     blurb: "Los focos de calor de NASA, ordenados por mes y por región.",
     art: imgArt(
-      "/pantalla-2/card-datos.jpg",
+      "/metodo/card-datos.jpg",
       "Vista general del Perú desde el satélite Terra, en tonos de la paleta.",
     ),
     summary:
@@ -90,7 +90,7 @@ const chapters: Chapter[] = [
     title: "Dónde ambos miraron a la vez",
     blurb: "Entre 2012 y 2022 los dos satélites coinciden en el tiempo.",
     art: imgArt(
-      "/pantalla-2/card-solape.jpg",
+      "/metodo/card-solape.jpg",
       "Recorte de una escena amazónica con marcas de focos superpuestas.",
     ),
     summary:
@@ -104,7 +104,7 @@ const chapters: Chapter[] = [
     title: "Una traducción por región",
     blurb: "Ajustamos por unidad territorial cuando hay datos suficientes.",
     art: imgArt(
-      "/pantalla-2/card-modelo.jpg",
+      "/metodo/card-modelo.jpg",
       "Costa y cordillera de los Andes del sur del Perú vistas desde el satélite, en tonos de la paleta.",
     ),
     summary:
@@ -118,7 +118,7 @@ const chapters: Chapter[] = [
     title: "Decimos cuánto dudamos",
     blurb: "Cada año estimado lleva un intervalo, no un número exacto.",
     art: imgArt(
-      "/pantalla-2/card-rango.jpg",
+      "/metodo/card-rango.jpg",
       "Ríos de la Amazonía peruana entre nubes y bruma, en tonos de la paleta.",
     ),
     summary:
@@ -145,7 +145,7 @@ export default function Pantalla2() {
               className="pointer-events-none absolute inset-0 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent_0%,black_16%,black_48%,transparent_100%)]"
             >
               <Image
-                src="/pantalla-2/hero-peru.webp"
+                src="/metodo/hero-peru.webp"
                 alt=""
                 fill
                 priority
@@ -410,7 +410,7 @@ export default function Pantalla2() {
                     Explorar los datos →
                   </Link>
                   <Link
-                    href="/pantalla-1"
+                    href="/historia"
                     className="rounded-full border border-slate/50 px-7 py-3.5 text-navy transition-colors hover:border-navy"
                   >
                     Volver a la historia
