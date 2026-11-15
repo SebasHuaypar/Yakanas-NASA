@@ -8,8 +8,8 @@ Before 20 January 2012 the series is MODIS converted to VIIRS-equivalent hotspot
 
 | Path | What it is |
 |---|---|
-| `backend/` | The API (`app/`), the downloads (`ingest/`), the harmonization (`harmonize/`) and the tests |
-| `backend/data/out/` | Small results kept in git: calibration, validation, summaries |
+| `app/`, `ingest/`, `harmonize/`, `tests/` | The API, the downloads, the harmonization and the tests |
+| `data/out/` | Small results kept in git: calibration, validation, summaries |
 | `web/` | The three pages |
 | `docs/API.md` | Every route, its parameters and its response. **Start here to build a front end** |
 | `docs/metodo.md` | The harmonization method, step by step (Spanish) |
@@ -21,10 +21,10 @@ Before 20 January 2012 the series is MODIS converted to VIIRS-equivalent hotspot
 - Docker Desktop, **or** Python 3.11 or newer
 - A FIRMS MAP key ([request one here](https://firms.modaps.eosdis.nasa.gov/api/area/)), needed to download 2026 and the recent week
 
-Put the key in `backend/.env`, which git ignores:
+Put the key in `.env`, which git ignores:
 
 ```bash
-cp backend/.env.example backend/.env
+cp .env.example .env
 ```
 
 ```
@@ -33,7 +33,7 @@ FIRMS_MAP_KEY=your_key
 
 ## Run with Docker
 
-From the repository root:
+From this folder (`backend/`):
 
 ```bash
 docker compose run --rm serie      # once: builds the series, 2003 to today
@@ -41,14 +41,13 @@ docker compose run --rm semana     # optional: downloads the recent week
 docker compose up -d --build       # API on :8000, pages on :5500
 ```
 
-There is no database container: the series lives in Parquet files and DuckDB reads them. `backend/data` and `web` are mounted as volumes, so data and page edits show up without rebuilding the image.
+There is no database container: the series lives in Parquet files and DuckDB reads them. `data` and `web` are mounted as volumes, so data and page edits show up without rebuilding the image.
 
 Stop any local `uvicorn` first, because it uses the same port.
 
 ## Run without Docker
 
 ```bash
-cd backend
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/python run_serie.py      # once: builds the series, 2003 to today
@@ -100,7 +99,6 @@ The Parquet files are not in git, so a fresh clone has to run this command once 
 ## Tests
 
 ```bash
-cd backend
 .venv/bin/pip install pytest
 .venv/bin/python -m pytest tests          # model, region lookup, alert rule
 .venv/bin/python tests/comprobar.py       # checks the downloaded week; needs run_week.py first

@@ -10,7 +10,7 @@ PARQUET = DATA / "parquet"
 PROCESSED = DATA / "processed"
 SP = RAW / "sp"
 REF = ROOT / "ref"
-HTML = ROOT.parent / "web" / "calendario-del-fuego.html"
+HTML = ROOT / "web" / "calendario-del-fuego.html"
 
 BBOX = "-81.4,-18.4,-68.6,0.0"
 FUENTES = ("MODIS_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT")

@@ -7,5 +7,5 @@
 **/__pycache__
 **/*.pyc
 *:Zone.Identifier
-backend/.env
-backend/data/raw
+.env
+data/raw

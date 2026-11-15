@@ -1,11 +1,11 @@
 # Uso:
 #   docker compose up -d --build          API en :8000 y páginas en :5500
-#   docker compose run --rm serie         arma la serie 2003–hoy (necesita backend/.env con FIRMS_MAP_KEY)
+#   docker compose run --rm serie         arma la serie 2003–hoy (necesita .env con FIRMS_MAP_KEY)
 #   docker compose run --rm semana        baja la semana reciente para /week, /heat y /fires
 x-backend: &backend
   build: .
   volumes:
-    - ./backend/data:/app/backend/data
+    - ./data:/app/data
 
 services:
   api:
@@ -30,11 +30,11 @@ services:
   serie:
     <<: *backend
     profiles: ["datos"]
-    env_file: [{ path: backend/.env, required: false }]
+    env_file: [{ path: .env, required: false }]
     command: ["python", "run_serie.py"]
 
   semana:
     <<: *backend
     profiles: ["datos"]
-    env_file: [{ path: backend/.env, required: false }]
+    env_file: [{ path: .env, required: false }]
     command: ["python", "run_week.py"]

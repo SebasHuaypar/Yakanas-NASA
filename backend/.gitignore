@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 # Archivos que Windows añade a lo descargado
 *:Zone.Identifier
+.env
+data/raw/
+data/parquet/
+data/processed/*.parquet
