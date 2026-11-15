@@ -9,14 +9,14 @@ const TXT = {
     aria: (y: number, m: string, lo: string, hi: string) =>
       `Estimate for ${y}: ${m} hotspots, with a likely range of ${lo} to ${hi}.`,
     title: (y: number) => `Estimate for ${y}`,
-    cap: "The mark is the best estimate; the band is the likely range (p10–p90 in the prototype). An estimated year is not a measured year.",
+    cap: "The mark is the best estimate; the band is the likely range (p10–p90). An estimated year is not a measured year.",
   },
   es: {
     loc: "es",
     aria: (y: number, m: string, lo: string, hi: string) =>
       `Estimación de ${y}: ${m} focos, con un rango probable de ${lo} a ${hi}.`,
     title: (y: number) => `Estimación de ${y}`,
-    cap: "La marca es la mejor estimación; la franja es el rango probable (p10–p90 en el prototipo). Un año estimado no es un año medido.",
+    cap: "La marca es la mejor estimación; la franja es el rango probable (p10–p90). Un año estimado no es un año medido.",
   },
 };
 

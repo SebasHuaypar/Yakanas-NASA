@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { seeded, type DeptShape, type Pt } from "./geo";
+import type { DeptShape } from "./geo";
 import type { Place } from "./places";
 import { svgToLonLat, type Terrain } from "./terrain";
 
@@ -15,8 +15,8 @@ export type TerrainScene = {
   resetView: () => void;
   /** Vuelve a leer `terrain.texture` (por ejemplo cuando llega la imagen satelital) y la aplica. */
   refreshTexture: () => void;
-  /** Focos de calor (coordenadas de la silueta) que se dibujan como columnas. */
-  setHotspots: (points: Pt[]) => void;
+  /** Celdas con focos de calor reales: [x, y, focos] con x, y en coordenadas de la silueta (grados × 20). */
+  setHotspots: (cells: [number, number, number][]) => void;
 };
 
 const KM = 1 / 1000;
@@ -34,9 +34,14 @@ const RELIEF_BOOST = 1.4;
 let sharedRenderer: THREE.WebGLRenderer | null = null;
 function getRenderer() {
   if (!sharedRenderer) {
-    sharedRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    sharedRenderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance",
+    });
     sharedRenderer.setClearColor(0x000000, 0);
-    sharedRenderer.domElement.style.cssText = "display:block;width:100%;height:100%;touch-action:none";
+    sharedRenderer.domElement.style.cssText =
+      "display:block;width:100%;height:100%;touch-action:none";
   }
   return sharedRenderer;
 }
@@ -72,14 +77,30 @@ export function makeSpotMaterial() {
 export async function warmUpRenderer() {
   const r = getRenderer();
   const sc = new THREE.Scene();
-  sc.add(new THREE.HemisphereLight(0xffffff, 0x4c6679, 1.15), new THREE.DirectionalLight(0xffffff, 1.9));
+  sc.add(
+    new THREE.HemisphereLight(0xffffff, 0x4c6679, 1.15),
+    new THREE.DirectionalLight(0xffffff, 1.9),
+  );
   const dt = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
   dt.needsUpdate = true;
-  const terrainMat = new THREE.MeshLambertMaterial({ map: dt, alphaTest: 0.5, side: THREE.DoubleSide });
-  const wallMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  const terrainMat = new THREE.MeshLambertMaterial({
+    map: dt,
+    alphaTest: 0.5,
+    side: THREE.DoubleSide,
+  });
+  const wallMat = new THREE.MeshLambertMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+  });
   const wallGeo = new THREE.BufferGeometry();
-  wallGeo.setAttribute("position", new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 0, 1, 0], 3));
-  wallGeo.setAttribute("color", new THREE.Float32BufferAttribute([1, 1, 1, 1, 1, 1, 1, 1, 1], 3));
+  wallGeo.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 0, 1, 0], 3),
+  );
+  wallGeo.setAttribute(
+    "color",
+    new THREE.Float32BufferAttribute([1, 1, 1, 1, 1, 1, 1, 1, 1], 3),
+  );
   const spotMat = makeSpotMaterial();
   const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
   const meshes = [
@@ -133,12 +154,15 @@ export function createTerrainScene(
   /* ---------- geometría ---------- */
   const base = min - 100; // metros: el “suelo” de la maqueta queda un poco bajo el punto más bajo
   // Exageración vertical (entre 1× y 3,2×, más el extra de cada región): que la sierra se note sin deformar.
-  const exag = clamp((0.06 * W) / Math.max(0.3, (max - min) * KM), 1, 3.2) * RELIEF_BOOST;
+  const exag =
+    clamp((0.06 * W) / Math.max(0.3, (max - min) * KM), 1, 3.2) * RELIEF_BOOST;
   const yOf = (m: number) => Math.max(0, m - base) * KM * exag;
 
   const toXZ = (lon: number, lat: number): [number, number] => [
     ((lon - bb.west) / (bb.east - bb.west) - 0.5) * W,
-    ((mercY(bb.north) - mercY(lat)) / (mercY(bb.north) - mercY(bb.south)) - 0.5) * H,
+    ((mercY(bb.north) - mercY(lat)) / (mercY(bb.north) - mercY(bb.south)) -
+      0.5) *
+      H,
   ];
   const elevAt = (x: number, z: number) => {
     const fx = clamp((x / W + 0.5) * (cols - 1), 0, cols - 1.001),
@@ -148,7 +172,10 @@ export function createTerrainScene(
       tx = fx - x0,
       ty = fy - y0;
     const g = (i: number, j: number) => dem[(y0 + j) * cols + x0 + i];
-    return (g(0, 0) * (1 - tx) + g(1, 0) * tx) * (1 - ty) + (g(0, 1) * (1 - tx) + g(1, 1) * tx) * ty;
+    return (
+      (g(0, 0) * (1 - tx) + g(1, 0) * tx) * (1 - ty) +
+      (g(0, 1) * (1 - tx) + g(1, 1) * tx) * ty
+    );
   };
 
   const relief = new THREE.Group();
@@ -160,7 +187,8 @@ export function createTerrainScene(
   const vidx = new Int32Array(nx * ny);
   for (let j = 0; j < ny; j++) {
     const r = Math.round((j * (rows - 1)) / (ny - 1));
-    for (let i = 0; i < nx; i++) vidx[j * nx + i] = r * cols + Math.round((i * (cols - 1)) / (nx - 1));
+    for (let i = 0; i < nx; i++)
+      vidx[j * nx + i] = r * cols + Math.round((i * (cols - 1)) / (nx - 1));
   }
   const makeTex = () => {
     const t = new THREE.CanvasTexture(terrain.texture);
@@ -170,10 +198,17 @@ export function createTerrainScene(
   };
   let tex = makeTex();
   // Lambert: iluminación difusa más barata que la PBR estándar (el material ya era rugoso al máximo).
-  const terrainMat = new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide });
+  const terrainMat = new THREE.MeshLambertMaterial({
+    map: tex,
+    alphaTest: 0.5,
+    side: THREE.DoubleSide,
+  });
   const setLook = () => terrainMat.color.setScalar(terrain.satellite ? 1.3 : 1); // la selva en satélite sale muy oscura
   setLook();
-  const terrainMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H, nx - 1, ny - 1).rotateX(-Math.PI / 2), terrainMat);
+  const terrainMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(W, H, nx - 1, ny - 1).rotateX(-Math.PI / 2),
+    terrainMat,
+  );
   relief.add(terrainMesh);
 
   // Contorno: puntos densificados (x,z) de cada anillo de la silueta.
@@ -182,14 +217,29 @@ export function createTerrainScene(
     const out: [number, number][] = [];
     for (let i = 0; i < ring.length; i++) {
       const a = toXZ(...svgToLonLat(ring[i][0], ring[i][1])),
-        b = toXZ(...svgToLonLat(ring[(i + 1) % ring.length][0], ring[(i + 1) % ring.length][1]));
-      const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / step));
-      for (let k = 0; k < n; k++) out.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
+        b = toXZ(
+          ...svgToLonLat(
+            ring[(i + 1) % ring.length][0],
+            ring[(i + 1) % ring.length][1],
+          ),
+        );
+      const n = Math.max(
+        1,
+        Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / step),
+      );
+      for (let k = 0; k < n; k++)
+        out.push([
+          a[0] + ((b[0] - a[0]) * k) / n,
+          a[1] + ((b[1] - a[1]) * k) / n,
+        ]);
     }
     return out;
   });
 
-  const wallMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  const wallMat = new THREE.MeshLambertMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+  });
   const walls = new THREE.Mesh(new THREE.BufferGeometry(), wallMat);
   relief.add(walls);
 
@@ -212,13 +262,22 @@ export function createTerrainScene(
   const computeWallTone = () => {
     const ew = terrain.edge.width,
       eh = terrain.edge.height;
-    const edata = terrain.edge.getContext("2d")!.getImageData(0, 0, ew, eh).data;
+    const edata = terrain.edge
+      .getContext("2d")!
+      .getImageData(0, 0, ew, eh).data;
     wallTone = rings.map((ring) =>
       ring.map(([x, z]) => {
         const ix = clamp(Math.round((x / W + 0.5) * (ew - 1)), 0, ew - 1),
           iy = clamp(Math.round((z / H + 0.5) * (eh - 1)), 0, eh - 1);
         const i = (iy * ew + ix) * 4;
-        return tmpC.setRGB(edata[i] / 255, edata[i + 1] / 255, edata[i + 2] / 255, THREE.SRGBColorSpace).clone();
+        return tmpC
+          .setRGB(
+            edata[i] / 255,
+            edata[i + 1] / 255,
+            edata[i + 2] / 255,
+            THREE.SRGBColorSpace,
+          )
+          .clone();
       }),
     );
   };
@@ -260,10 +319,18 @@ export function createTerrainScene(
 
   /* ---------- nombres de lugares ---------- */
   const labelLayer = document.createElement("div");
-  labelLayer.style.cssText = "position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:0;transition:opacity .6s";
+  labelLayer.style.cssText =
+    "position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:0;transition:opacity .6s";
   host.appendChild(labelLayer);
   const labels = (opts.places ?? [])
-    .filter((p) => p.level === 1 && p.lat > bb.south && p.lat < bb.north && p.lon > bb.west && p.lon < bb.east)
+    .filter(
+      (p) =>
+        p.level === 1 &&
+        p.lat > bb.south &&
+        p.lat < bb.north &&
+        p.lon > bb.west &&
+        p.lon < bb.east,
+    )
     .map((p) => {
       const [x, z] = toXZ(p.lon, p.lat);
       const m = elevAt(x, z);
@@ -282,7 +349,12 @@ export function createTerrainScene(
       const x = cp.x + (l.v.x - cp.x) * t,
         y = cp.y + (l.v.y - cp.y) * t,
         z = cp.z + (l.v.z - cp.z) * t;
-      if (Math.abs(x) < W / 2 && Math.abs(z) < H / 2 && yOf(elevAt(x, z)) > y + eps) return true;
+      if (
+        Math.abs(x) < W / 2 &&
+        Math.abs(z) < H / 2 &&
+        yOf(elevAt(x, z)) > y + eps
+      )
+        return true;
     }
     return false;
   };
@@ -293,23 +365,31 @@ export function createTerrainScene(
     for (const l of labels) {
       l.v.set(l.x, yOf(l.m) + 0.02 * (D / 20), l.z);
       tmp.copy(l.v).project(camera);
-      let on = tmp.z < 1 && Math.abs(tmp.x) < 1.1 && Math.abs(tmp.y) < 1.1 && !occluded(l);
+      let on =
+        tmp.z < 1 &&
+        Math.abs(tmp.x) < 1.1 &&
+        Math.abs(tmp.y) < 1.1 &&
+        !occluded(l);
       const x = (tmp.x * 0.5 + 0.5) * w,
         y = (-tmp.y * 0.5 + 0.5) * h;
       if (on) {
         const bw = l.len * 8,
           b = [x - bw / 2, y - 34, x + bw / 2, y];
-        on = boxes.every((o) => b[2] < o[0] || b[0] > o[2] || b[3] < o[1] || b[1] > o[3]);
+        on = boxes.every(
+          (o) => b[2] < o[0] || b[0] > o[2] || b[3] < o[1] || b[1] > o[3],
+        );
         if (on) boxes.push(b);
       }
       l.el.style.display = on ? "" : "none";
-      if (on) l.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-100%)`;
+      if (on)
+        l.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-100%)`;
     }
   };
 
   /* ---------- relieve ---------- */
   const applyRelief = () => {
-    const pos = terrainMesh.geometry.attributes.position as THREE.BufferAttribute;
+    const pos = terrainMesh.geometry.attributes
+      .position as THREE.BufferAttribute;
     for (let i = 0; i < pos.count; i++) pos.setY(i, yOf(dem[vidx[i]]));
     pos.needsUpdate = true;
     terrainMesh.geometry.computeVertexNormals();
@@ -326,7 +406,14 @@ export function createTerrainScene(
         const c = wallTone[r][i];
         v.push(x, yOf(elevAt(cx, cz)), z, x, -slabD, z);
         // continuo con el terreno: casi el mismo color arriba, más oscuro hacia la base
-        col.push(c.r * 0.8, c.g * 0.8, c.b * 0.8, c.r * 0.34, c.g * 0.34, c.b * 0.34);
+        col.push(
+          c.r * 0.8,
+          c.g * 0.8,
+          c.b * 0.8,
+          c.r * 0.34,
+          c.g * 0.34,
+          c.b * 0.34,
+        );
       });
       const n = ring.length;
       for (let i = 0; i < n; i++) {
@@ -349,7 +436,10 @@ export function createTerrainScene(
           cz = clamp(z, -H / 2, H / 2);
         a.push(x, yOf(elevAt(cx, cz)) + D * 0.0006, z);
       }
-      l.geometry.setAttribute("position", new THREE.Float32BufferAttribute(a, 3));
+      l.geometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(a, 3),
+      );
     });
     placePillars();
     dirty = true;
@@ -400,7 +490,11 @@ export function createTerrainScene(
       const e = easeOut(t);
       relief.scale.y = 0.02 + 0.98 * e;
       // La cámara baja desde la vista cenital (como el mapa plano) hasta la vista oblicua.
-      sph.set(homeSph.radius, 0.04 + (homeSph.phi - 0.04) * e, homeSph.theta + (1 - e) * 0.7);
+      sph.set(
+        homeSph.radius,
+        0.04 + (homeSph.phi - 0.04) * e,
+        homeSph.theta + (1 - e) * 0.7,
+      );
       camera.position.setFromSpherical(sph).add(target);
       camera.lookAt(target);
       pillarS = easeOut((t - 0.55) / 0.45);
@@ -471,14 +565,19 @@ export function createTerrainScene(
   return {
     resetView,
     refreshTexture,
-    setHotspots(points) {
+    setHotspots(cells) {
       disposeMarkers();
-      const rnd = seeded(`${shape.id}-${points.length}`);
-      markers = points.map(([sx, sy]) => {
+      const top = Math.max(1, ...cells.map((c) => c[2]));
+      markers = cells.map(([sx, sy, hs]) => {
         const [x, z] = toXZ(...svgToLonLat(sx, sy));
-        return { x, z, r: 0.8 + 0.5 * rnd() };
+        // El tamaño crece con los focos de la celda (raíz, para que las grandes no tapen todo)
+        return { x, z, r: 0.45 + 0.85 * Math.sqrt(hs / top) };
       });
-      spotMesh = new THREE.InstancedMesh(spotGeo, spotMat, markers.length);
+      spotMesh = new THREE.InstancedMesh(
+        spotGeo,
+        spotMat,
+        Math.max(1, markers.length),
+      );
       spotMesh.frustumCulled = false;
       relief.add(spotMesh);
       if (!intro) pillarS = 1;

@@ -6,7 +6,6 @@ import {
   PERU_VIEWBOX_STR,
   SHAPE_BY_ID,
 } from "@/app/explorador/lib/geo";
-import { periodValue } from "@/app/explorador/lib/stats";
 import { hasSatellite } from "@/app/explorador/lib/places";
 import { BACKDROP, CARD, fmt, H2_SMALL } from "@/app/explorador/lib/ui";
 import type { FireDataset, FireZone } from "@/app/explorador/lib/types";
@@ -220,8 +219,8 @@ export default function Explorer({ ds, t }: { ds: FireDataset; t: Texts }) {
               key={shape.id}
               shape={shape}
               name={deptName(shape.id)}
-              count={periodValue(zone, ds, year, month)}
-              seedKey={`${shape.id}-${year}-${month}`}
+              year={year}
+              month={month}
               t={t}
               onBack={() => setZoneId("PE")}
             />

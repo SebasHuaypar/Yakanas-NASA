@@ -60,7 +60,10 @@ const es = {
   stageAlt: "Altitud",
   stageSat: "Imagen: Sentinel-2 cloudless © EOX (CC BY-NC-SA)",
   stageBack: "Volver a todo el Perú",
-  stageHint: "Arrastra para girar, rueda para acercar. Cada marcador es un foco de calor (ubicación ilustrativa); el relieve es real (elevación AWS Terrain Tiles).",
+  stageHint: "Arrastra para girar, rueda para acercar. Cada punto es una celda de unos 2 km donde VIIRS detectó focos de calor en el periodo elegido (más grande, más focos); el relieve es real (elevación AWS Terrain Tiles).",
+  stageCells: (n: number, total: number) => (n < total ? `Se muestran las ${n} celdas con más focos de ${total}.` : `${n} celdas con focos.`),
+  stageNoCells: "Sin focos detectados en este periodo.",
+  stageCellsError: "No pudimos leer la ubicación de los focos.",
   stageReset: "Reiniciar vista",
 
   calTitle: "Calendario del fuego",
@@ -144,7 +147,10 @@ const en: Texts = {
   stageAlt: "Altitude",
   stageSat: "Imagery: Sentinel-2 cloudless © EOX (CC BY-NC-SA)",
   stageBack: "Back to all of Peru",
-  stageHint: "Drag to rotate, scroll to zoom. Each marker is a hotspot (illustrative position); the terrain is real (AWS Terrain Tiles elevation).",
+  stageHint: "Drag to rotate, scroll to zoom. Each dot is a cell of about 2 km where VIIRS detected hotspots in the chosen period (bigger means more); the terrain is real (AWS Terrain Tiles elevation).",
+  stageCells: (n: number, total: number) => (n < total ? `Showing the ${n} cells with the most hotspots out of ${total}.` : `${n} cells with hotspots.`),
+  stageNoCells: "No hotspots detected in this period.",
+  stageCellsError: "We could not read the hotspot locations.",
   stageReset: "Reset view",
 
   calTitle: "Burning calendar",

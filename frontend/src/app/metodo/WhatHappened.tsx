@@ -32,7 +32,7 @@ const TXT = {
   },
 };
 
-/** Tres cifras que resumen el salto de 2012 (conteos del prototipo separados por satélite). */
+/** Tres cifras que resumen el salto de 2012 (conteos crudos reales separados por satélite). */
 export default function WhatHappened() {
   const [lang] = useLang();
   const L = TXT[lang];

@@ -15,7 +15,7 @@ export default function Seg<T extends string>({
   label: string;
 }) {
   return (
-    <div role="group" aria-label={label} className="inline-flex overflow-hidden rounded-full border border-snow/20 bg-ink/40 backdrop-blur-sm">
+    <div role="group" aria-label={label} className="inline-flex overflow-hidden rounded-full border border-snow/20 bg-ink/40">
       {options.map((o) => (
         <button
           key={o.value}

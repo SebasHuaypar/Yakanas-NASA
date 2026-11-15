@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { samplePoints, type DeptShape } from "@/app/explorador/lib/geo";
+import type { DeptShape } from "@/app/explorador/lib/geo";
 import { PLACES_BY_DEPT, hasSatellite } from "@/app/explorador/lib/places";
 import type { TerrainScene } from "@/app/explorador/lib/terrain-scene";
 import type { Texts } from "@/app/explorador/lib/i18n";
 import { BACKDROP, fmt } from "@/app/explorador/lib/ui";
+import type { ApiHeatmap } from "@/lib/api";
+import { useApi } from "@/lib/use-api";
 
 type Status = "loading" | "ready" | "error";
 
 const BTN =
-  "cursor-pointer rounded-full border border-snow/20 bg-ink/50 px-3.5 py-1.5 text-xs font-medium text-snow backdrop-blur-sm transition-colors hover:border-snow/60";
+  "cursor-pointer rounded-full border border-snow/20 bg-ink/50 px-3.5 py-1.5 text-xs font-medium text-snow transition-colors hover:border-snow/60";
 
 /**
  * Maqueta 3D con el relieve real del departamento (three.js + elevación AWS).
@@ -20,16 +22,16 @@ const BTN =
 export default function Region3D({
   shape,
   name,
-  count,
-  seedKey,
+  year,
+  month,
   t,
   onBack,
 }: {
   shape: DeptShape;
   name: string;
-  /** Focos del periodo elegido (define cuántas columnas se dibujan). */
-  count: number;
-  seedKey: string;
+  /** Periodo elegido: año y mes (0–11) o -1 para todo el año. */
+  year: number;
+  month: number;
   t: Texts;
   onBack: () => void;
 }) {
@@ -50,10 +52,19 @@ export default function Region3D({
           import("@/app/explorador/lib/terrain"),
           import("@/app/explorador/lib/terrain-scene"),
         ]);
-        const terrain = await getTerrain(shape, wantsSatellite, (n) => !cancelled && setTiles(n));
+        const terrain = await getTerrain(
+          shape,
+          wantsSatellite,
+          (n) => !cancelled && setTiles(n),
+        );
         if (cancelled || !host.current) return;
-        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        handle = createTerrainScene(host.current, terrain, shape, { reduceMotion: reduce, places: PLACES_BY_DEPT[shape.id] });
+        const reduce = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        handle = createTerrainScene(host.current, terrain, shape, {
+          reduceMotion: reduce,
+          places: PLACES_BY_DEPT[shape.id],
+        });
         setSat(terrain.satellite);
         scene.current = handle;
         // Si la imagen satelital aún se está bajando, el relieve ya se ve; al llegar, se pone encima.
@@ -78,14 +89,37 @@ export default function Region3D({
     };
   }, [shape, wantsSatellite]);
 
-  const points = useMemo(() => {
-    const n = Math.min(46, Math.max(6, Math.round(Math.sqrt(count) * 1.3)));
-    return samplePoints(shape, n, seedKey);
-  }, [shape, count, seedKey]);
+  // Ubicación REAL de los focos: celdas de 0,02° de la API (/heatmap) del periodo elegido.
+  const last =
+    month >= 0 ? new Date(Date.UTC(year, month + 1, 0)).getUTCDate() : 31;
+  const mm = String(month + 1).padStart(2, "0");
+  const heat = useApi<ApiHeatmap>("/heatmap", {
+    start: month >= 0 ? `${year}-${mm}-01` : `${year}-01-01`,
+    end: month >= 0 ? `${year}-${mm}-${last}` : `${year}-12-31`,
+    region_id: shape.id,
+  });
+  const cells = useMemo(() => {
+    const all = heat.data?.features ?? [];
+    const top = [...all]
+      .sort((a, b) => b.properties.hs - a.properties.hs)
+      .slice(0, 900);
+    return {
+      shown: top.map(
+        (f) =>
+          [
+            f.geometry.coordinates[0] * 20,
+            -f.geometry.coordinates[1] * 20,
+            f.properties.hs,
+          ] as [number, number, number],
+      ),
+      total: all.length,
+    };
+  }, [heat.data]);
 
   useEffect(() => {
-    if (status === "ready") scene.current?.setHotspots(points);
-  }, [points, status]);
+    if (status === "ready" && heat.data)
+      scene.current?.setHotspots(cells.shown);
+  }, [cells, status, heat.data]);
 
   const { x0, y0, x1, y1 } = shape.bbox;
   const pad = Math.max(x1 - x0, y1 - y0) * 0.06;
@@ -104,9 +138,19 @@ export default function Region3D({
             className={`h-60 w-auto ${status === "loading" ? "animate-pulse" : ""}`}
             aria-hidden
           >
-            <path d={shape.d} fill="#f3f9fc" fillOpacity={0.16} stroke="#f3f9fc" strokeOpacity={0.7} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+            <path
+              d={shape.d}
+              fill="#f3f9fc"
+              fillOpacity={0.16}
+              stroke="#f3f9fc"
+              strokeOpacity={0.7}
+              strokeWidth={1.5}
+              vectorEffect="non-scaling-stroke"
+            />
           </svg>
-          <p className="text-sm text-snow/60">{status === "error" ? t.stageError : t.stageLoading(tiles)}</p>
+          <p className="text-sm text-snow/60">
+            {status === "error" ? t.stageError : t.stageLoading(tiles)}
+          </p>
         </div>
 
         <div
@@ -119,12 +163,19 @@ export default function Region3D({
         />
 
         <div className="pointer-events-none absolute left-3 top-3">
-          <div className="text-xl font-bold text-snow" style={{ fontFamily: "var(--font-jakarta), system-ui" }}>
+          <div
+            className="text-xl font-bold text-snow"
+            style={{ fontFamily: "var(--font-jakarta), system-ui" }}
+          >
             {name}
           </div>
         </div>
         <div className="absolute right-3 top-3 flex flex-wrap justify-end gap-2">
-          <button type="button" onClick={() => scene.current?.resetView()} className={BTN}>
+          <button
+            type="button"
+            onClick={() => scene.current?.resetView()}
+            className={BTN}
+          >
             {t.stageReset}
           </button>
           <button type="button" onClick={onBack} className={BTN}>
@@ -149,7 +200,16 @@ export default function Region3D({
           {sat && <span className="ml-auto text-xs">{t.stageSat}</span>}
         </div>
       )}
-      <p className="mt-1.5 text-[13px] text-snow/60">{t.stageHint}</p>
+      <p className="mt-1.5 text-[13px] text-snow/60">
+        {heat.error
+          ? t.stageCellsError
+          : heat.data
+            ? cells.total
+              ? t.stageCells(cells.shown.length, cells.total)
+              : t.stageNoCells
+            : t.stageLoading(0)}
+      </p>
+      <p className="mt-1 text-[13px] text-snow/60">{t.stageHint}</p>
     </div>
   );
 }

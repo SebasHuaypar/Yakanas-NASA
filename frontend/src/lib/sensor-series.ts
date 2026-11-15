@@ -61,5 +61,13 @@ export const HARMONIZED_MONTHLY: readonly number[] =
 export const HARMONIZED_LOW: readonly number[] = SNAPSHOT_MONTHLY.low;
 export const HARMONIZED_HIGH: readonly number[] = SNAPSHOT_MONTHLY.high;
 
-/** Razón media VIIRS/MODIS en los años en que ambos estaban activos. */
-export const SENSOR_RATIO = 4.81;
+/** Razón VIIRS/MODIS en los años de solape (2012–2022), calculada con los conteos mensuales reales de arriba. */
+export const SENSOR_RATIO = (() => {
+  let m = 0;
+  let v = 0;
+  for (let t = VIIRS_START; t <= OVERLAP_END; t++) {
+    m += MODIS_MONTHLY[t];
+    v += VIIRS_MONTHLY[t - VIIRS_START];
+  }
+  return v / m;
+})();

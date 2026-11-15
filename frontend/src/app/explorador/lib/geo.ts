@@ -104,34 +104,3 @@ export function pointInRings(x: number, y: number, rings: Ring[]) {
   for (const r of rings) if (inRing(x, y, r)) c++;
   return c % 2 === 1;
 }
-
-/** Generador pseudoaleatorio determinista (para que los datos simulados no cambien en cada carga). */
-export function seeded(seed: string | number) {
-  let h = 1779033703 ^ String(seed).length;
-  for (const ch of String(seed)) {
-    h = Math.imul(h ^ ch.charCodeAt(0), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  let a = h >>> 0;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** n puntos al azar (estables) dentro del departamento. */
-export function samplePoints(shape: DeptShape, n: number, seed: string | number): Pt[] {
-  const rnd = seeded(seed);
-  const { x0, y0, x1, y1 } = shape.bbox;
-  const out: Pt[] = [];
-  let guard = 0;
-  while (out.length < n && guard++ < n * 80) {
-    const x = x0 + rnd() * (x1 - x0),
-      y = y0 + rnd() * (y1 - y0);
-    if (pointInRings(x, y, shape.rings)) out.push([x, y]);
-  }
-  return out;
-}

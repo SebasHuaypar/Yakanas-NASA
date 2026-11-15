@@ -1,7 +1,6 @@
 /**
- * Límites de las 26 unidades territoriales del prototipo (calendario-del-fuego.html).
- * Coordenadas = grados × 20 (x = longitud, y = −latitud). PLACEHOLDER: se reemplaza
- * por la capa oficial que entregue el equipo de datos.
+ * Límites de las 26 unidades territoriales (los mismos polígonos del backend, calendario-del-fuego.html).
+ * Coordenadas = grados × 20 (x = longitud, y = −latitud).
  */
 export type MapRegion = {
   id: string;

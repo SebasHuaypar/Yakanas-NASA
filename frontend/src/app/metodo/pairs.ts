@@ -1,7 +1,6 @@
 /**
- * Pares mensuales (MODIS, VIIRS) por unidad territorial, 2012–2022: una de cada 4 filas del
- * ajuste del prototipo (calendario-del-fuego.html) para no cargar los 3.219. PLACEHOLDER: el
- * backend los reemplaza por la salida del algoritmo final.
+ * Pares mensuales REALES (MODIS, VIIRS) por unidad territorial, 2012–2022: una de cada 4 filas de las
+ * 3.219 de la extracción del equipo de backend (calendario-del-fuego.html), para no cargar todas.
  */
 export const PAIRS: [number, number][] = [
   [4, 26],
@@ -810,8 +809,8 @@ export const PAIRS: [number, number][] = [
   [471, 2586],
 ];
 
-/** Total de pares mes-región del ajuste nacional del prototipo. */
+/** Total de pares mes-región de la extracción. */
 export const PAIR_TOTAL = 3219;
 
-/** ln(1+VIIRS) = a + b · ln(1+MODIS), ajuste nacional del prototipo. */
+/** ln(1+VIIRS) = a + b · ln(1+MODIS), ajustado sobre esos mismos pares. */
 export const PAIR_FIT = { a: 1.692, b: 0.976 };

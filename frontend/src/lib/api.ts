@@ -251,3 +251,22 @@ export type ApiCalibration = {
   method: string;
   n: string;
 };
+
+/** Detecciones individuales (/fires): solo cubre la ventana reciente que descargó el backend. */
+export type ApiFires = {
+  desde: string;
+  hasta: string;
+  cobertura: { desde: string; hasta: string };
+  total: number;
+  features: {
+    geometry: { coordinates: [number, number] };
+    properties: {
+      acq_date: string;
+      sensor: "MODIS" | "VIIRS_NOAA20" | "VIIRS_NOAA21";
+      satellite: string;
+      frp_mw: number;
+      conf_level: string;
+      dep_id: string;
+    };
+  }[];
+};

@@ -194,7 +194,7 @@ export default function Select<T extends string | number>({
         aria-activedescendant={open ? `${btnId}-opt-${active}` : undefined}
         onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={onKeyDown}
-        className={`flex w-full items-center justify-between gap-3 border bg-[rgb(12_9_10/0.45)] text-left text-[#F3F9FC] outline-none backdrop-blur-sm transition-colors focus-visible:ring-2 focus-visible:ring-[rgb(243_249_252/0.35)] ${sizing} ${
+        className={`flex w-full items-center justify-between gap-3 border bg-[rgb(12_9_10/0.45)] text-left text-[#F3F9FC] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[rgb(243_249_252/0.35)] ${sizing} ${
           open
             ? "border-[rgb(243_249_252/0.55)]"
             : "border-[rgb(243_249_252/0.2)] hover:border-[rgb(243_249_252/0.45)]"

@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * Nota de procedencia de los datos: deja claro qué es dato real, qué viene
- * del prototipo y qué falta validar con el algoritmo final.
+ * Nota de procedencia de los datos: deja claro de dónde sale cada cifra.
  */
 export default function DataNote({
   children,
