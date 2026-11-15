@@ -28,8 +28,13 @@ const TXT = {
     obs: "observed",
     withVals: "With this region's values",
     alta: "high",
-    ln1: "is the natural logarithm. ",
-    ln2: " is 1 in a high-season month and 0 if not. To go back to hotspots we apply the inverse operation with the Duan correction: VIIRS = smear × e",
+    lnT: "Natural logarithm",
+    lnD: "Compresses counts so a few huge months don't dominate the fit.",
+    highT: "High season",
+    highD: "1 in a high-season month, 0 if not.",
+    invT: "Back to hotspots",
+    invD: "We undo the logarithm and apply the Duan correction:",
+    inv: "VIIRS = smear × e^(…) − 1",
   },
   es: {
     loc: "es",
@@ -42,8 +47,13 @@ const TXT = {
     obs: "observado",
     withVals: "Con los valores de esta región",
     alta: "alta",
-    ln1: "es el logaritmo natural. ",
-    ln2: " vale 1 en un mes de temporada alta y 0 si no. Para volver a focos se aplica la operación inversa con la corrección de Duan: VIIRS = smear × e",
+    lnT: "Logaritmo natural",
+    lnD: "Comprime los conteos para que unos pocos meses enormes no dominen el ajuste.",
+    highT: "Temporada alta",
+    highD: "Vale 1 en un mes de temporada alta y 0 si no.",
+    invT: "De vuelta a focos",
+    invD: "Se deshace el logaritmo y se aplica la corrección de Duan:",
+    inv: "VIIRS = smear × e^(…) − 1",
   },
 };
 
@@ -111,14 +121,14 @@ export default function Formula({
   const f = (n: number) => n.toFixed(2);
   return (
     <Card as="figure" className="rounded-3xl p-5 sm:p-6">
-      <figcaption className={`text-[11px] text-slate ${hud}`}>
+      <figcaption className={`text-center text-[11px] text-slate ${hud}`}>
         {L.title}
       </figcaption>
 
       <div
         role="math"
         aria-label={L.aria}
-        className="mt-4 flex flex-wrap items-start gap-x-0.5 gap-y-3"
+        className="mt-4 flex flex-wrap items-start justify-center gap-x-0.5 gap-y-3"
       >
         <Term k="viirs" focus={focus} onFocus={onFocus} label={L.est}>
           ln(VIIRS + 1)
@@ -142,22 +152,38 @@ export default function Formula({
       </div>
 
       <div className="mt-5 border-t border-slate/20 pt-4">
-        <p className={`text-[11px] text-slate ${hud}`}>{L.withVals}</p>
+        <p className={`text-center text-[11px] text-slate ${hud}`}>{L.withVals}</p>
         <p
           aria-hidden
-          className="mt-2 break-words font-mono text-sm leading-loose text-ink sm:text-base"
+          className="mt-2 break-words text-center font-mono text-sm leading-loose text-ink sm:text-base"
         >
           ln(VIIRS + 1) = <span className="text-navy">{f(a)}</span> +{" "}
           <span className="text-navy">{f(d)}</span> × {high ? 1 : 0} +{" "}
           <span className="text-navy">{f(b)}</span> × ln(
           {modis.toLocaleString(L.loc)} + 1)
         </p>
-        <p className="mt-2 text-xs text-slate">
-          <b className="text-ink">ln</b> {L.ln1}
-          <b className="text-ink">{L.alta}</b>
-          {L.ln2}
-          <sup>…</sup> − 1.
-        </p>
+        <dl className="mt-5 grid gap-3 text-left sm:grid-cols-3">
+          {(
+            [
+              ["ln", L.lnT, L.lnD],
+              [L.alta, L.highT, L.highD],
+              ["e^(…)", L.invT, `${L.invD} ${L.inv}`],
+            ] as [string, string, string][]
+          ).map(([sym, t, d]) => (
+            <div
+              key={t}
+              className="rounded-2xl border border-slate/20 bg-white/[0.03] p-4"
+            >
+              <dt className="flex items-baseline gap-2">
+                <span className="font-mono text-sm font-semibold text-navy">
+                  {sym}
+                </span>
+                <span className={`text-[11px] text-slate ${hud}`}>{t}</span>
+              </dt>
+              <dd className="mt-1.5 text-xs leading-relaxed text-slate">{d}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </Card>
   );

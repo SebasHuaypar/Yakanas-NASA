@@ -163,7 +163,7 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
           ))}
         </div>
 
-        <Card aria-live="polite" className="mt-6 min-h-40 rounded-3xl p-6">
+        <Card aria-live="polite" className="mt-6 min-h-64 rounded-3xl p-6">
           {shown ? (
             <>
               <p className={`text-xs text-(--accent) ${hud}`}>
@@ -183,17 +183,21 @@ export default function PeruFitMap({ compact = false }: { compact?: boolean }) {
                 )}
               </p>
               {fit && (
-                <dl className="mt-4 grid grid-cols-4 gap-3 text-sm">
-                  {[
-                    ["a", fit.a],
-                    ["d", fit.d],
-                    ["b", fit.b],
-                    [L.months, fit.months],
-                  ].map(([k, v]) => (
-                    <div key={String(k)}>
-                      <dt className={`text-[11px] text-slate ${hud}`}>{k}</dt>
-                      <dd className="font-heading text-lg font-bold text-navy">
-                        {String(v)}
+                <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 text-sm sm:grid-cols-4">
+                  {(
+                    [
+                      ["a", fit.a.toFixed(2)],
+                      ["d", fit.d.toFixed(2)],
+                      ["b", fit.b.toFixed(2)],
+                      [L.months, String(fit.months)],
+                    ] as [string, string][]
+                  ).map(([k, v]) => (
+                    <div key={k} className="min-w-0">
+                      <dt className={`truncate text-[11px] text-slate ${hud}`}>
+                        {k}
+                      </dt>
+                      <dd className="font-heading text-lg font-bold tabular-nums text-navy">
+                        {v}
                       </dd>
                     </div>
                   ))}
