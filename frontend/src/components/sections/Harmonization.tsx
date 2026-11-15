@@ -362,7 +362,7 @@ export default function Harmonization() {
               href="/pantalla-2"
               className="group inline-flex items-center gap-2 rounded-full bg-snow px-7 py-3.5 text-sm font-medium text-ink transition duration-300 hover:shadow-[0_0_32px_rgb(243_249_252/0.4)]"
             >
-              Explorar los datos
+              Ver el método
               <span
                 aria-hidden="true"
                 className="transition-transform duration-300 group-hover:translate-x-1"

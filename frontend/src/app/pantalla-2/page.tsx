@@ -1,7 +1,12 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import ChapterCards, { type Chapter } from "./ChapterCards";
-import { DatosContent, ModeloContent, RangoContent, SolapeContent } from "./ChapterContent";
+import {
+  DatosContent,
+  ModeloContent,
+  RangoContent,
+  SolapeContent,
+} from "./ChapterContent";
 import CountUp from "./CountUp";
 import DataNote from "./DataNote";
 import DotRing from "./DotRing";
@@ -10,6 +15,7 @@ import Reveal from "./Reveal";
 import ScrollLine from "./ScrollLine";
 import ScrollProgress from "./ScrollProgress";
 import Image from "next/image";
+import Footer from "@/components/sections/Footer";
 import SectionHead from "./SectionHead";
 import TechPanel from "./TechPanel";
 import WhatHappened from "./WhatHappened";
@@ -53,7 +59,13 @@ const tones = {
 
 /** Capítulos del método: cuatro tarjetas verticales + detalle. */
 const imgArt = (src: string, alt: string) => (
-  <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 280px, 100vw" className="object-cover" />
+  <Image
+    src={src}
+    alt={alt}
+    fill
+    sizes="(min-width: 1024px) 280px, 100vw"
+    className="object-cover"
+  />
 );
 
 const chapters: Chapter[] = [
@@ -63,8 +75,12 @@ const chapters: Chapter[] = [
     word: "Datos",
     title: "Qué entra al método",
     blurb: "Los focos de calor de NASA, ordenados por mes y por región.",
-    art: imgArt("/pantalla-2/card-datos.jpg", "Vista general del Perú desde el satélite Terra, en tonos de la paleta."),
-    summary: "Todo parte de los focos de calor que NASA publica. Antes de comparar, hay que prepararlos.",
+    art: imgArt(
+      "/pantalla-2/card-datos.jpg",
+      "Vista general del Perú desde el satélite Terra, en tonos de la paleta.",
+    ),
+    summary:
+      "Todo parte de los focos de calor que NASA publica. Antes de comparar, hay que prepararlos.",
     content: <DatosContent />,
   },
   {
@@ -73,8 +89,12 @@ const chapters: Chapter[] = [
     word: "Solape",
     title: "Dónde ambos miraron a la vez",
     blurb: "Entre 2012 y 2022 los dos satélites coinciden en el tiempo.",
-    art: imgArt("/pantalla-2/card-solape.jpg", "Recorte de una escena amazónica con marcas de focos superpuestas."),
-    summary: "Ese solape es nuestra piedra de Rosetta: nos enseña cuánto cuenta uno por cada foco del otro.",
+    art: imgArt(
+      "/pantalla-2/card-solape.jpg",
+      "Recorte de una escena amazónica con marcas de focos superpuestas.",
+    ),
+    summary:
+      "Ese solape es nuestra piedra de Rosetta: nos enseña cuánto cuenta uno por cada foco del otro.",
     content: <SolapeContent />,
   },
   {
@@ -83,8 +103,12 @@ const chapters: Chapter[] = [
     word: "Modelo",
     title: "Una traducción por región",
     blurb: "Ajustamos por unidad territorial cuando hay datos suficientes.",
-    art: imgArt("/pantalla-2/card-modelo.jpg", "Costa y cordillera de los Andes del sur del Perú vistas desde el satélite, en tonos de la paleta."),
-    summary: "Los climas del Perú son muy distintos, así que cada región tiene su propia relación entre MODIS y VIIRS.",
+    art: imgArt(
+      "/pantalla-2/card-modelo.jpg",
+      "Costa y cordillera de los Andes del sur del Perú vistas desde el satélite, en tonos de la paleta.",
+    ),
+    summary:
+      "Los climas del Perú son muy distintos, así que cada región tiene su propia relación entre MODIS y VIIRS.",
     content: <ModeloContent />,
   },
   {
@@ -93,193 +117,288 @@ const chapters: Chapter[] = [
     word: "Rango",
     title: "Decimos cuánto dudamos",
     blurb: "Cada año estimado lleva un intervalo, no un número exacto.",
-    art: imgArt("/pantalla-2/card-rango.jpg", "Ríos de la Amazonía peruana entre nubes y bruma, en tonos de la paleta."),
-    summary: "Un año estimado no es un año medido: por eso cada estimación lleva su rango probable.",
+    art: imgArt(
+      "/pantalla-2/card-rango.jpg",
+      "Ríos de la Amazonía peruana entre nubes y bruma, en tonos de la paleta.",
+    ),
+    summary:
+      "Un año estimado no es un año medido: por eso cada estimación lleva su rango probable.",
     content: <RangoContent />,
   },
 ];
 
 export default function Pantalla2() {
   return (
-    <div id="metodo" style={tones} className={`${mono.variable} ${montserrat.variable} relative text-ink leading-relaxed [&_h1]:text-navy [&_h2]:text-navy [&_h3]:text-navy [&_h4]:text-navy`}>
-      <ScrollProgress />
-      <ScrollLine />
-      <div className="relative z-10">
-
-      {/* HERO: centrado, mucho aire; el fondo lo pone el layout global */}
-      <section className="relative flex min-h-[92vh] flex-col justify-center">
-        <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-36 text-center sm:px-6 sm:pt-44">
-          <Reveal>
-            <p className="inline-flex rounded-full border border-navy/40 px-6 py-2.5 text-sm tracking-wide text-navy backdrop-blur-sm">
-              Método · Armonización MODIS + VIIRS
-            </p>
-          </Reveal>
-          <Reveal delay={0.08}>
-            <h1 className="mx-auto mt-8 max-w-5xl text-5xl leading-[1.04] tracking-tight sm:text-7xl lg:text-8xl">
-              El fuego no se multiplicó.
-              <span className="block text-navy/50">Cambió la cámara.</span>
-            </h1>
-          </Reveal>
-          <Reveal delay={0.16}>
-            <p className="mx-auto mt-10 max-w-2xl text-lg text-slate sm:text-xl">
-              Al sumar los registros de dos satélites, el conteo de focos de calor del Perú se
-              multiplica casi por nueve en 2012. Buena parte de ese salto no es fuego nuevo: es un
-              sensor distinto que detecta más. Así lo corregimos para que veinte años de datos
-              hablen el mismo idioma.
-            </p>
-          </Reveal>
-          <Reveal delay={0.24}>
-            <nav aria-label="En esta página" className="mt-12 flex flex-wrap justify-center gap-4 text-sm font-medium">
-              <a href="#resultado" className="rounded-full bg-(--accent) px-7 py-3.5 text-[#0C090A] transition hover:-translate-y-0.5 hover:opacity-90">
-                Ver el antes y después →
-              </a>
-              <a href="#detalle" className="rounded-full border border-slate/50 px-7 py-3.5 text-navy transition-colors hover:border-navy">
-                Ver el detalle técnico
-              </a>
-            </nav>
-          </Reveal>
-        </div>
-
-        {/* Franja de cifras con divisores */}
-        <div className="relative mx-auto w-full max-w-6xl px-4 pb-28 sm:px-6">
-          <Reveal delay={0.3}>
-            <dl className="grid border-y border-slate/25 sm:grid-cols-3">
-              {[
-                ["Salto aparente 2011 → 2012", <span key="a" className="text-navy/45 line-through decoration-2"><CountUp value={jumpRaw} decimals={1} prefix="×" /></span>, "sumando sin ajustar"],
-                ["Tras armonizar", <CountUp key="b" value={jumpHarm} decimals={1} prefix="×" />, "misma escala VIIRS"],
-                ["Registro comparable", <CountUp key="c" value={23} suffix=" años" />, "2003 – 2025"],
-              ].map(([label, value, sub], i) => (
-                <div key={String(label)} className={`px-8 py-12 ${i ? "border-t border-slate/25 sm:border-l sm:border-t-0" : ""}`}>
-                  <dt className={`text-[11px] text-slate ${hud}`}>{label}</dt>
-                  <dd className="mt-3 font-heading text-5xl font-bold text-navy">{value}</dd>
-                  <p className="mt-2 text-sm text-slate">{sub}</p>
-                </div>
-              ))}
-            </dl>
-            <div className="mt-8 max-w-3xl">
-              <DataNote>
-                Cifras calculadas con los datos NASA FIRMS del prototipo (Perú, fuegos de
-                vegetación, confianza nominal y alta). Se actualizan cuando el algoritmo final
-                entregue la serie armonizada.
-              </DataNote>
+    <>
+      <div
+        id="metodo"
+        style={tones}
+        className={`${mono.variable} ${montserrat.variable} relative text-ink leading-relaxed [&_h1]:text-navy [&_h2]:text-navy [&_h3]:text-navy [&_h4]:text-navy`}
+      >
+        <ScrollProgress />
+        <ScrollLine />
+        <div className="relative z-10">
+          {/* HERO: centrado, mucho aire; el fondo lo pone el layout global */}
+          <section className="relative flex min-h-[92vh] flex-col justify-center">
+            <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-36 text-center sm:px-6 sm:pt-44">
+              <Reveal>
+                <p className="text-xs uppercase tracking-[0.22em] text-slate">
+                  Método · Armonización MODIS + VIIRS
+                </p>
+              </Reveal>
+              <Reveal delay={0.08}>
+                <h1 className="mx-auto mt-8 max-w-5xl text-5xl leading-[1.04] tracking-tight sm:text-7xl lg:text-8xl">
+                  El fuego no se multiplicó.
+                  <span className="block text-navy/50">Cambió la cámara.</span>
+                </h1>
+              </Reveal>
+              <Reveal delay={0.16}>
+                <p className="mx-auto mt-10 max-w-2xl text-lg text-slate sm:text-xl">
+                  Al sumar los registros de dos satélites, el conteo de focos de
+                  calor del Perú se multiplica casi por nueve en 2012. Buena
+                  parte de ese salto no es fuego nuevo: es un sensor distinto
+                  que detecta más. Así lo corregimos para que veinte años de
+                  datos hablen el mismo idioma.
+                </p>
+              </Reveal>
+              <Reveal delay={0.24}>
+                <nav
+                  aria-label="En esta página"
+                  className="mt-12 flex flex-wrap justify-center gap-4 text-sm font-medium"
+                >
+                  <a
+                    href="#resultado"
+                    className="rounded-full bg-(--accent) px-7 py-3.5 text-[#0C090A] transition hover:-translate-y-0.5 hover:opacity-90"
+                  >
+                    Ver el antes y después →
+                  </a>
+                  <a
+                    href="#detalle"
+                    className="rounded-full border border-slate/50 px-7 py-3.5 text-navy transition-colors hover:border-navy"
+                  >
+                    Ver el detalle técnico
+                  </a>
+                </nav>
+              </Reveal>
             </div>
-          </Reveal>
-        </div>
-      </section>
 
-      {/* 03 · CÓMO ESTÁ HECHO — cuatro tarjetas verticales + detalle */}
-      <section className="relative">
-        <div className="relative mx-auto w-full max-w-6xl px-4 py-24 sm:px-6 sm:py-40">
-          <Reveal>
-            <SectionHead kicker="01 · Cómo está hecho" title="Cuatro pasos, un solo registro">
-              Elige un paso: de los datos crudos al número final con su rango.
-            </SectionHead>
-          </Reveal>
-          <Reveal delay={0.1} className="mt-16">
-            <ChapterCards items={chapters} />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* 01 · PRUEBA — consola: controles a la izquierda, visor a la derecha */}
-      <section id="resultado" className="relative scroll-mt-20">
-        <div className="relative mx-auto w-full max-w-6xl px-4 py-24 sm:px-6 sm:py-40">
-          <Reveal>
-            <SectionHead kicker="02 · El resultado" title="Antes y después de corregir">
-              Con los datos tal como llegan, el fuego parece explotar en 2012 y otra vez en 2018. Cambia
-              entre las dos vistas y compara: corregida, la serie se puede leer año a año.
-            </SectionHead>
-          </Reveal>
-          <Reveal delay={0.1} className="mt-16">
-            <HarmonizeChart />
-          </Reveal>
-          <Reveal delay={0.12} className="mt-16">
-            <WhatHappened />
-          </Reveal>
-          <Reveal delay={0.15} className="mt-8 max-w-3xl">
-            <DataNote>
-              Serie anual de focos del Perú calculada con el modelo del prototipo (placeholder). Los
-              años anteriores a 2012 son estimaciones con su rango, no observaciones.
-            </DataNote>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* 03 · VALIDACIÓN */}
-      <section className="relative">
-        <div className="relative mx-auto w-full max-w-6xl px-4 py-24 sm:px-6 sm:py-40">
-          <Reveal>
-            <SectionHead kicker="03 · Validación" title="Lo pusimos a prueba a ciegas">
-              Entrenamos con 2012–2019 y escondimos 2020–2022. Luego comparamos lo que el modelo
-              predijo con lo que VIIRS contó de verdad.
-            </SectionHead>
-          </Reveal>
-          <div className="mt-20 grid gap-16 sm:grid-cols-3">
-            {[
-              [0.98, <CountUp key="a" value={0.98} decimals={2} />, "Acierto del total mensual (R²)", "Casi toda la variación de un mes a otro en el Perú queda explicada."],
-              [0.11, <CountUp key="b" value={11} prefix="±" suffix=" %" />, "Error típico por mes", "En un mes normal, la estimación se aleja poco más de una décima del valor real. El anillo muestra ese 11 %."],
-              [0.78, <CountUp key="c" value={78} suffix=" %" />, "Meses dentro del rango", "Casi ocho de cada diez meses reales cayeron dentro del rango que anunciamos."],
-            ].map(([v, big, label, d], i) => (
-              <Reveal key={String(label)} delay={i * 0.1}>
-                <div className="h-full rounded-3xl border border-slate/25 bg-snow px-6 py-12 backdrop-blur-md">
-                  <DotRing value={Number(v)} label={String(label)}>{big}</DotRing>
-                  <p className="mx-auto mt-8 max-w-64 text-center text-sm text-slate">{d}</p>
+            {/* Franja de cifras con divisores */}
+            <div className="relative mx-auto w-full max-w-6xl px-4 pb-28 sm:px-6">
+              <Reveal delay={0.3}>
+                <dl className="grid border-y border-slate/25 sm:grid-cols-3">
+                  {[
+                    [
+                      "Salto aparente 2011 → 2012",
+                      <span
+                        key="a"
+                        className="text-navy/45 line-through decoration-2"
+                      >
+                        <CountUp value={jumpRaw} decimals={1} prefix="×" />
+                      </span>,
+                      "sumando sin ajustar",
+                    ],
+                    [
+                      "Tras armonizar",
+                      <CountUp
+                        key="b"
+                        value={jumpHarm}
+                        decimals={1}
+                        prefix="×"
+                      />,
+                      "misma escala VIIRS",
+                    ],
+                    [
+                      "Registro comparable",
+                      <CountUp key="c" value={23} suffix=" años" />,
+                      "2003 – 2025",
+                    ],
+                  ].map(([label, value, sub], i) => (
+                    <div
+                      key={String(label)}
+                      className={`px-8 py-12 ${i ? "border-t border-slate/25 sm:border-l sm:border-t-0" : ""}`}
+                    >
+                      <dt className={`text-[11px] text-slate ${hud}`}>
+                        {label}
+                      </dt>
+                      <dd className="mt-3 font-heading text-5xl font-bold text-navy">
+                        {value}
+                      </dd>
+                      <p className="mt-2 text-sm text-slate">{sub}</p>
+                    </div>
+                  ))}
+                </dl>
+                <div className="mt-8 max-w-3xl">
+                  <DataNote>
+                    Cifras calculadas con los datos NASA FIRMS del prototipo
+                    (Perú, fuegos de vegetación, confianza nominal y alta). Se
+                    actualizan cuando el algoritmo final entregue la serie
+                    armonizada.
+                  </DataNote>
                 </div>
               </Reveal>
-            ))}
-          </div>
-          <div className="mt-14 max-w-3xl">
-            <DataNote>
-              Métricas del prototipo, aún sin validar con el pipeline final. Se reemplazan por las
-              del algoritmo de armonización cuando estén disponibles.
-            </DataNote>
-          </div>
-        </div>
-      </section>
-
-
-      {/* 05 · DETALLE TÉCNICO */}
-      <section id="detalle" className="scroll-mt-20">
-        <div className="mx-auto w-full max-w-6xl px-4 py-24 sm:px-6 sm:py-40">
-          <Reveal>
-            <SectionHead kicker="04 · Bajo el capó" title="Pruébalo tú mismo">
-              Para quien quiera auditar: juega con el modelo, mira cómo lo validamos, qué supuestos
-              hicimos y los parámetros de cada región, descargables.
-            </SectionHead>
-          </Reveal>
-          <Reveal delay={0.1} className="mt-16">
-            <TechPanel />
-          </Reveal>
-          <Reveal delay={0.15} className="mt-8 max-w-3xl">
-            <DataNote>
-              Todo corresponde al modelo del prototipo. Si el algoritmo final cambia (variables,
-              ventana de entrenamiento, filtros), esta sección se actualiza.
-            </DataNote>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* CIERRE */}
-      <section className="relative overflow-hidden border-t border-slate/25">
-        <div className="relative mx-auto w-full max-w-6xl px-4 py-32 text-center sm:px-6 sm:py-48">
-          <Reveal>
-            <p className={`text-xs text-slate ${hud}`}>Siguiente paso</p>
-            <h2 className="mx-auto mt-4 max-w-4xl text-4xl tracking-tight sm:text-6xl">
-              Con un registro consistente,
-              <span className="block text-navy/50">ya se puede comparar.</span>
-            </h2>
-            <div className="mt-12 flex flex-wrap justify-center gap-3 text-sm font-medium">
-              <Link href="/pantalla-3" className="rounded-full bg-(--accent) px-7 py-3.5 text-[#0C090A] transition hover:-translate-y-0.5 hover:opacity-90">
-                Explorar los datos →
-              </Link>
-              <Link href="/pantalla-1" className="rounded-full border border-slate/50 px-7 py-3.5 text-navy transition-colors hover:border-navy">
-                Volver a la historia
-              </Link>
             </div>
-          </Reveal>
+          </section>
+
+          {/* 03 · CÓMO ESTÁ HECHO — cuatro tarjetas verticales + detalle */}
+          <section className="relative">
+            <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44">
+              <Reveal>
+                <SectionHead
+                  kicker="01 · Cómo está hecho"
+                  title="Cuatro pasos, un solo registro"
+                >
+                  Elige un paso: de los datos crudos al número final con su
+                  rango.
+                </SectionHead>
+              </Reveal>
+              <Reveal delay={0.1} className="mt-16">
+                <ChapterCards items={chapters} />
+              </Reveal>
+            </div>
+          </section>
+
+          {/* 01 · PRUEBA — consola: controles a la izquierda, visor a la derecha */}
+          <section id="resultado" className="relative scroll-mt-24">
+            <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44">
+              <Reveal>
+                <SectionHead
+                  kicker="02 · El resultado"
+                  title="Antes y después de corregir"
+                >
+                  Con los datos tal como llegan, el fuego parece explotar en
+                  2012 y otra vez en 2018. Cambia entre las dos vistas y
+                  compara: corregida, la serie se puede leer año a año.
+                </SectionHead>
+              </Reveal>
+              <Reveal delay={0.1} className="mt-16">
+                <HarmonizeChart />
+              </Reveal>
+              <Reveal delay={0.12} className="mt-16">
+                <WhatHappened />
+              </Reveal>
+              <Reveal delay={0.15} className="mt-8 max-w-3xl">
+                <DataNote>
+                  Serie anual de focos del Perú calculada con el modelo del
+                  prototipo (placeholder). Los años anteriores a 2012 son
+                  estimaciones con su rango, no observaciones.
+                </DataNote>
+              </Reveal>
+            </div>
+          </section>
+
+          {/* 03 · VALIDACIÓN */}
+          <section className="relative">
+            <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44">
+              <Reveal>
+                <SectionHead
+                  kicker="03 · Validación"
+                  title="Lo pusimos a prueba a ciegas"
+                >
+                  Entrenamos con 2012–2019 y escondimos 2020–2022. Luego
+                  comparamos lo que el modelo predijo con lo que VIIRS contó de
+                  verdad.
+                </SectionHead>
+              </Reveal>
+              <div className="mt-20 grid gap-16 sm:grid-cols-3">
+                {[
+                  [
+                    0.98,
+                    <CountUp key="a" value={0.98} decimals={2} />,
+                    "Acierto del total mensual (R²)",
+                    "Casi toda la variación de un mes a otro en el Perú queda explicada.",
+                  ],
+                  [
+                    0.11,
+                    <CountUp key="b" value={11} prefix="±" suffix=" %" />,
+                    "Error típico por mes",
+                    "En un mes normal, la estimación se aleja poco más de una décima del valor real. El anillo muestra ese 11 %.",
+                  ],
+                  [
+                    0.78,
+                    <CountUp key="c" value={78} suffix=" %" />,
+                    "Meses dentro del rango",
+                    "Casi ocho de cada diez meses reales cayeron dentro del rango que anunciamos.",
+                  ],
+                ].map(([v, big, label, d], i) => (
+                  <Reveal key={String(label)} delay={i * 0.1}>
+                    <div className="h-full rounded-3xl border border-slate/25 bg-snow px-6 py-12 backdrop-blur-md">
+                      <DotRing value={Number(v)} label={String(label)}>
+                        {big}
+                      </DotRing>
+                      <p className="mx-auto mt-8 max-w-64 text-center text-sm text-slate">
+                        {d}
+                      </p>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+              <div className="mt-14 max-w-3xl">
+                <DataNote>
+                  Métricas del prototipo, aún sin validar con el pipeline final.
+                  Se reemplazan por las del algoritmo de armonización cuando
+                  estén disponibles.
+                </DataNote>
+              </div>
+            </div>
+          </section>
+
+          {/* 05 · DETALLE TÉCNICO */}
+          <section id="detalle" className="scroll-mt-24">
+            <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-44">
+              <Reveal>
+                <SectionHead
+                  kicker="04 · Bajo el capó"
+                  title="Pruébalo tú mismo"
+                >
+                  Para quien quiera auditar: juega con el modelo, mira cómo lo
+                  validamos, qué supuestos hicimos y los parámetros de cada
+                  región, descargables.
+                </SectionHead>
+              </Reveal>
+              <Reveal delay={0.1} className="mt-16">
+                <TechPanel />
+              </Reveal>
+              <Reveal delay={0.15} className="mt-8 max-w-3xl">
+                <DataNote>
+                  Todo corresponde al modelo del prototipo. Si el algoritmo
+                  final cambia (variables, ventana de entrenamiento, filtros),
+                  esta sección se actualiza.
+                </DataNote>
+              </Reveal>
+            </div>
+          </section>
+
+          {/* CIERRE */}
+          <section className="relative overflow-hidden border-t border-slate/25">
+            <div className="relative mx-auto w-full max-w-6xl px-4 py-32 text-center sm:px-6 sm:py-48">
+              <Reveal>
+                <p className={`text-xs text-slate ${hud}`}>Siguiente paso</p>
+                <h2 className="mx-auto mt-4 max-w-4xl text-4xl tracking-tight sm:text-6xl">
+                  Con un registro consistente,
+                  <span className="block text-navy/50">
+                    ya se puede comparar.
+                  </span>
+                </h2>
+                <div className="mt-12 flex flex-wrap justify-center gap-3 text-sm font-medium">
+                  <Link
+                    href="/pantalla-3"
+                    className="rounded-full bg-(--accent) px-7 py-3.5 text-[#0C090A] transition hover:-translate-y-0.5 hover:opacity-90"
+                  >
+                    Explorar los datos →
+                  </Link>
+                  <Link
+                    href="/pantalla-1"
+                    className="rounded-full border border-slate/50 px-7 py-3.5 text-navy transition-colors hover:border-navy"
+                  >
+                    Volver a la historia
+                  </Link>
+                </div>
+              </Reveal>
+            </div>
+          </section>
         </div>
-      </section>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }

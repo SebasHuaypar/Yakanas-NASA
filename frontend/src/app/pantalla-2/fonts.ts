@@ -1,23 +1,17 @@
-import { JetBrains_Mono, Montserrat } from "next/font/google";
+/**
+ * Tipografías de esta pantalla: se usan las de la marca (definidas en layout.tsx),
+ * así toda la web comparte el mismo lenguaje:
+ *  - títulos: Plus Jakarta Sans (font-heading)
+ *  - cuerpo y etiquetas: Inter
+ * Se mantienen los nombres `hud`, `mono`, `montserrat` y `mont` para no tocar los componentes.
+ */
 
-/** Tipografía mono para etiquetas tipo HUD (solo esta pantalla; no toca layout.tsx). */
-export const mono = JetBrains_Mono({
-  variable: "--font-mono-hud",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap",
-});
+/** Etiqueta HUD: Inter en mayúsculas con tracking ancho. */
+export const hud = "font-medium uppercase tracking-[0.14em]";
 
-/** Clases de una etiqueta HUD: mono, mayúsculas, tracking ancho. */
-export const hud = "font-[family-name:var(--font-mono-hud)] uppercase tracking-[0.14em]";
+/** Antes cargaban fuentes propias; ahora no aportan variable CSS. */
+export const mono = { variable: "" };
+export const montserrat = { variable: "" };
 
-/** Tipografía de las cápsulas: geométrica ancha, como el diseño de referencia. */
-export const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: ["500", "700", "800"],
-  display: "swap",
-});
-
-/** Clase para usar Montserrat. */
-export const mont = "font-[family-name:var(--font-montserrat)]";
+/** Clase para los títulos de las cápsulas: Plus Jakarta Sans de la marca. */
+export const mont = "font-heading";
