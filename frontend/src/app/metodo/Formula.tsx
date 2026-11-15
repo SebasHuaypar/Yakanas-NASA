@@ -57,20 +57,22 @@ const TXT = {
   },
 };
 
-/** Un término de la ecuación: el símbolo grande y, debajo, qué significa. */
+/** Un término: símbolo grande, debajo su valor con esta región y, al final, qué es. */
 function Term({
   k,
   focus,
   onFocus,
   label,
-  children,
+  value,
   hot = false,
+  children,
 }: {
-  hot?: boolean;
   k: TermKey;
   focus: TermKey | null;
   onFocus: (k: TermKey | null) => void;
   label: string;
+  value: string;
+  hot?: boolean;
   children: React.ReactNode;
 }) {
   const on = focus === k;
@@ -81,16 +83,25 @@ function Term({
       onMouseLeave={() => onFocus(null)}
       onFocus={() => onFocus(k)}
       onBlur={() => onFocus(null)}
-      className={`inline-flex cursor-help flex-col items-center rounded-xl border px-1.5 py-2 outline-none transition-colors ${
+      className={`flex min-w-[5.5rem] cursor-help flex-col items-center rounded-2xl border px-3 py-3 outline-none transition-colors ${
         on
-          ? "border-navy bg-navy/10"
-          : "border-transparent hover:border-slate/40"
+          ? hot
+            ? "border-(--hot)/70 bg-(--hot)/10"
+            : "border-navy bg-navy/10"
+          : "border-slate/20 hover:border-slate/50"
       }`}
     >
-      <span className={`whitespace-nowrap font-heading text-xl font-semibold sm:text-[1.65rem] ${hot ? "text-[#FF6B2C]" : "text-navy"}`}>
+      <span
+        className={`whitespace-nowrap font-heading text-xl font-bold sm:text-2xl ${hot ? "text-(--hot)" : "text-ink"}`}
+      >
         {children}
       </span>
-      <span className={`mt-1 text-[9px] text-slate ${hud}`}>{label}</span>
+      <span
+        className={`mt-2 rounded-full px-2.5 py-0.5 font-mono text-xs tabular-nums ${hot ? "bg-(--hot)/15 text-(--hot)" : "bg-white/[0.06] text-navy"}`}
+      >
+        {value}
+      </span>
+      <span className={`mt-2 text-[10px] text-slate ${hud}`}>{label}</span>
     </span>
   );
 }
@@ -98,7 +109,7 @@ function Term({
 const Op = ({ children }: { children: React.ReactNode }) => (
   <span
     aria-hidden
-    className="self-start pt-1.5 font-heading text-xl text-slate sm:text-2xl"
+    className="self-center pb-8 font-heading text-xl text-slate sm:text-2xl"
   >
     {children}
   </span>
@@ -121,6 +132,8 @@ export default function Formula({
   const [lang] = useLang();
   const L = TXT[lang];
   const f = (n: number) => n.toFixed(2);
+  const u = Math.log(modis + 1);
+  const w = a + (high ? d : 0) + b * u;
   return (
     <Card as="figure" className="rounded-3xl p-5 sm:p-6">
       <figcaption className={`text-center text-[11px] text-slate ${hud}`}>
@@ -130,41 +143,31 @@ export default function Formula({
       <div
         role="math"
         aria-label={L.aria}
-        className="mt-4 flex flex-wrap items-start justify-center gap-x-0.5 gap-y-3"
+        className="mt-5 flex flex-wrap items-stretch justify-center gap-x-1.5 gap-y-3"
       >
-        <Term k="viirs" hot focus={focus} onFocus={onFocus} label={L.est}>
+        <Term k="viirs" hot focus={focus} onFocus={onFocus} label={L.est} value={f(w)}>
           ln(VIIRS + 1)
         </Term>
         <Op>=</Op>
-        <Term k="a" focus={focus} onFocus={onFocus} label={L.base}>
+        <Term k="a" focus={focus} onFocus={onFocus} label={L.base} value={f(a)}>
           a
         </Term>
         <Op>+</Op>
-        <Term k="d" focus={focus} onFocus={onFocus} label={L.high}>
+        <Term k="d" focus={focus} onFocus={onFocus} label={L.high} value={`${f(d)} × ${high ? 1 : 0}`}>
           d · {L.alta}
         </Term>
         <Op>+</Op>
-        <Term k="b" focus={focus} onFocus={onFocus} label={L.slope}>
+        <Term k="b" focus={focus} onFocus={onFocus} label={L.slope} value={f(b)}>
           b
         </Term>
         <Op>×</Op>
-        <Term k="modis" focus={focus} onFocus={onFocus} label={L.obs}>
+        <Term k="modis" focus={focus} onFocus={onFocus} label={L.obs} value={f(u)}>
           ln(MODIS + 1)
         </Term>
       </div>
 
       <div className="mt-5 border-t border-slate/20 pt-4">
-        <p className={`text-center text-[11px] text-slate ${hud}`}>{L.withVals}</p>
-        <p
-          aria-hidden
-          className="mt-2 break-words text-center font-mono text-sm leading-loose text-ink sm:text-base"
-        >
-          <span className="text-[#FF6B2C]">ln(VIIRS + 1)</span> = <span className="text-navy">{f(a)}</span> +{" "}
-          <span className="text-navy">{f(d)}</span> × {high ? 1 : 0} +{" "}
-          <span className="text-navy">{f(b)}</span> × ln(
-          {modis.toLocaleString(L.loc)} + 1)
-        </p>
-        <dl className="mt-5 grid gap-3 text-left sm:grid-cols-3">
+        <dl className="grid gap-3 text-left sm:grid-cols-3">
           {(
             [
               ["ln", L.lnT, L.lnD],

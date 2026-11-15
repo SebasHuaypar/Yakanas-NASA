@@ -51,6 +51,8 @@ const tones = {
   "--fog": "rgb(40 58 84 / 0.30)",
   "--deep": "rgb(40 58 84 / 0.55)",
   "--accent": "#F3F9FC",
+  /* único acento cálido: solo para el resultado de las fórmulas */
+  "--hot": "#FF8A3D",
 } as CSSProperties;
 
 /** Capítulos del método: cuatro tarjetas verticales + detalle. */

@@ -204,7 +204,7 @@ export function ModeloContent() {
         <Card className="rounded-3xl p-5">
           <p className={`text-[11px] text-slate ${hud}`}>{L.rule}</p>
           <code className="mt-3 block break-words font-mono text-sm leading-loose text-ink">
-            <span className="font-semibold text-[#FF6B2C]">log(VIIRS+1)</span>
+            <span className="font-semibold text-(--hot)">log(VIIRS+1)</span>
             <span className="text-slate"> = </span>
             <span className="text-navy">a</span>
             <span className="text-slate"> + </span>
@@ -231,7 +231,7 @@ export function ModeloContent() {
               {L.ex2}
               <b className="text-ink">{modis}</b>
               {L.ex3}
-              <b className="font-heading text-2xl text-[#FF6B2C]">
+              <b className="font-heading text-2xl text-(--hot)">
                 ≈ {est.toLocaleString(L.loc)}
               </b>
               {L.ex4}
