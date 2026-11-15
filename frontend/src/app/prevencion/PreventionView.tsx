@@ -319,7 +319,7 @@ function useModelSeries(loc: { lat: number; lon: number }, dept: string | undefi
     const count = mode === "weeks" ? 8 : 14;
     const step = mode === "weeks" ? 7 : 1;
     const dates = Array.from({ length: count }, (_, i) => new Date(base + i * step * 864e5).toISOString().slice(0, 10));
-    Promise.all(dates.map((fecha) => apiGet<ApiModelMap>("/prevention/model", { fecha, region_id: dept, minimo: 0.05, limit: 20000 }, ctl.signal)))
+    Promise.all(dates.map((fecha) => apiGet<ApiModelMap>("/prevention/model", { fecha, region_id: dept, minimo: 0.05, limit: 20000 }, ctl.signal).catch(() => (ctl.signal.aborted ? Promise.reject(new Error("aborted")) : apiGet<ApiModelMap>("/prevention/model", { fecha, region_id: dept, minimo: 0.05, limit: 20000 }, ctl.signal)))))
       .then((maps) => {
         const pts = maps.map((m, i) => {
           let p = 0;
