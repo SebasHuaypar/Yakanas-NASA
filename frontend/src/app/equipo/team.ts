@@ -73,7 +73,15 @@ export const TEAM: Member[] = [
   {
     id: "isaac",
     name: "Isaac Martel",
-    role: { en: "Team member", es: "Integrante" },
-    links: {},
+    photo: "/equipo/isaac.webp",
+    role: { en: "Predictive modeling", es: "Modelado predictivo" },
+    contribution: {
+      en: "Built the predictive model, a logistic regression trained on the harmonized series and compared against four other methods, and collaborated on the MODIS–VIIRS harmonization model and on integrating the team’s work into the 2003–2026 series and its API.",
+      es: "Construyó el modelo predictivo, una regresión logística entrenada con la serie armonizada y comparada con otros cuatro métodos, y colaboró en el modelo de armonización MODIS–VIIRS y en la integración del trabajo del equipo en la serie 2003–2026 y su API.",
+    },
+    links: {
+      linkedin: "https://www.linkedin.com/in/isaac-martel-balvin",
+      github: "https://github.com/SL7u777",
+    },
   },
 ];
