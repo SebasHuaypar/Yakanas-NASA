@@ -259,7 +259,7 @@ flowchart LR
 | Average error per department and month | ≈ 24 % |
 | Error by zone | Rainforest 18 % · Highlands 25 % · Coast 51 % (very little fire there) |
 
-Full details live in [`backend/docs/metodo.md`](backend/docs/metodo.md) and [`backend/docs/API.md`](backend/docs/API.md).
+The interactive API reference (every route, parameter and response) is served by the backend itself at `/docs`.
 
 ---
 
@@ -285,7 +285,7 @@ Tested on years the model had not seen (2019–2025):
 | Random forest | 0.641 | 0.894 | 84.4 % | 28.6 % |
 | Gradient boosting | 0.638 | 0.893 | 84.1 % | 28.5 % |
 
-The simple model was chosen on purpose: it performs like the complex ones, gives real probabilities between 0 and 1, and its weights can be read. It ranks zones better than plain history; it marks them right about as often. **It uses no weather**, so the website says it is a prediction from past years, not a warning of a specific fire. The job `run_modelo.py` retrains it every month. See [`backend/docs/modelo-predictivo.md`](backend/docs/modelo-predictivo.md).
+The simple model was chosen on purpose: it performs like the complex ones, gives real probabilities between 0 and 1, and its weights can be read. It ranks zones better than plain history; it marks them right about as often. **It uses no weather**, so the website says it is a prediction from past years, not a warning of a specific fire. The job `run_modelo.py` retrains it every month.
 
 ---
 
@@ -312,8 +312,7 @@ Yakanas-NASA/
    ├─ run_serie.py              build the series (once)
    ├─ run_week.py               refresh the recent week  (Cloud Run Job)
    ├─ run_modelo.py             retrain the prevention model  (Cloud Run Job)
-   ├─ data/out/                 small results kept in git
-   └─ docs/                     API.md, metodo.md, modelo-predictivo.md
+   └─ data/out/                 small results kept in git
 ```
 
 | Folder | Docs |

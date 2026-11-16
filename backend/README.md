@@ -31,10 +31,6 @@ flowchart LR
 | `comparar_modelos.py` | Compares five prediction methods. Evidence only; nothing serves it |
 | `data/out/` | Small results kept in git: calibration, validation, model, summaries |
 | `web/` | The three pages |
-| `docs/API.md` | Every route, its parameters and its response. **Start here to build a front end** |
-| `docs/metodo.md` | The harmonization method, step by step (Spanish) |
-| `docs/modelo-predictivo.md` | The prevention model and the comparison of methods (Spanish) |
-| `docs/investigacion-inicial.md` | The team's first research notes (Spanish) |
 | `Dockerfile`, `docker-compose.yml` | One image for the API, the pages and the jobs |
 | `.gcloudignore` | What `gcloud run deploy --source` does **not** upload (the git-ignored series files must still go up) |
 
@@ -122,7 +118,7 @@ The Parquet files are not in git, so a fresh clone has to run this command once 
 
 **`run_modelo.py`** retrains the logistic regression that `/prevention/model` serves. It reads `fire_cell_day.parquet` (the harmonized output), builds the training table using only dates whose ±15-day window is already closed, trains, and writes `data/out/modelo_logistico.json` plus a line in `data/out/reentrenamientos.jsonl` (the registry of retrainings). It does not compare other methods and does not touch the harmonization. It runs on the 1st of every month, so the model learns the newest fire.
 
-**`comparar_modelos.py`** compares five methods (recurrence, linear and logistic regression, random forest, gradient boosting) on 2019–2025 with years they had not seen and writes `data/out/modelos_comparacion.json`. Nothing schedules it: it is the evidence behind choosing the logistic regression, and the file that exists is kept as it is. See `docs/modelo-predictivo.md`.
+**`comparar_modelos.py`** compares five methods (recurrence, linear and logistic regression, random forest, gradient boosting) on 2019–2025 with years they had not seen and writes `data/out/modelos_comparacion.json`. Nothing schedules it: it is the evidence behind choosing the logistic regression, and the file that exists is kept as it is.
 
 ## The prevention model
 
