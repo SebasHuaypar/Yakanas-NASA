@@ -5,14 +5,18 @@ export const metadata = {
 };
 
 import HeroScroll from "@/components/hero/HeroScroll";
+import IntroVideo from "@/components/IntroVideo";
 import Regions from "@/components/sections/Regions";
 import Satellites from "@/components/sections/Satellites";
 
 export default function Pantalla1() {
   return (
-    <HeroScroll>
-      <Regions />
-      <Satellites />
-    </HeroScroll>
+    <>
+      <IntroVideo />
+      <HeroScroll>
+        <Regions />
+        <Satellites />
+      </HeroScroll>
+    </>
   );
 }

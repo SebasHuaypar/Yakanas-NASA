@@ -24,6 +24,11 @@
   <img src="docs/images/story-hero.jpg" alt="Yakana’s Fire Intelligence: the globe travels to Peru" width="820">
 </p>
 
+<p align="center">
+  <a href="frontend/public/video/yakana-intro.mp4"><img src="frontend/public/video/yakana-intro-poster.jpg" alt="Watch the 30-second video: Yakana’s Fire Intelligence" width="820"></a>
+  <br><sub><b>▶ Watch the 30-second video</b> — click the image (it also plays at the start of <a href="https://yakanas.earth">yakanas.earth</a>).</sub>
+</p>
+
 ---
 
 ## Table of contents
