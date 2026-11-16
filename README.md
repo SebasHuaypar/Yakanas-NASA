@@ -39,6 +39,7 @@
 9. [Deployment and CI/CD](#9-deployment-and-cicd)
 10. [Data sources, licenses and credits](#10-data-sources-licenses-and-credits)
 11. [Team](#11-team)
+12. [License](#12-license)
 
 ---
 
@@ -406,3 +407,14 @@ Built by **Yakana's Team** for the NASA Space Apps Challenge 2026.
 | **Isabel Makishi** | Data Engineer | Ingestion pipeline, MODIS–VIIRS harmonization, data quality, monthly retraining. |
 | **Isaac Martel** | Data Scientist | The predictive (logistic regression) model and its comparison with four other methods. |
 
+---
+
+## 12. License
+
+The **source code** of this repository is released under the [MIT License](LICENSE) — © 2026 Yakana's Team.
+
+What the MIT License does **not** cover:
+
+- **Third-party data and imagery** keep their own terms: NASA FIRMS, geoBoundaries, GeoNames, OpenStreetMap, NASA GIBS, AWS Terrain Tiles and, in particular, the **Sentinel-2 cloudless imagery © EOX (CC BY-NC-SA 4.0, non-commercial)** used in the 3D relief. See [§10](#10-data-sources-licenses-and-credits).
+- **The Yakana logotype and isotype** (`frontend/public/brand/`, `docs/images/banner.svg`) and the **team photos** (`frontend/public/equipo/`) are © Yakana's Team, all rights reserved.
+- The NASA logo is used only to name the challenge and implies no endorsement by NASA.
