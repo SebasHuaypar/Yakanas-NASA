@@ -396,16 +396,16 @@ The NASA logo is used only to name the challenge; it does not imply NASA's endor
 
 ## 11. Team
 
-Built by **Yakana's Team** for the NASA Space Apps Challenge 2026.
+Built by **Yakana's Team** for the NASA Space Apps Challenge 2026. This is the same text the website shows on its [Team page](https://yakanas.earth/equipo) (source: [`team.ts`](frontend/src/app/equipo/team.ts)).
 
 | Person | Role | Contribution |
 | --- | --- | --- |
-| **Sebastián Huaypar** | Project Manager & Team Lead | Led the project end to end; visual identity and design system; Story, Prevention, Response and Team pages; EN/ES; data integration; daily data automation and deployment. |
-| **Giordano Medrano** | Frontend Developer | Method page; the official logotype and isotype. |
-| **Darcy Ortega** | Full-stack Developer | Explorer (map, 3D relief, calendar); the YakaLlama assistant; the pitch video. |
-| **Cesar Correa** | Backend Lead | The API (historical series, live week, prevention model) and its deployment on Google Cloud. |
-| **Isabel Makishi** | Data Engineer | Ingestion pipeline, MODIS–VIIRS harmonization, data quality, monthly retraining. |
-| **Isaac Martel** | Data Scientist | The predictive (logistic regression) model and its comparison with four other methods. |
+| **Sebastián Huaypar** | Project Manager & Team Lead | Led the project end to end: set the vision, coordinated the team and the work of every branch, and made sure everything came together as one coherent product. Designed the visual identity and shared design system, built the Story, Prevention, Response and Team pages, the EN/ES language system and the connection to the real data API, automated the daily data refresh and the deployment, and kept the quality of the whole site high. |
+| **Giordano Medrano** | Frontend Developer | Built the Method page: the before-and-after chart, the validation and the interactive simulator of the harmonization formula. Also designed the official Yakana logotype and isotype. |
+| **Darcy Ortega** | Full-stack Developer | Built the Explorer: the department map, the 3D terrain view with real hotspot cells and the 23-year monthly calendar. Also built YakaLlama, the assistant connected to NVIDIA models and the backend data, and produced the project's pitch video. |
+| **Cesar Correa** | Backend Lead | Built the API that serves the historical series, the live week and the prevention model, and configured and deployed it on Google Cloud so the whole platform can query it. |
+| **Isabel Makishi** | Data Engineer | Engineered the data ingestion pipeline, implemented the MODIS–VIIRS harmonization methodology, ensured data quality, set up the monthly retraining of the model and developed the backend API powering the entire platform. |
+| **Isaac Martel** | Data Scientist | Built the predictive model, a logistic regression trained on the harmonized series and compared against four other methods, and collaborated on the MODIS–VIIRS harmonization model and on integrating the team’s work into the 2003–2026 series and its API. |
 
 ---
 
