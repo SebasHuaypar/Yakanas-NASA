@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  Want to see the promo video? <a href="frontend/public/video/yakana-intro.mp4"><b>Watch it here</b></a>.
+  Want to see the promo video? <a href="https://drive.google.com/file/d/1EpkdT7OodWiSTPSHqt87_nDDGQ_gqW0y/view?usp=drive_link"><b>Watch it here</b></a>.
 </p>
 
 ---
