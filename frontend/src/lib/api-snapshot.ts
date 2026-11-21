@@ -1,8 +1,8 @@
-/* GENERADO por scripts/snapshot-api.mjs el 2026-11-20 desde https://calendario-fuego-1022991169828.southamerica-west1.run.app.
+/* GENERADO por scripts/snapshot-api.mjs el 2026-11-21 desde https://calendario-fuego-1022991169828.southamerica-west1.run.app.
    Datos reales de la API del equipo de backend, usados como valor inicial antes de la lectura en vivo. No editar a mano. */
 import type { ApiValidation } from "./api";
 
-export const SNAPSHOT_DATE = "2026-11-20";
+export const SNAPSHOT_DATE = "2026-11-21";
 
 export const SNAPSHOT_SERIES = {"years":[2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025],"harmonized":[75175,58172,102652,64522,82914,67896,59494,92113,56862,75993,59034,53173,64386,83518,52166,56310,69181,90375,62131,81567,72009,95028,48382],"low":[45920,36419,61484,39744,51310,41867,36790,55647,35222,75661,59034,53173,64386,83518,52166,56310,69181,90375,62131,81567,72009,95028,48382],"high":[125290,95391,174064,106945,137066,112442,98525,154750,93618,76545,59034,53173,64386,83518,52166,56310,69181,90375,62131,81567,72009,95028,48382]};
 
